@@ -1,0 +1,116 @@
+[2026-06-30 15:00:38] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+[2026-06-30 15:00:38] WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+[2026-06-30 15:00:38] INFO:ctrl.robot_arm:DDS 연결 성공.
+[2026-06-30 15:00:38] INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+[2026-06-30 15:00:38] INFO:ctrl.robot_arm:관절 고정 완료.
+[2026-06-30 15:00:38] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[2026-06-30 15:00:38] [System] Robot connected
+[2026-06-30 15:00:38] INFO:     Started server process [3882]
+[2026-06-30 15:00:38] INFO:     Waiting for application startup.
+[2026-06-30 15:00:38] INFO:     Application startup complete.
+[2026-06-30 15:00:38] INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /robot-only HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /vendor/three.min.js HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/urdf HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/meshes HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/mesh/pelvis.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:52314 - "GET /api/mesh/pelvis_contour_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/left_hip_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/left_hip_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:61240 - "GET /api/mesh/left_knee_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:59437 - "GET /api/mesh/left_hip_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/left_ankle_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/left_ankle_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:59437 - "GET /api/mesh/right_hip_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/right_hip_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/right_hip_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/mesh/right_knee_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:59437 - "GET /api/mesh/right_ankle_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/right_ankle_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/waist_yaw_link_rev_1_0.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:61240 - "GET /api/mesh/waist_roll_link_rev_1_0.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:59437 - "GET /api/mesh/torso_link_rev_1_0.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:61240 - "GET /api/mesh/logo_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/head_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/left_shoulder_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/mesh/left_shoulder_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:61240 - "GET /api/mesh/left_shoulder_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/left_elbow_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/left_wrist_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/mesh/left_wrist_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:52314 - "GET /api/mesh/left_wrist_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:62140 - "GET /api/mesh/left_rubber_hand.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:61240 - "GET /api/mesh/right_shoulder_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/right_shoulder_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/mesh/right_shoulder_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:61240 - "GET /api/mesh/right_wrist_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:52314 - "GET /api/mesh/right_elbow_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/right_wrist_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:64006 - "GET /api/mesh/right_wrist_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/mesh/right_rubber_hand.stl HTTP/1.1" 200 OK
+[2026-06-30 15:00:47] INFO:     192.168.123.50:56100 - "GET /api/status HTTP/1.1" 200 OK
+[2026-06-30 15:00:48] INFO:     192.168.123.50:56100 - "GET /api/joint_states HTTP/1.1" 200 OK
+[2026-06-30 15:05:59] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+[2026-06-30 15:05:59] WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+[2026-06-30 15:05:59] INFO:ctrl.robot_arm:DDS 연결 성공.
+[2026-06-30 15:05:59] INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+[2026-06-30 15:05:59] INFO:ctrl.robot_arm:관절 고정 완료.
+[2026-06-30 15:05:59] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[2026-06-30 15:05:59] [System] Robot connected
+[2026-06-30 15:05:59] INFO:     Started server process [4459]
+[2026-06-30 15:05:59] INFO:     Waiting for application startup.
+[2026-06-30 15:05:59] INFO:     Application startup complete.
+[2026-06-30 15:05:59] INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+[2026-06-30 15:05:59] INFO:     192.168.123.50:55303 - "GET /api/joint_states HTTP/1.1" 200 OK
+[2026-06-30 15:07:47] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+[2026-06-30 15:07:47] WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+[2026-06-30 15:07:47] INFO:ctrl.robot_arm:DDS 연결 성공.
+[2026-06-30 15:07:47] INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+[2026-06-30 15:07:47] INFO:ctrl.robot_arm:관절 고정 완료.
+[2026-06-30 15:07:47] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[2026-06-30 15:07:47] [System] Robot connected
+[2026-06-30 15:07:48] INFO:     Started server process [4832]
+[2026-06-30 15:07:48] INFO:     Waiting for application startup.
+[2026-06-30 15:07:48] INFO:     Application startup complete.
+[2026-06-30 15:07:48] INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /robot-only HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /vendor/three.min.js HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/urdf HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/meshes HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/pelvis.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:55222 - "GET /api/mesh/pelvis_contour_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63223 - "GET /api/mesh/left_hip_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:54881 - "GET /api/mesh/left_hip_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:60977 - "GET /api/mesh/left_hip_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:61593 - "GET /api/mesh/left_knee_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/left_ankle_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/left_ankle_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:60977 - "GET /api/mesh/right_hip_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:54881 - "GET /api/mesh/right_hip_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63223 - "GET /api/mesh/right_hip_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:60977 - "GET /api/mesh/right_knee_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63223 - "GET /api/mesh/right_ankle_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/right_ankle_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:54881 - "GET /api/mesh/waist_yaw_link_rev_1_0.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/waist_roll_link_rev_1_0.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:61593 - "GET /api/mesh/torso_link_rev_1_0.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63223 - "GET /api/mesh/logo_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/left_shoulder_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:60977 - "GET /api/mesh/head_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63223 - "GET /api/mesh/left_shoulder_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/left_elbow_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:54881 - "GET /api/mesh/left_shoulder_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:60977 - "GET /api/mesh/left_wrist_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63778 - "GET /api/mesh/left_wrist_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:54881 - "GET /api/mesh/left_wrist_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:63223 - "GET /api/mesh/left_rubber_hand.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:53] INFO:     192.168.68.115:60977 - "GET /api/mesh/right_shoulder_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:61593 - "GET /api/mesh/right_shoulder_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:63778 - "GET /api/mesh/right_shoulder_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:60977 - "GET /api/mesh/right_elbow_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:54881 - "GET /api/mesh/right_wrist_roll_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:63778 - "GET /api/mesh/right_wrist_yaw_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:61593 - "GET /api/mesh/right_wrist_pitch_link.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:60977 - "GET /api/mesh/right_rubber_hand.stl HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:55222 - "GET /api/status HTTP/1.1" 200 OK
+[2026-06-30 15:07:54] INFO:     192.168.68.115:55222 - "GET /api/joint_states HTTP/1.1" 200 OK

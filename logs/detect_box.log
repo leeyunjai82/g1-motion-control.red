@@ -1,0 +1,993 @@
+INFO:     Started server process [8405]
+INFO:     Waiting for application startup.
+[YOLO] 로드: /home/circulus/project/g1-motion-control/high/models/box_openvino_model (device=intel:cpu)
+Loading /home/circulus/project/g1-motion-control/high/models/box_openvino_model for OpenVINO inference...
+Using OpenVINO LATENCY mode for batch=1 inference on CPU...
+[DETECT] 첫 프레임 대기...
+[detect_box] http://0.0.0.0:50010/
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:50010 (Press CTRL+C to quit)
+[COLOR] 연결[DEPTH] 연결
+
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[DETECT] 시작
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:64726 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:51447 - "GET /video_feed?t=1780392209483 HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.9 h_table=-42.6 H=16.6cm top_px=28249/38157 (74%) size=18.7x17.3x16.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.3 h_table=-43.1 H=12.8cm top_px=28284/32497 (87%) size=15.5x15.4x12.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.3 H=8.6cm top_px=28782/30023 (96%) size=15.4x14.5x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.6 H=8.8cm top_px=29605/30535 (97%) size=15.3x14.8x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.4 H=8.5cm top_px=29810/30566 (98%) size=15.5x14.7x8.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.5 H=8.6cm top_px=29885/30630 (98%) size=15.4x14.7x8.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.7 H=9.3cm top_px=29219/30622 (95%) size=14.9x14.7x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.8cm top_px=29616/30626 (97%) size=15.3x14.7x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.4 H=8.5cm top_px=29721/30568 (97%) size=15.4x14.9x8.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.8 H=9.0cm top_px=29787/30534 (98%) size=15.4x14.8x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.5 H=8.6cm top_px=29734/30523 (97%) size=15.6x14.7x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-44.0 H=9.3cm top_px=29395/30571 (96%) size=15.5x14.7x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-44.0 H=9.4cm top_px=29166/30514 (96%) size=15.4x14.5x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.8 H=9.0cm top_px=29712/30509 (97%) size=15.6x14.8x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.7cm top_px=29689/30519 (97%) size=15.5x14.7x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.8 H=8.9cm top_px=29551/30483 (97%) size=15.6x14.8x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-44.0 H=9.1cm top_px=29676/30442 (97%) size=15.6x14.8x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29566/30436 (97%) size=15.6x14.8x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.7 H=8.9cm top_px=29551/30399 (97%) size=15.4x14.6x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-35.0 h_table=-43.9 H=9.0cm top_px=29658/30400 (98%) size=15.5x14.6x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=8.9cm top_px=29623/30354 (98%) size=15.5x14.6x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.5 H=8.6cm top_px=29529/30330 (97%) size=15.6x14.8x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.7cm top_px=29569/30361 (97%) size=15.3x14.9x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=29169/30300 (96%) size=15.5x14.5x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-35.0 h_table=-43.8 H=8.9cm top_px=29534/30262 (98%) size=15.6x14.7x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.5 H=9.1cm top_px=28865/30249 (95%) size=15.0x14.6x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.5 H=9.1cm top_px=28807/30232 (95%) size=15.0x14.6x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.8 H=9.0cm top_px=29347/30207 (97%) size=15.4x14.6x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29414/30240 (97%) size=15.6x14.7x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.5 H=8.6cm top_px=29406/30269 (97%) size=15.4x14.8x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.8 H=8.9cm top_px=29506/30300 (97%) size=15.6x14.6x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.8 H=8.9cm top_px=29315/30308 (97%) size=15.3x14.8x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.8cm top_px=29452/30277 (97%) size=15.5x14.8x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.8cm top_px=29415/30252 (97%) size=15.4x14.8x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.7 H=8.9cm top_px=29424/30300 (97%) size=15.5x14.5x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=29129/30224 (96%) size=15.2x14.8x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.6 H=9.0cm top_px=29071/30308 (96%) size=15.2x14.7x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.6cm top_px=29632/30340 (98%) size=15.4x14.9x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=28895/30260 (95%) size=15.0x14.7x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.7 H=8.8cm top_px=29520/30278 (97%) size=15.5x14.7x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.8 H=9.1cm top_px=29102/30273 (96%) size=15.1x14.8x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-44.0 H=9.4cm top_px=29084/30271 (96%) size=15.2x14.6x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-44.0 H=9.2cm top_px=29404/30327 (97%) size=15.4x14.7x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-44.0 H=9.2cm top_px=29250/30231 (97%) size=15.4x14.5x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29515/30260 (98%) size=15.6x14.6x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29488/30291 (97%) size=15.5x14.7x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.7cm top_px=29397/30308 (97%) size=15.5x14.7x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.7 H=9.1cm top_px=29203/30302 (96%) size=15.2x14.8x9.1cm
+INFO:     192.168.123.50:59037 - "GET /set_auto_mode?enabled=false HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.8cm top_px=29537/30315 (97%) size=15.5x14.6x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.9 H=9.1cm top_px=29402/30279 (97%) size=15.4x14.6x9.1cm
+INFO:     192.168.123.50:59037 - "GET /set_auto_mode?enabled=true HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.7 H=8.9cm top_px=29316/30273 (97%) size=15.4x14.7x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.7 H=9.1cm top_px=28992/30260 (96%) size=15.2x14.6x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-44.0 H=9.1cm top_px=29503/30290 (97%) size=15.5x14.7x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.9 H=9.0cm top_px=29394/30287 (97%) size=15.5x14.6x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.7 H=8.8cm top_px=29472/30314 (97%) size=15.5x14.7x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.5 H=8.6cm top_px=29528/30301 (97%) size=15.5x14.6x8.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.7cm top_px=29547/30313 (97%) size=15.5x14.7x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[AUTO] dwell 만족 → POST grab
+[POST] grab_at: {"ok":true,"type":"cardboard"}
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.7 H=8.9cm top_px=29385/30299 (97%) size=15.3x14.8x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29435/30253 (97%) size=15.5x14.7x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.5 H=8.9cm top_px=29101/30343 (96%) size=15.1x14.6x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.8 H=8.9cm top_px=29477/30325 (97%) size=15.4x14.7x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.7 H=8.9cm top_px=29562/30283 (98%) size=15.4x14.7x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-44.0 H=9.1cm top_px=29550/30268 (98%) size=15.5x14.6x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=29060/30327 (96%) size=15.0x14.7x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.5 H=8.7cm top_px=29446/30287 (97%) size=15.4x14.6x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.9 H=9.1cm top_px=29538/30307 (97%) size=15.4x14.6x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.1cm top_px=29430/30280 (97%) size=15.5x14.6x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29458/30290 (97%) size=15.4x14.7x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.8 H=9.3cm top_px=28995/30267 (96%) size=15.0x14.7x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.9 H=9.1cm top_px=29517/30311 (97%) size=15.5x14.8x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.8 H=9.3cm top_px=28804/30351 (95%) size=15.0x14.9x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.9 H=9.0cm top_px=29662/30536 (97%) size=15.7x14.9x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.7 H=9.0cm top_px=29571/30558 (97%) size=15.2x14.8x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=29103/30554 (95%) size=15.1x14.8x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.9 H=9.1cm top_px=29728/30563 (97%) size=15.5x14.7x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.8 H=9.0cm top_px=29611/30570 (97%) size=15.5x14.7x9.0cm
+INFO:     127.0.0.1:51486 - "GET /pose HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.4 H=8.7cm top_px=29491/30561 (96%) size=15.5x14.7x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-44.1 H=9.3cm top_px=29431/30417 (97%) size=15.5x14.7x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=28908/30331 (95%) size=15.6x14.4x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.1 h_table=-43.2 H=9.1cm top_px=31181/31944 (98%) size=16.0x15.0x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.5 h_table=-41.3 H=9.8cm top_px=31527/34428 (92%) size=15.7x13.4x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-41.2 H=9.5cm top_px=34763/35494 (98%) size=16.0x15.0x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-40.6 H=8.9cm top_px=34011/34862 (98%) size=15.7x15.1x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.6 h_table=-40.6 H=9.0cm top_px=33485/34862 (96%) size=15.8x14.9x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.9 h_table=-40.9 H=10.0cm top_px=32319/35125 (92%) size=14.9x14.7x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.5 h_table=-40.6 H=9.2cm top_px=33716/35240 (96%) size=15.7x14.8x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.0 h_table=-41.0 H=10.0cm top_px=32616/35071 (93%) size=14.9x14.8x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.6 h_table=-41.1 H=9.5cm top_px=33395/34856 (96%) size=15.7x14.8x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-41.0 H=9.3cm top_px=33467/34872 (96%) size=15.8x14.8x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.5 h_table=-40.8 H=9.3cm top_px=33598/35124 (96%) size=15.4x14.9x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.1 h_table=-40.9 H=9.8cm top_px=32604/34992 (93%) size=15.7x14.1x9.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-41.1 H=9.4cm top_px=34123/35660 (96%) size=16.1x14.7x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.0 h_table=-35.8 H=3.8cm top_px=34934/36707 (95%) size=15.5x14.4x3.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.7 h_table=-41.9 H=9.1cm top_px=38054/38054 (100%) size=16.2x15.0x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.3 h_table=-36.9 H=3.6cm top_px=39536/39538 (100%) size=15.8x14.9x3.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.9 h_table=-38.1 H=4.3cm top_px=40423/40423 (100%) size=15.7x14.7x4.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-38.8 H=4.6cm top_px=39955/39964 (100%) size=18.8x16.1x4.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.3 h_table=-39.1 H=10.8cm top_px=55580/55580 (100%) size=15.1x14.6x10.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.0 h_table=-38.4 H=12.4cm top_px=59780/59780 (100%) size=14.8x14.3x12.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-38.3 H=12.9cm top_px=62142/62142 (100%) size=14.9x14.8x12.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.0 h_table=-37.8 H=12.8cm top_px=63740/63775 (100%) size=15.1x14.9x12.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-23.5 H=?cm top_px=63530/63530 (100%) WxD=15.0x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-23.5 H=?cm top_px=63886/63886 (100%) WxD=15.1x14.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-23.4 H=?cm top_px=63817/64262 (99%) WxD=15.1x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.0 h_table=-23.6 H=?cm top_px=63493/63837 (99%) WxD=15.0x14.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-23.7 H=?cm top_px=62936/63693 (99%) WxD=14.9x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-23.3 H=?cm top_px=63508/64507 (98%) WxD=15.2x14.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.0 h_table=-23.4 H=?cm top_px=63527/64451 (99%) WxD=15.3x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-23.4 H=?cm top_px=63351/64247 (99%) WxD=15.3x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.0 h_table=-23.4 H=?cm top_px=63188/63930 (99%) WxD=14.9x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-25.2 H=?cm top_px=54338/54338 (100%) WxD=15.8x13.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-24.8 H=?cm top_px=51807/52833 (98%) WxD=15.3x14.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-24.9 H=?cm top_px=49249/51118 (96%) WxD=15.2x14.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.6 h_table=-21.9 H=?cm top_px=47036/50361 (93%) WxD=15.3x13.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.2 h_table=-21.7 H=?cm top_px=46239/50602 (91%) WxD=14.9x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.4 h_table=-21.8 H=?cm top_px=46644/50556 (92%) WxD=15.3x13.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.2 h_table=-21.7 H=?cm top_px=46306/50801 (91%) WxD=15.0x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.5 h_table=-21.7 H=?cm top_px=46626/50389 (93%) WxD=15.4x13.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.4 h_table=-22.0 H=?cm top_px=46442/50406 (92%) WxD=15.3x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.4 h_table=-21.8 H=?cm top_px=46478/50447 (92%) WxD=15.6x13.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.4 h_table=-21.7 H=?cm top_px=48848/52760 (93%) WxD=15.6x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-22.2 H=?cm top_px=45620/49783 (92%) WxD=15.7x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-22.8 H=?cm top_px=34185/41461 (82%) WxD=15.6x14.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.2 h_table=-23.6 H=?cm top_px=12776/24270 (53%) WxD=16.7x10.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.4 h_table=-38.6 H=5.2cm top_px=5562/11640 (48%) size=15.5x8.6x5.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.4 h_table=-39.3 H=9.9cm top_px=4384/14869 (29%) size=14.7x6.8x9.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.6 h_table=-40.7 H=11.1cm top_px=5531/16710 (33%) size=15.2x7.4x11.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.4 h_table=-41.0 H=11.7cm top_px=6452/18174 (36%) size=15.1x8.9x11.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.4 h_table=-41.7 H=11.2cm top_px=11403/22272 (51%) size=14.7x11.0x11.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.1 h_table=-42.8 H=10.7cm top_px=20294/27011 (75%) size=17.3x14.4x10.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.0 h_table=-43.2 H=9.2cm top_px=28392/29726 (96%) size=16.6x15.0x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.9 H=9.2cm top_px=30515/30935 (99%) size=15.8x14.3x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.9 H=9.3cm top_px=30607/31026 (99%) size=15.7x14.2x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.4 H=8.8cm top_px=30319/30819 (98%) size=15.6x14.3x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.6 H=9.1cm top_px=30412/30910 (98%) size=15.6x14.2x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.7 H=9.1cm top_px=30479/30925 (99%) size=15.8x14.3x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.6 H=9.0cm top_px=30372/30841 (98%) size=15.7x14.2x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.8 H=9.3cm top_px=30439/30880 (99%) size=15.7x14.2x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.4 H=8.8cm top_px=30401/30824 (99%) size=15.6x14.3x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.5 H=9.1cm top_px=30121/30846 (98%) size=15.5x14.3x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=30306/30855 (98%) size=15.7x14.2x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.4 H=8.5cm top_px=30644/30821 (99%) size=15.8x14.5x8.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.6 H=8.8cm top_px=30705/30917 (99%) size=16.0x14.4x8.8cm
+[AUTO] dwell 만족 → POST grab
+[POST] grab_at: {"ok":true,"type":"cardboard"}
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.5 H=8.9cm top_px=30459/30898 (99%) size=15.7x14.3x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.7 H=9.1cm top_px=30467/30887 (99%) size=15.6x14.3x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=30393/30899 (98%) size=15.8x14.3x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.8 H=9.2cm top_px=30398/30880 (98%) size=15.8x14.2x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=30670/30948 (99%) size=15.9x14.4x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.8 H=9.2cm top_px=30458/30913 (99%) size=15.8x14.4x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.2 H=8.7cm top_px=30509/30934 (99%) size=15.7x14.3x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.3 H=8.7cm top_px=30465/30858 (99%) size=15.7x14.2x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.4 H=8.8cm top_px=30510/30957 (99%) size=15.8x14.4x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.7 H=9.1cm top_px=30399/30885 (98%) size=15.7x14.1x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.7 H=9.1cm top_px=30488/30900 (99%) size=15.8x14.2x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.6 H=9.0cm top_px=30359/30877 (98%) size=15.6x14.3x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.7 H=9.2cm top_px=29891/30562 (98%) size=15.0x14.9x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.4 H=8.9cm top_px=29228/30095 (97%) size=15.1x14.7x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=29159/29997 (97%) size=15.3x14.6x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.4 H=8.6cm top_px=29047/29957 (97%) size=16.1x14.0x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.5 H=9.0cm top_px=28825/30046 (96%) size=15.4x14.4x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.7 H=9.3cm top_px=28756/30067 (96%) size=15.2x14.5x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49170 - "GET /pose HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.4 H=8.7cm top_px=29074/30026 (97%) size=15.4x14.6x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.3 H=8.6cm top_px=29083/30042 (97%) size=15.5x14.7x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.8 H=9.3cm top_px=28393/29790 (95%) size=15.3x14.5x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.4 H=9.0cm top_px=29256/30282 (97%) size=16.1x14.0x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.6 h_table=-41.8 H=9.2cm top_px=31768/32947 (96%) size=16.0x14.0x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-41.2 H=9.5cm top_px=33653/34490 (98%) size=16.1x14.8x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.9 H=9.1cm top_px=33801/34393 (98%) size=16.5x14.3x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.3 h_table=-40.9 H=9.6cm top_px=31794/33842 (94%) size=15.6x14.8x9.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-41.1 H=9.3cm top_px=32839/34141 (96%) size=16.6x14.3x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.7 H=8.9cm top_px=33053/34190 (97%) size=16.5x14.3x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.6 H=8.8cm top_px=33198/34258 (97%) size=16.7x14.3x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.4 h_table=-40.8 H=9.4cm top_px=32216/34098 (94%) size=16.3x14.2x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.9 h_table=-41.2 H=9.3cm top_px=32976/34108 (97%) size=16.6x14.4x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.9 H=9.1cm top_px=33108/34243 (97%) size=16.6x14.3x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.9 h_table=-41.0 H=9.1cm top_px=33434/34374 (97%) size=16.6x14.3x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.0 h_table=-41.2 H=9.3cm top_px=34022/34872 (98%) size=16.2x14.3x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.4 h_table=-36.3 H=3.9cm top_px=35943/36110 (100%) size=15.7x15.6x3.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.6 h_table=-36.6 H=4.0cm top_px=37536/37567 (100%) size=15.6x15.2x4.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.2 h_table=-36.9 H=3.7cm top_px=39410/39429 (100%) size=15.9x15.4x3.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.8 h_table=-37.8 H=4.0cm top_px=40243/40243 (100%) size=15.8x14.9x4.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.9 h_table=-38.7 H=4.8cm top_px=40908/40915 (100%) size=15.2x14.7x4.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-39.7 H=5.3cm top_px=38978/39394 (99%) size=15.1x14.5x5.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-35.5 H=?cm top_px=36059/36723 (98%) WxD=15.1x13.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-39.8 H=5.1cm top_px=35662/36373 (98%) size=15.1x13.7x5.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-35.5 H=?cm top_px=34985/35986 (97%) WxD=15.2x13.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-39.8 H=5.3cm top_px=35904/36785 (98%) size=15.0x13.4x5.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-35.6 H=?cm top_px=34165/35162 (97%) WxD=15.1x13.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-39.9 H=5.3cm top_px=34318/35393 (97%) size=15.3x13.0x5.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-39.8 H=5.1cm top_px=34402/35393 (97%) size=15.3x13.0x5.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-39.7 H=4.9cm top_px=34019/35243 (97%) size=15.3x13.0x4.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.1 h_table=-35.0 H=?cm top_px=36404/37235 (98%) WxD=15.5x13.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.6 h_table=-39.6 H=7.1cm top_px=42895/43070 (100%) size=15.3x14.2x7.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.5 h_table=-39.3 H=8.8cm top_px=49989/49989 (100%) size=15.0x15.0x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.5 h_table=-38.6 H=10.0cm top_px=54007/54007 (100%) size=15.3x14.8x10.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.4 H=?cm top_px=62391/62393 (100%) WxD=15.8x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.6 h_table=-22.5 H=?cm top_px=61986/61986 (100%) WxD=15.7x14.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.2 H=?cm top_px=61226/61226 (100%) WxD=15.5x14.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.7 H=?cm top_px=61000/61000 (100%) WxD=15.7x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.6 h_table=-23.0 H=?cm top_px=60955/60957 (100%) WxD=15.3x14.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-25.6 H=?cm top_px=64287/64530 (100%) WxD=17.1x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.3 H=?cm top_px=59818/59818 (100%) WxD=14.6x14.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-24.6 H=?cm top_px=60999/60999 (100%) WxD=15.3x14.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-23.0 H=?cm top_px=61189/61190 (100%) WxD=15.6x14.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.3 H=?cm top_px=61046/61046 (100%) WxD=15.4x14.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.6 H=?cm top_px=60969/60969 (100%) WxD=15.6x14.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-23.1 H=?cm top_px=60792/60792 (100%) WxD=15.4x14.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.5 H=?cm top_px=62190/62190 (100%) WxD=15.8x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.3 H=?cm top_px=60887/60887 (100%) WxD=15.6x14.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-22.4 H=?cm top_px=60816/60816 (100%) WxD=14.8x14.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.6 h_table=-22.3 H=?cm top_px=60147/60147 (100%) WxD=15.3x14.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-24.7 H=?cm top_px=60612/60612 (100%) WxD=15.3x14.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-25.3 H=?cm top_px=60301/60301 (100%) WxD=15.6x14.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-24.7 H=?cm top_px=60710/60710 (100%) WxD=15.6x14.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-25.9 H=?cm top_px=58683/58683 (100%) WxD=15.5x14.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-25.3 H=?cm top_px=56968/56968 (100%) WxD=15.4x14.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-24.9 H=?cm top_px=54736/54736 (100%) WxD=15.6x14.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-22.0 H=?cm top_px=53307/53420 (100%) WxD=15.5x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.3 h_table=-22.1 H=?cm top_px=49538/51911 (95%) WxD=15.3x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.3 h_table=-21.8 H=?cm top_px=47245/50656 (93%) WxD=15.2x14.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.1 h_table=-21.9 H=?cm top_px=46018/50192 (92%) WxD=15.5x14.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.6 h_table=-21.7 H=?cm top_px=44287/50167 (88%) WxD=15.0x13.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.7 h_table=-21.4 H=?cm top_px=44577/50100 (89%) WxD=15.1x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.1 h_table=-21.4 H=?cm top_px=45622/50129 (91%) WxD=15.5x14.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.7 h_table=-21.7 H=?cm top_px=44585/50167 (89%) WxD=15.1x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.7 h_table=-21.6 H=?cm top_px=44572/50244 (89%) WxD=14.9x13.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.7 h_table=-21.5 H=?cm top_px=44743/50257 (89%) WxD=14.9x13.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.9 h_table=-21.4 H=?cm top_px=45553/50380 (90%) WxD=15.2x14.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.0 h_table=-21.5 H=?cm top_px=45407/50257 (90%) WxD=15.3x14.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.0 h_table=-21.5 H=?cm top_px=45473/50311 (90%) WxD=15.5x14.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.7 h_table=-21.8 H=?cm top_px=44656/50282 (89%) WxD=15.3x13.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.2 h_table=-21.6 H=?cm top_px=45725/50287 (91%) WxD=15.3x14.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.1 h_table=-21.4 H=?cm top_px=47337/51309 (92%) WxD=15.9x14.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-23.9 h_table=-21.8 H=?cm top_px=46020/50958 (90%) WxD=15.6x14.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-22.9 H=?cm top_px=38611/41694 (93%) WxD=16.1x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.4 h_table=-40.4 H=13.9cm top_px=25248/33296 (76%) size=14.9x14.2x13.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.6 h_table=-105.5 H=?cm top_px=14498/21747 (67%) WxD=17.2x14.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.7 h_table=-43.0 H=16.2cm top_px=869/22661 (4%) size=4.1x0.9x16.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.8 h_table=-41.9 H=14.0cm top_px=13812/26803 (52%) size=14.5x9.9x14.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.0 h_table=-42.9 H=13.9cm top_px=23966/32271 (74%) size=14.5x13.5x13.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.1 h_table=-43.5 H=9.4cm top_px=28101/29838 (94%) size=15.7x14.3x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.7 H=9.0cm top_px=28719/29930 (96%) size=16.1x14.4x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.6 H=9.0cm top_px=28716/29915 (96%) size=16.1x14.4x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=28556/29806 (96%) size=16.2x14.4x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.2 h_table=-43.7 H=9.5cm top_px=28044/29883 (94%) size=15.6x14.4x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=28731/29782 (96%) size=16.1x14.4x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.4 H=8.7cm top_px=28574/29805 (96%) size=16.0x14.4x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-43.4 H=9.2cm top_px=28144/29843 (94%) size=15.6x14.4x9.2cm
+[AUTO] dwell 만족 → POST grab
+[POST] grab_at: {"ok":true,"type":"cardboard"}
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=28531/29773 (96%) size=16.1x14.4x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.6 H=8.8cm top_px=28586/29806 (96%) size=16.2x14.4x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.7 H=9.1cm top_px=28549/29802 (96%) size=16.0x14.5x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.4 H=8.6cm top_px=28642/29750 (96%) size=16.2x14.3x8.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.4 H=8.7cm top_px=28665/29802 (96%) size=16.2x14.4x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.6 H=8.9cm top_px=28597/29815 (96%) size=16.0x14.4x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.7 H=9.0cm top_px=28593/29832 (96%) size=16.0x14.5x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.3 H=8.5cm top_px=28658/29794 (96%) size=16.2x14.3x8.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.5 H=8.8cm top_px=28590/29832 (96%) size=16.1x14.4x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.4 H=8.7cm top_px=28624/29788 (96%) size=16.0x14.4x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.3 H=8.5cm top_px=28643/29797 (96%) size=16.1x14.4x8.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.7 h_table=-43.5 H=8.8cm top_px=28469/29751 (96%) size=16.1x14.3x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.7 H=8.8cm top_px=28540/29649 (96%) size=16.0x14.4x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=28392/30016 (95%) size=15.7x14.5x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-43.5 H=9.1cm top_px=28103/30273 (93%) size=15.5x14.2x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.8 H=9.0cm top_px=28669/30154 (95%) size=15.3x14.7x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.7cm top_px=28815/30215 (95%) size=15.3x14.6x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.7 H=8.8cm top_px=28808/30159 (96%) size=15.3x14.7x8.8cm
+INFO:     127.0.0.1:60036 - "GET /pose HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.4 H=8.5cm top_px=28763/30202 (95%) size=15.3x14.7x8.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.4 H=8.6cm top_px=28637/29897 (96%) size=15.5x14.6x8.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.8 H=9.0cm top_px=27952/29588 (94%) size=16.0x14.4x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.1 h_table=-42.8 H=9.7cm top_px=29184/31768 (92%) size=15.5x14.4x9.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.3 h_table=-41.1 H=8.8cm top_px=33695/34562 (97%) size=16.3x15.1x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-40.8 H=9.1cm top_px=34192/35110 (97%) size=16.2x15.0x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.0 h_table=-40.6 H=9.6cm top_px=31547/34398 (92%) size=15.1x14.7x9.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.8 H=9.0cm top_px=33138/34779 (95%) size=16.2x15.2x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-40.7 H=9.0cm top_px=33464/34875 (96%) size=16.3x15.1x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.7 h_table=-40.7 H=9.0cm top_px=33232/34830 (95%) size=16.2x15.1x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.7 H=8.9cm top_px=32830/34426 (95%) size=16.0x15.2x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.9 h_table=-40.7 H=8.8cm top_px=32984/34432 (96%) size=16.8x14.6x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.9 h_table=-40.6 H=8.7cm top_px=33052/34567 (96%) size=16.1x15.2x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.5 H=8.7cm top_px=33232/34732 (96%) size=15.6x15.3x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.7 H=8.9cm top_px=33012/34464 (96%) size=16.4x14.8x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.9 h_table=-40.8 H=9.0cm top_px=33342/34625 (96%) size=16.6x14.7x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.2 h_table=-41.1 H=8.9cm top_px=35564/36067 (99%) size=17.1x14.5x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.5 h_table=-35.9 H=3.4cm top_px=36365/36893 (99%) size=16.3x15.0x3.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.4 h_table=-36.8 H=3.4cm top_px=37681/37681 (100%) size=15.9x15.5x3.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.6 h_table=-37.7 H=4.1cm top_px=38227/38227 (100%) size=15.8x15.3x4.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.1 h_table=-38.3 H=4.2cm top_px=38831/38831 (100%) size=16.0x15.0x4.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-38.9 H=4.6cm top_px=38956/38956 (100%) size=15.9x15.1x4.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.9 h_table=-38.9 H=5.0cm top_px=39077/39077 (100%) size=15.9x14.8x5.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-38.5 H=4.1cm top_px=39057/39057 (100%) size=16.0x15.1x4.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-39.0 H=4.6cm top_px=39117/39120 (100%) size=16.0x15.1x4.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-39.0 H=4.6cm top_px=38942/38942 (100%) size=15.9x15.0x4.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.0 h_table=-39.0 H=5.1cm top_px=39647/39647 (100%) size=15.7x14.8x5.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.9 h_table=-38.9 H=5.0cm top_px=39488/39488 (100%) size=15.7x14.7x5.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-39.0 H=4.6cm top_px=39411/39411 (100%) size=15.8x14.9x4.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-38.8 H=4.4cm top_px=39517/39517 (100%) size=15.9x15.1x4.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-38.7 H=4.4cm top_px=39464/39464 (100%) size=16.0x14.8x4.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-38.9 H=4.5cm top_px=39209/39209 (100%) size=16.1x14.9x4.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-38.8 H=4.3cm top_px=39179/39179 (100%) size=16.2x15.0x4.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-38.9 H=4.4cm top_px=39268/39268 (100%) size=16.2x14.8x4.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-39.0 H=4.5cm top_px=39250/39250 (100%) size=15.9x15.1x4.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-38.9 H=4.5cm top_px=39148/39148 (100%) size=16.0x14.9x4.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-38.9 H=4.5cm top_px=40028/40029 (100%) size=16.6x14.9x4.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.2 h_table=-39.0 H=4.8cm top_px=33327/40885 (82%) size=15.7x13.6x4.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.9 h_table=-38.5 H=6.6cm top_px=37735/42926 (88%) size=15.6x14.3x6.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-42.4 H=17.6cm top_px=41427/52680 (79%) size=15.0x14.8x17.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-28.8 H=4.0cm top_px=35146/52679 (67%) size=15.1x13.5x4.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-42.4 H=17.4cm top_px=42466/52390 (81%) size=15.3x15.0x17.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.5 h_table=-42.4 H=16.9cm top_px=47279/52022 (91%) size=16.6x14.7x16.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-21.1 H=?cm top_px=45022/51643 (87%) WxD=16.1x15.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-21.1 H=?cm top_px=45358/52227 (87%) WxD=16.2x15.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-28.7 H=3.9cm top_px=37460/54929 (68%) size=15.1x13.4x3.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-21.1 H=?cm top_px=44960/51060 (88%) WxD=16.0x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-21.0 H=?cm top_px=46685/50953 (92%) WxD=16.4x14.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-21.2 H=?cm top_px=47127/51127 (92%) WxD=16.5x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-28.7 H=3.5cm top_px=36828/51168 (72%) size=15.0x14.5x3.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-28.8 H=3.4cm top_px=37354/51410 (73%) size=14.9x14.2x3.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-22.0 H=?cm top_px=46582/51236 (91%) WxD=15.7x14.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-25.5 H=?cm top_px=46951/51609 (91%) WxD=16.4x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-28.8 H=3.2cm top_px=38638/51829 (75%) size=14.8x14.7x3.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-28.9 H=3.3cm top_px=38717/51384 (75%) size=14.8x14.5x3.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.7 h_table=-21.9 H=?cm top_px=45521/49029 (93%) WxD=16.3x14.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-22.0 H=?cm top_px=45524/49251 (92%) WxD=16.3x14.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-21.9 H=?cm top_px=45604/49565 (92%) WxD=16.1x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.7 h_table=-22.1 H=?cm top_px=45644/49698 (92%) WxD=16.4x14.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.1 h_table=-22.5 H=?cm top_px=45333/48797 (93%) WxD=15.9x15.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.7 h_table=-29.5 H=3.8cm top_px=33145/46565 (71%) size=15.0x14.2x3.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.9 h_table=-21.4 H=?cm top_px=42181/46818 (90%) WxD=16.3x14.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.7 h_table=-21.5 H=?cm top_px=41146/46487 (89%) WxD=16.7x14.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.7 h_table=-21.0 H=?cm top_px=40837/45104 (91%) WxD=16.4x14.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-20.6 H=?cm top_px=39736/45404 (88%) WxD=16.5x14.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-20.7 H=?cm top_px=38638/45483 (85%) WxD=15.8x14.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-20.8 H=?cm top_px=37232/45473 (82%) WxD=15.3x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-20.8 H=?cm top_px=37741/45542 (83%) WxD=15.5x14.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-20.8 H=?cm top_px=38467/45481 (85%) WxD=15.6x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-21.1 H=?cm top_px=36715/45335 (81%) WxD=16.2x14.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-21.0 H=?cm top_px=38655/45262 (85%) WxD=15.9x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-20.7 H=?cm top_px=38272/45168 (85%) WxD=15.7x14.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-20.7 H=?cm top_px=37768/45304 (83%) WxD=15.5x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-20.9 H=?cm top_px=36765/44159 (83%) WxD=16.4x14.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-20.8 H=?cm top_px=36462/45225 (81%) WxD=15.9x14.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-21.0 H=?cm top_px=37501/45289 (83%) WxD=16.4x14.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.5 h_table=-21.3 H=?cm top_px=37578/45180 (83%) WxD=15.8x14.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-21.0 H=?cm top_px=35714/46282 (77%) WxD=15.0x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.0 h_table=-20.1 H=?cm top_px=39978/47394 (84%) WxD=15.5x15.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.5 h_table=-22.1 H=?cm top_px=35295/40504 (87%) WxD=15.3x14.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.6 h_table=-23.4 H=?cm top_px=875/21464 (4%) WxD=4.9x0.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.6 h_table=-23.5 H=?cm top_px=899/21531 (4%) WxD=5.0x0.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.7 h_table=-42.7 H=15.0cm top_px=19323/29587 (65%) size=13.9x11.7x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.6 h_table=-43.7 H=11.1cm top_px=21386/27676 (77%) size=18.1x14.1x11.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-43.3 H=8.9cm top_px=29419/30998 (95%) size=15.2x14.9x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.7 H=9.3cm top_px=29299/30939 (95%) size=19.8x18.6x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.5 H=9.0cm top_px=29368/30842 (95%) size=19.8x18.5x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.5 H=9.1cm top_px=29187/30892 (94%) size=19.8x18.5x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.3 H=8.8cm top_px=29437/30922 (95%) size=19.9x18.6x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.6 H=9.1cm top_px=29415/30936 (95%) size=19.9x18.5x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.6 H=9.3cm top_px=29372/30926 (95%) size=19.8x18.5x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.5 H=9.1cm top_px=29335/30933 (95%) size=19.7x18.4x9.1cm
+[AUTO] dwell 만족 → POST grab
+[POST] grab_at: {"ok":true,"type":"cardboard"}
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.7 H=9.3cm top_px=29335/30952 (95%) size=19.7x18.4x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=29589/31002 (95%) size=19.9x18.5x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.8 H=9.4cm top_px=29342/30961 (95%) size=19.8x18.5x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.3 H=8.9cm top_px=29271/30907 (95%) size=19.7x18.4x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.6 H=8.8cm top_px=29803/30906 (96%) size=19.9x18.9x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.7 H=9.2cm top_px=29525/30921 (95%) size=19.9x18.6x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.3 h_table=-43.4 H=9.1cm top_px=29296/30891 (95%) size=19.8x18.4x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.5 H=9.2cm top_px=29275/30933 (95%) size=19.7x18.4x9.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.4 H=9.0cm top_px=29363/30950 (95%) size=19.8x18.6x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.4 H=8.9cm top_px=29356/30916 (95%) size=19.8x18.6x8.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.4 H=9.0cm top_px=29417/30914 (95%) size=19.7x18.7x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.4 h_table=-43.5 H=9.0cm top_px=29385/30882 (95%) size=19.7x18.4x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.5 H=8.9cm top_px=29086/30501 (95%) size=15.2x14.7x8.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.5 h_table=-43.2 H=8.6cm top_px=29011/30402 (95%) size=15.5x14.5x8.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.4 H=8.5cm top_px=30107/30618 (98%) size=15.8x14.8x8.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.6 H=8.7cm top_px=29591/30329 (98%) size=15.8x14.7x8.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.8 H=9.0cm top_px=29654/30434 (97%) size=15.8x14.7x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.6 h_table=-43.5 H=8.9cm top_px=29075/30191 (96%) size=15.4x14.7x8.9cm
+INFO:     127.0.0.1:47238 - "GET /pose HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.9 h_table=-43.4 H=8.5cm top_px=29723/30413 (98%) size=15.8x14.6x8.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-35.0 h_table=-43.4 H=8.4cm top_px=29368/30089 (98%) size=15.7x14.7x8.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.8 h_table=-43.5 H=8.7cm top_px=29356/30267 (97%) size=15.8x14.7x8.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.1 h_table=-42.4 H=9.3cm top_px=31218/32444 (96%) size=15.9x14.3x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-41.1 H=9.4cm top_px=33826/34768 (97%) size=20.2x18.0x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.9 h_table=-40.4 H=9.5cm top_px=32569/34878 (93%) size=19.9x16.5x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.1 h_table=-40.6 H=9.5cm top_px=31795/34207 (93%) size=15.9x14.0x9.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.0 h_table=-40.7 H=9.8cm top_px=31559/34300 (92%) size=20.1x16.7x9.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.8 h_table=-40.5 H=8.8cm top_px=33297/34580 (96%) size=16.4x14.6x8.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.5 h_table=-40.3 H=8.8cm top_px=32846/34375 (96%) size=16.2x14.6x8.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.5 h_table=-41.2 H=9.7cm top_px=32506/34056 (95%) size=16.0x14.6x9.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.0 h_table=-40.9 H=9.9cm top_px=31324/34020 (92%) size=19.8x16.3x9.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.0 h_table=-40.9 H=9.9cm top_px=31655/34333 (92%) size=15.7x13.8x9.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.0 h_table=-40.6 H=9.6cm top_px=31863/34420 (93%) size=15.6x14.1x9.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.1 h_table=-40.7 H=9.6cm top_px=31784/34331 (93%) size=15.7x14.1x9.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.6 h_table=-41.1 H=9.5cm top_px=33465/35341 (95%) size=15.6x14.9x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.5 h_table=-41.4 H=9.0cm top_px=36929/37216 (99%) size=15.8x15.6x9.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.8 h_table=-37.0 H=4.2cm top_px=39500/39500 (100%) size=15.6x15.3x4.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.7 h_table=-37.2 H=3.5cm top_px=40422/40424 (100%) size=16.2x14.9x3.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.2 h_table=-38.2 H=4.0cm top_px=41283/41283 (100%) size=15.4x15.0x4.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.7 h_table=-38.7 H=10.0cm top_px=53416/53416 (100%) size=15.2x15.2x10.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.8 h_table=-38.2 H=11.5cm top_px=57184/57233 (100%) size=15.4x14.9x11.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-21.8 H=?cm top_px=62464/63070 (99%) WxD=16.5x15.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-23.1 H=?cm top_px=63223/63538 (100%) WxD=16.2x15.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.0 h_table=-23.3 H=?cm top_px=63213/63618 (99%) WxD=16.3x15.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-23.6 H=?cm top_px=63293/63577 (100%) WxD=16.2x15.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-23.3 H=?cm top_px=63319/63422 (100%) WxD=16.0x15.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.4 H=?cm top_px=61798/61886 (100%) WxD=15.7x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.3 H=?cm top_px=61753/61815 (100%) WxD=15.6x15.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-37.4 H=12.2cm top_px=60909/60909 (100%) size=15.3x15.2x12.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-37.5 H=12.3cm top_px=61572/61590 (100%) size=15.7x15.0x12.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-37.4 H=12.2cm top_px=60775/60788 (100%) size=15.4x15.2x12.2cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-37.2 H=12.0cm top_px=61580/61607 (100%) size=15.6x15.3x12.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.4 H=?cm top_px=61200/61200 (100%) WxD=15.7x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.2 H=?cm top_px=61024/61024 (100%) WxD=15.3x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-21.4 H=?cm top_px=61239/61239 (100%) WxD=15.0x14.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.3 H=?cm top_px=61349/61349 (100%) WxD=15.3x14.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.5 H=?cm top_px=61460/61524 (100%) WxD=15.2x14.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-24.7 H=?cm top_px=61217/61272 (100%) WxD=15.2x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.4 H=?cm top_px=61200/61247 (100%) WxD=15.2x15.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-25.7 H=?cm top_px=61204/61217 (100%) WxD=15.3x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-25.5 H=?cm top_px=61075/61082 (100%) WxD=15.2x15.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-23.3 H=?cm top_px=60847/60855 (100%) WxD=15.1x15.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.2 h_table=-21.4 H=?cm top_px=60959/60968 (100%) WxD=15.4x14.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.1 h_table=-21.2 H=?cm top_px=60490/60490 (100%) WxD=15.5x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.6 h_table=-22.1 H=?cm top_px=58654/58682 (100%) WxD=15.5x15.0cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.9 h_table=-24.0 H=?cm top_px=57495/57538 (100%) WxD=15.2x15.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-21.7 H=?cm top_px=55279/55279 (100%) WxD=14.9x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.3 h_table=-21.5 H=?cm top_px=53703/53925 (100%) WxD=15.4x14.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.9 H=?cm top_px=50412/52433 (96%) WxD=15.1x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.5 h_table=-21.7 H=?cm top_px=48505/51745 (94%) WxD=15.1x14.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.6 H=?cm top_px=47846/50915 (94%) WxD=15.4x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.8 H=?cm top_px=48250/51657 (93%) WxD=15.3x14.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.6 H=?cm top_px=48181/51684 (93%) WxD=15.2x14.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.4 H=?cm top_px=48098/51438 (94%) WxD=15.2x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.3 H=?cm top_px=48295/51713 (93%) WxD=15.3x14.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.3 H=?cm top_px=48376/51727 (94%) WxD=15.3x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.5 H=?cm top_px=48407/51702 (94%) WxD=15.3x14.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.7 h_table=-21.6 H=?cm top_px=48244/51692 (93%) WxD=15.3x14.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.4 h_table=-21.8 H=?cm top_px=47379/51455 (92%) WxD=15.0x14.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.3 h_table=-21.4 H=?cm top_px=47473/51652 (92%) WxD=15.0x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.4 h_table=-21.5 H=?cm top_px=47766/51738 (92%) WxD=15.0x14.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.9 h_table=-21.9 H=?cm top_px=48362/51323 (94%) WxD=15.4x14.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-24.8 h_table=-21.5 H=?cm top_px=49942/52965 (94%) WxD=16.1x14.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-25.4 h_table=-22.3 H=?cm top_px=50364/52565 (96%) WxD=15.8x15.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.2 h_table=-22.9 H=?cm top_px=47283/48788 (97%) WxD=15.7x15.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.7 h_table=-23.5 H=?cm top_px=41643/44904 (93%) WxD=15.8x15.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-26.5 h_table=-112.5 H=?cm top_px=30135/36578 (82%) WxD=15.2x13.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.3 h_table=-40.6 H=9.3cm top_px=21668/27809 (78%) size=15.7x14.4x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.9 h_table=-27.6 H=?cm top_px=11782/23857 (49%) WxD=17.2x12.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-21.7 h_table=-41.0 H=19.2cm top_px=2286/12702 (18%) size=8.0x3.4x19.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.6 h_table=-41.2 H=13.5cm top_px=4222/16817 (25%) size=11.5x3.9x13.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.5 h_table=-40.9 H=9.4cm top_px=11714/17606 (67%) size=19.0x10.5x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-31.4 h_table=-41.7 H=10.3cm top_px=10922/18887 (58%) size=14.1x11.4x10.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.4 h_table=-42.3 H=9.9cm top_px=11588/18891 (61%) size=14.7x11.8x9.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.0 h_table=-42.7 H=9.6cm top_px=11954/18775 (64%) size=14.8x12.0x9.6cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.3 h_table=-43.0 H=9.8cm top_px=11892/18804 (63%) size=14.6x12.1x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.5 h_table=-42.9 H=9.4cm top_px=12168/18930 (64%) size=15.0x12.2x9.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.9 h_table=-43.0 H=9.1cm top_px=12676/18869 (67%) size=15.3x12.6x9.1cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.3 h_table=-43.1 H=9.8cm top_px=11659/18888 (62%) size=14.3x12.2x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.6 h_table=-43.0 H=9.4cm top_px=12172/18906 (64%) size=14.9x12.3x9.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.1 h_table=-43.3 H=9.2cm top_px=12872/18845 (68%) size=14.7x9.6x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.7 h_table=-43.2 H=9.5cm top_px=12339/18858 (65%) size=15.0x12.4x9.5cm
+[AUTO] dwell 만족 → POST grab
+[POST] grab_at: {"ok":true,"type":"cardboard"}
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.1 h_table=-43.2 H=9.1cm top_px=12909/18904 (68%) size=15.6x12.6x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.2 h_table=-43.5 H=9.3cm top_px=12937/18860 (69%) size=14.6x9.8x9.3cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.3 h_table=-43.0 H=9.7cm top_px=11798/18884 (62%) size=14.6x12.0x9.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.6 h_table=-43.2 H=9.5cm top_px=12214/18898 (65%) size=14.9x12.3x9.5cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.4 h_table=-43.3 H=9.9cm top_px=11904/18897 (63%) size=14.7x12.1x9.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.7 h_table=-43.1 H=9.4cm top_px=12350/18893 (65%) size=15.0x12.3x9.4cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.4 h_table=-43.4 H=10.0cm top_px=11772/18876 (62%) size=14.5x12.1x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.7 h_table=-43.4 H=9.7cm top_px=12301/18872 (65%) size=15.0x12.3x9.7cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.7 h_table=-43.4 H=9.7cm top_px=12287/18904 (65%) size=15.0x12.4x9.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.3 h_table=-43.2 H=9.9cm top_px=11709/18888 (62%) size=14.4x12.0x9.9cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.6 h_table=-43.4 H=9.8cm top_px=12097/18884 (64%) size=14.9x12.2x9.8cm
+INFO:     192.168.123.50:59037 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-34.0 h_table=-43.3 H=9.3cm top_px=14873/21949 (68%) size=16.0x14.7x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.3 h_table=-42.8 H=9.5cm top_px=16009/25178 (64%) size=21.1x14.9x9.5cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.1 h_table=-42.8 H=9.7cm top_px=13791/23751 (58%) size=19.9x15.0x9.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.2 h_table=-42.9 H=9.7cm top_px=13657/23755 (57%) size=20.2x14.6x9.7cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.2 h_table=-42.6 H=9.4cm top_px=14003/23902 (59%) size=19.9x14.8x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.2 h_table=-43.0 H=9.8cm top_px=13611/23754 (57%) size=20.0x14.5x9.8cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46844 - "GET /pose HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.2 h_table=-42.8 H=9.6cm top_px=13885/23804 (58%) size=20.3x14.6x9.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.2 h_table=-42.7 H=9.5cm top_px=13659/23772 (57%) size=20.0x14.5x9.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-33.4 h_table=-42.9 H=9.5cm top_px=13658/23543 (58%) size=20.2x14.6x9.5cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-32.8 h_table=-42.2 H=9.4cm top_px=13599/23807 (57%) size=20.1x14.6x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.7 h_table=-40.7 H=10.0cm top_px=15582/26826 (58%) size=20.5x15.2x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.3 h_table=-39.1 H=10.9cm top_px=14928/26875 (56%) size=19.4x13.6x10.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.0 h_table=-38.1 H=10.1cm top_px=15480/26548 (58%) size=14.5x11.4x10.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.7 h_table=-37.6 H=9.9cm top_px=15653/27884 (56%) size=19.2x13.4x9.9cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.7 h_table=-38.1 H=10.4cm top_px=15641/27536 (57%) size=18.6x13.4x10.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.2 h_table=-37.8 H=10.6cm top_px=14011/28461 (49%) size=18.3x12.6x10.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.6 h_table=-38.1 H=10.5cm top_px=15383/28165 (55%) size=18.7x13.5x10.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.6 h_table=-38.0 H=10.3cm top_px=15513/27925 (56%) size=18.5x13.4x10.3cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.6 h_table=-38.0 H=10.5cm top_px=15268/28024 (54%) size=18.6x13.4x10.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.5 h_table=-37.9 H=10.4cm top_px=15386/28504 (54%) size=18.8x13.4x10.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.9 h_table=-37.9 H=10.0cm top_px=16068/27561 (58%) size=15.0x11.3x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.2 h_table=-37.8 H=10.7cm top_px=14600/27924 (52%) size=18.3x12.9x10.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.6 h_table=-37.7 H=10.1cm top_px=15637/28760 (54%) size=18.1x13.5x10.1cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.3 h_table=-39.2 H=9.9cm top_px=21710/29620 (73%) size=16.5x11.7x9.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.2 h_table=-39.3 H=9.1cm top_px=29217/34589 (84%) size=16.1x14.7x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.7 h_table=-39.6 H=9.8cm top_px=28302/34659 (82%) size=15.8x14.5x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.2 h_table=-39.5 H=9.3cm top_px=28989/34496 (84%) size=15.9x14.8x9.3cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.3 h_table=-39.4 H=9.1cm top_px=29004/34352 (84%) size=16.1x14.6x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.3 h_table=-39.6 H=9.3cm top_px=28956/34375 (84%) size=16.0x14.8x9.3cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.3 h_table=-39.7 H=9.4cm top_px=28888/34276 (84%) size=16.0x14.8x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.4 h_table=-39.8 H=9.4cm top_px=29075/34245 (85%) size=16.1x14.9x9.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.4 h_table=-39.4 H=9.0cm top_px=29190/34475 (85%) size=15.9x14.9x9.0cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.0 h_table=-39.7 H=9.7cm top_px=28282/34362 (82%) size=15.6x14.5x9.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.3 h_table=-39.6 H=9.2cm top_px=29047/34330 (85%) size=16.0x14.6x9.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.4 h_table=-39.5 H=9.1cm top_px=28601/33723 (85%) size=15.9x14.6x9.1cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.5 h_table=-39.7 H=9.3cm top_px=28965/34169 (85%) size=15.9x14.8x9.3cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.1 h_table=-40.0 H=10.9cm top_px=26482/33266 (80%) size=15.1x14.1x10.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.5 h_table=-40.0 H=10.5cm top_px=26914/32851 (82%) size=15.0x14.8x10.5cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.4 h_table=-40.3 H=10.9cm top_px=26772/32786 (82%) size=14.8x14.5x10.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.2 h_table=-40.8 H=10.6cm top_px=28076/32848 (85%) size=15.0x14.8x10.6cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.1 h_table=-40.6 H=10.5cm top_px=26970/31947 (84%) size=14.7x14.2x10.5cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-30.1 h_table=-40.5 H=10.4cm top_px=26997/31980 (84%) size=15.0x14.9x10.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-29.9 h_table=-40.7 H=10.7cm top_px=26001/31111 (84%) size=15.1x15.0x10.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-28.6 h_table=-40.6 H=11.9cm top_px=27824/34001 (82%) size=16.8x14.4x11.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-27.1 h_table=-40.1 H=13.0cm top_px=26032/33918 (77%) size=14.4x14.2x13.0cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.7 h_table=-19.7 H=?cm top_px=23278/38492 (60%) WxD=14.6x9.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.7 h_table=-19.6 H=?cm top_px=23164/38347 (60%) WxD=13.3x10.6cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.5 h_table=-19.7 H=?cm top_px=22892/37950 (60%) WxD=13.4x10.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.5 h_table=-19.8 H=?cm top_px=22666/38008 (60%) WxD=13.4x10.3cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.6 h_table=-19.5 H=?cm top_px=22890/38175 (60%) WxD=13.5x10.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.5 h_table=-19.5 H=?cm top_px=22679/38406 (59%) WxD=13.3x10.4cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.5 h_table=-19.6 H=?cm top_px=22592/38304 (59%) WxD=13.5x10.3cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.5 h_table=-19.8 H=?cm top_px=22454/38135 (59%) WxD=13.3x10.2cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.5 h_table=-19.7 H=?cm top_px=22548/37889 (60%) WxD=13.3x10.4cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-20.2 h_table=-19.6 H=?cm top_px=22118/38393 (58%) WxD=14.1x8.4cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.9 h_table=-19.2 H=?cm top_px=23357/39396 (59%) WxD=13.2x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.7 h_table=-19.2 H=?cm top_px=23343/39421 (59%) WxD=13.3x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.6 h_table=-18.8 H=?cm top_px=23495/39515 (59%) WxD=13.1x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.5 h_table=-18.8 H=?cm top_px=23417/39639 (59%) WxD=13.3x9.8cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.5 h_table=-18.5 H=?cm top_px=23382/39507 (59%) WxD=13.2x9.7cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.5 h_table=-18.8 H=?cm top_px=23466/39580 (59%) WxD=13.3x9.8cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.5 h_table=-17.7 H=?cm top_px=23363/39309 (59%) WxD=13.3x9.7cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.7 h_table=-18.8 H=?cm top_px=23727/40083 (59%) WxD=13.3x9.9cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-19.8 h_table=-18.5 H=?cm top_px=25154/41565 (61%) WxD=13.6x10.0cm
+[BOX] up=[         -0       -0.67       -0.74] h_top=-21.1 h_table=-18.6 H=?cm top_px=23073/37145 (62%) WxD=14.7x9.1cm
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52770 - "GET /set_auto_mode?enabled=false HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [8405]

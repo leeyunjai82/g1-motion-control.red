@@ -1,0 +1,25 @@
+[2026-06-30 15:00:32] INFO:     Started server process [3795]
+[2026-06-30 15:00:32] INFO:     Waiting for application startup.
+[2026-06-30 15:00:34] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-30 15:00:34] INFO:     Application startup complete.
+[2026-06-30 15:00:34] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-30 15:00:40] INFO:     127.0.0.1:50598 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-30 15:00:43] INFO:     127.0.0.1:50610 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-30 15:00:43] INFO:     127.0.0.1:50622 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-30 15:01:34] INFO:     192.168.123.50:52090 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-30 15:05:54] INFO:     Started server process [4372]
+[2026-06-30 15:05:54] INFO:     Waiting for application startup.
+[2026-06-30 15:05:55] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-30 15:05:55] INFO:     Application startup complete.
+[2026-06-30 15:05:55] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-30 15:06:01] INFO:     127.0.0.1:52740 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-30 15:06:03] INFO:     127.0.0.1:52750 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-30 15:06:03] INFO:     127.0.0.1:52766 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-30 15:07:42] INFO:     Started server process [4744]
+[2026-06-30 15:07:42] INFO:     Waiting for application startup.
+[2026-06-30 15:07:43] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-30 15:07:43] INFO:     Application startup complete.
+[2026-06-30 15:07:43] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-30 15:07:49] INFO:     127.0.0.1:41636 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-30 15:07:52] INFO:     127.0.0.1:39444 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-30 15:07:52] INFO:     127.0.0.1:39446 - "GET /video_feed HTTP/1.1" 200 OK

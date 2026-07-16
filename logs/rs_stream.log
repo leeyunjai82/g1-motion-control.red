@@ -1,0 +1,12 @@
+INFO:     Started server process [3590]
+INFO:     Waiting for application startup.
+[RS] 카메라 시작 (640x480@30fps)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:54410 - "GET /video_feed HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+ERROR:    Cancel 1 running task(s), timeout graceful shutdown exceeded
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3590]

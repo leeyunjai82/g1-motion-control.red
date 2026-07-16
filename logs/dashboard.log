@@ -1,0 +1,15 @@
+INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+INFO:ctrl.robot_arm:DDS 연결 성공.
+INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+INFO:ctrl.robot_arm:관절 고정 완료.
+INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[System] Robot connected
+INFO:     Started server process [3674]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3674]

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<!-- Version: 0.9
+  0.9 - 비율 2:4:4
+  0.8 - 뷰포트 높이 채움(스크롤 없음), 컬럼 내부 스크롤, 좁은화면 스택
+  0.7 - 3분할 비율 3:4:3 (좌우 넓게)
+  0.6 - Locomotion을 카메라 아래로, 우측에 robot-only(50003) iframe
+  0.5 - Grab Now 좌표 cm 표시, Auto Grab 토글, 인식영상 display 수정
+  0.4 - 자동 토글 추가
+  0.3 - 한글→영어, Pion 이름
+  0.2 - 중앙 카메라 3분할 반응형, 새 디자인
+  0.1 - 컨트롤 전용 UI (viewer 분리) -->
+<html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pion Control</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --line:#2a3340;
+  --ink:#c9d4e0; --dim:#6b7785; --accent:#3ddc97; --accent2:#4aa8ff;
+  --warn:#ff6b6b; --amber:#ffb454;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
+  background:var(--bg);color:var(--ink);font-size:13px;line-height:1.4;
+  background-image:radial-gradient(circle at 20% 0%,#16202c 0%,var(--bg) 55%);
+  height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,#11161d,#0e1116)}
+.logo{font-weight:700;letter-spacing:.5px;font-size:15px;color:var(--accent)}
+.logo b{color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);box-shadow:0 0 0 0 transparent}
+.dot.live{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.topbar .right{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:11px;color:var(--dim)}
+.topbar a{color:var(--accent2);text-decoration:none}
+.topbar a:hover{text-decoration:underline}
+
+.grid{display:grid;grid-template-columns:2fr 4fr 4fr;gap:14px;padding:14px;align-items:stretch;
+  flex:1;min-height:0;overflow:hidden}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;overflow-y:auto;padding-right:2px}
+.col-center{align-items:stretch}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.card-h{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);
+  padding:9px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;
+  background:var(--panel2)}
+.card-h .tag{color:var(--accent);font-weight:700}
+.card-b{padding:13px}
+
+/* camera */
+.cam-wrap{position:relative;background:#05080c;border-radius:var(--r);overflow:hidden;
+  border:1px solid var(--line);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+  max-height:58vh;margin:0 auto;width:auto;max-width:100%}
+.cam-wrap img{width:100%;height:100%;object-fit:contain;display:block}
+.cam-empty{color:var(--dim);font-size:13px;text-align:center;padding:30px}
+.cam-badge{position:absolute;top:10px;left:10px;font-size:10px;letter-spacing:1px;
+  background:#000a;border:1px solid var(--line);padding:4px 9px;border-radius:6px;color:var(--accent)}
+.statusline{margin-top:10px;display:flex;gap:8px;align-items:center;font-size:12px;
+  padding:9px 13px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.statusline .lbl{color:var(--dim)}
+.statusline.busy{border-color:var(--amber);color:var(--amber)}
+
+/* buttons */
+.seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.btn{font-family:inherit;font-size:12px;background:var(--panel2);border:1px solid var(--line);
+  color:var(--ink);padding:9px;border-radius:7px;cursor:pointer;transition:.12s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn.full{width:100%}
+.btn.on{background:var(--accent);color:#05221a;border-color:var(--accent);font-weight:700}
+.btn.primary{background:var(--accent2);color:#04121f;border:none;font-weight:700}
+.btn.warn{border-color:#5a2b2b;color:var(--warn)}
+.btn.warn:hover{border-color:var(--warn)}
+.row{display:flex;gap:6px}.row>*{flex:1}
+.hint{font-size:11px;color:var(--dim);margin-top:8px}
+
+/* inputs */
+.fld{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld.three{grid-template-columns:1fr 1fr 1fr}
+.col-lbl{font-size:10px;color:var(--dim);margin-bottom:5px}
+.in{width:100%;background:#0c1117;border:1px solid var(--line);color:var(--ink);
+  padding:6px;border-radius:6px;font-family:inherit;font-size:12px}
+.in:focus{outline:none;border-color:var(--accent2)}
+.mini{font-size:10px;color:var(--dim);margin-bottom:3px;display:block}
+
+/* motion list */
+.mlist{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
+.mitem{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel2);
+  border-radius:7px;border:1px solid transparent}
+.mitem:hover{border-color:var(--line)}
+.mitem .nm{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.play{background:var(--accent);color:#05221a;border:none;border-radius:5px;padding:5px 11px;
+  font-weight:700;cursor:pointer;font-family:inherit}
+
+/* loco pad */
+.pad{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,40px);gap:5px;margin:8px 0}
+.pad button{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  border-radius:7px;cursor:pointer;font-size:18px;font-family:inherit}
+.pad button.active{background:var(--accent);color:#05221a}
+#f{grid-area:1/3/2/4}#bk{grid-area:3/3/4/4}#l{grid-area:2/2/3/3}#r{grid-area:2/4/3/5}
+#st{grid-area:2/3/3/4;color:var(--warn)}#tl{grid-area:2/1/3/2}#tr{grid-area:2/5/3/6}
+.spd{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--dim)}
+.spd input{flex:1}
+
+/* robot-only iframe */
+.robot-frame{width:100%;border:1px solid var(--line);border-radius:8px;background:#05080c;
+  aspect-ratio:1/1;max-height:38vh;display:block}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel2);border:1px solid var(--accent);color:var(--accent);
+  padding:9px 16px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* responsive */
+@media(max-width:1100px){
+  body{height:auto;overflow:auto}
+  .grid{grid-template-columns:1fr 1fr;overflow:visible;flex:none}
+  .col{overflow:visible}
+  .col-center{grid-column:1/-1;order:-1}
+  .cam-wrap{max-height:none}
+  .robot-frame{max-height:none}
+}
+@media(max-width:680px){
+  .grid{grid-template-columns:1fr}
+  .col-center{grid-column:auto}
+}
+</style></head>
+<body>
+
+<div class="topbar">
+  <span class="dot live" id="livedot"></span>
+  <span class="logo">Pion<b>·grab</b></span>
+  <span style="color:var(--dim);font-size:11px">control · 50000</span>
+  <div class="right">
+    <span id="busy-ind">idle</span>
+    <a id="link-dash" href="#">dashboard ↗</a>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ===== LEFT: settings ===== -->
+  <div class="col">
+    <div class="card">
+      <div class="card-h">Grab Mode <span class="tag" id="mode-tag">OFF</span></div>
+      <div class="card-b">
+        <div class="seg">
+          <button class="btn" id="mode-none" onclick="setMode('none')">OFF</button>
+          <button class="btn" id="mode-marker" onclick="setMode('marker')">Marker</button>
+          <button class="btn" id="mode-box" onclick="setMode('box')">Box</button>
+        </div>
+        <button class="btn primary full" style="margin-top:9px" onclick="grabManual()">✋ Grab Now</button>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer">
+          <input type="checkbox" id="auto-chk" onchange="toggleAuto()" style="width:16px;height:16px;accent-color:var(--accent)">
+          <span id="auto-lbl" style="color:var(--dim)">Auto Grab : OFF</span>
+        </label>
+        <div class="hint">
+          Marker <a id="link-marker" href="#" target="_blank" style="color:var(--accent2)">:50011</a> ·
+          Box <a id="link-box" href="#" target="_blank" style="color:var(--accent2)">:50010</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Wrist RPY <span style="color:var(--dim)">deg</span></div>
+      <div class="card-b">
+        <div class="fld">
+          <div>
+            <span class="col-lbl" style="color:var(--accent)">LEFT</span>
+            <span class="mini">roll</span><input class="in" id="l-roll" type="number" value="-10" step="5">
+            <span class="mini">pitch</span><input class="in" id="l-pitch" type="number" value="-10" step="5">
+            <span class="mini">yaw</span><input class="in" id="l-yaw" type="number" value="-15" step="5">
+          </div>
+          <div>
+            <span class="col-lbl" style="color:var(--amber)">RIGHT</span>
+            <span class="mini">roll</span><input class="in" id="r-roll" type="number" value="10" step="5">
+            <span class="mini">pitch</span><input class="in" id="r-pitch" type="number" value="-10" step="5">
+            <span class="mini">yaw</span><input class="in" id="r-yaw" type="number" value="15" step="5">
+          </div>
+        </div>
+        <button class="btn full" style="margin-top:9px" onclick="applyWrist()">Apply</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Box Size <span style="color:var(--dim)">cm · marker</span></div>
+      <div class="card-b">
+        <div class="fld three">
+          <div><span class="mini">W</span><input class="in" id="bx-w" type="number" value="28"></div>
+          <div><span class="mini">D</span><input class="in" id="bx-d" type="number" value="9"></div>
+          <div><span class="mini">H</span><input class="in" id="bx-h" type="number" value="9"></div>
+        </div>
+        <button class="btn full" style="margin-top:9px" onclick="applyBoxSize()">Apply Size</button>
+        <div class="hint">Box mode uses measured size (ignores this)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Handover <span class="tag" id="ho-tag">Center</span></div>
+      <div class="card-b">
+        <div class="seg">
+          <button class="btn" id="ho-left" onclick="setHandover('left')">◀ Left</button>
+          <button class="btn on" id="ho-center" onclick="setHandover('center')">■ Center</button>
+          <button class="btn" id="ho-right" onclick="setHandover('right')">Right ▶</button>
+        </div>
+        <div class="spd" style="margin-top:9px"><span>yaw</span>
+          <input class="in" id="ho-yaw" type="number" value="30" step="5" style="width:70px;flex:none"><span>deg</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CENTER: camera + locomotion ===== -->
+  <div class="col col-center">
+    <div class="card">
+      <div class="card-h">Camera View <span class="tag" id="feed-tag">OFF</span></div>
+      <div class="card-b">
+        <div class="cam-wrap">
+          <span class="cam-badge" id="cam-badge" style="display:none">●REC</span>
+          <img id="detect-feed" style="display:none">
+          <div class="cam-empty" id="feed-none">Select a Grab Mode<br>to show the camera view</div>
+        </div>
+        <div class="statusline" id="statusline">
+          <span class="lbl">Status</span><span id="grab-msg">Idle (OFF)</span>
+          <span id="coord" style="margin-left:auto;color:var(--accent);font-size:11px"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Locomotion</div>
+      <div class="card-b">
+        <div class="spd"><span>Speed</span>
+          <input type="range" id="speed" min="0.1" max="0.5" step="0.05" value="0.3">
+          <span id="spdv" style="color:var(--accent)">0.30</span></div>
+        <div class="pad">
+          <button id="f" data-cmd="forward">▲</button>
+          <button id="tl" data-cmd="turn_left">↺</button>
+          <button id="l" data-cmd="left">◀</button>
+          <button id="st" onclick="locoStopBtn()">■</button>
+          <button id="r" data-cmd="right">▶</button>
+          <button id="tr" data-cmd="turn_right">↻</button>
+          <button id="bk" data-cmd="backward">▼</button>
+        </div>
+        <div class="hint">↑↓←→ move · Q,E turn</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RIGHT: robot 3D + control ===== -->
+  <div class="col">
+    <div class="card">
+      <div class="card-h">Robot View <a id="link-robotonly" href="#" target="_blank" style="color:var(--accent2)">↗</a></div>
+      <div class="card-b">
+        <iframe id="robot-frame" class="robot-frame" src="about:blank"></iframe>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Gift / Motions <span style="cursor:pointer" onclick="refreshMotions()">⟳</span></div>
+      <div class="card-b">
+        <button class="btn primary full" onclick="sendGift()">🎁 Send Gift</button>
+        <div class="mlist" id="mlist" style="margin-top:9px"><div class="hint" style="text-align:center">Loading...</div></div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn warn" onclick="stopMotion()">⏹ Stop</button>
+          <button class="btn" onclick="goHome()">⌂ Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+const host=location.hostname;
+let curMode='none';
+document.getElementById('link-dash').href=`http://${host}:50003/dashboard`;
+document.getElementById('link-marker').href=`http://${host}:50011/`;
+document.getElementById('link-box').href=`http://${host}:50010/`;
+// robot-only 3D 뷰 (50003)
+document.getElementById('robot-frame').src=`http://${host}:50003/robot-only`;
+document.getElementById('link-robotonly').href=`http://${host}:50003/robot-only`;
+
+let toastTimer;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),1800);}
+
+// ---- mode + feed ----
+function setMode(m){fetch('/set_mode?mode='+m,{method:'POST'}).then(r=>r.json()).then(()=>applyMode(m));}
+function applyMode(m){
+  // 모드 바뀌면 이전 자동 끄고 체크 초기화
+  const chk=document.getElementById('auto-chk');
+  if(curMode!==m && curMode!=='none' && chk.checked){
+    const pp=curMode==='marker'?50011:50010;
+    fetch(`http://${host}:${pp}/set_auto_mode?enabled=false`).catch(()=>{});
+  }
+  if(curMode!==m){chk.checked=false;
+    document.getElementById('auto-lbl').textContent='Auto Grab : OFF';
+    document.getElementById('auto-lbl').style.color='var(--dim)';}
+  curMode=m;
+  document.getElementById('mode-tag').textContent=m.toUpperCase();
+  ['none','marker','box'].forEach(k=>document.getElementById('mode-'+k).classList.toggle('on',k===m));
+  updateFeed(m);
+}
+function updateFeed(m){
+  const img=document.getElementById('detect-feed'),none=document.getElementById('feed-none'),
+    tag=document.getElementById('feed-tag'),badge=document.getElementById('cam-badge');
+  const url={marker:`http://${host}:50011/video_feed`,box:`http://${host}:50010/video_feed`}[m];
+  if(url){img.src=url+'?t='+Date.now();img.style.display='block';none.style.display='none';
+    tag.textContent=m.toUpperCase();badge.style.display='';
+    document.getElementById('grab-msg').textContent=m.toUpperCase()+' mode · detecting';}
+  else{img.src='';img.style.display='none';none.style.display='';tag.textContent='OFF';badge.style.display='none';
+    document.getElementById('grab-msg').textContent='Idle (OFF)';}
+}
+function grabManual(){fetch('/grab_manual').then(r=>r.json()).then(d=>{
+  toast(d.ok?'Grabbing...':'Failed: '+(d.reason||''));});}
+
+// 자동 모드 토글 — 현재 모드의 detect 서버에 직접 전달
+function toggleAuto(){
+  const on=document.getElementById('auto-chk').checked;
+  const lbl=document.getElementById('auto-lbl');
+  if(curMode==='none'){
+    document.getElementById('auto-chk').checked=false;
+    toast('Select Marker or Box first');
+    lbl.textContent='Auto Grab : OFF';lbl.style.color='var(--dim)';
+    return;
+  }
+  const port=curMode==='marker'?50011:50010;
+  fetch(`http://${host}:${port}/set_auto_mode?enabled=${on}`).then(()=>{
+    lbl.textContent='Auto Grab : '+(on?'ON':'OFF');
+    lbl.style.color=on?'var(--accent)':'var(--dim)';
+    toast('Auto '+(on?'ON':'OFF'));
+  }).catch(()=>toast('detect server not reachable'));
+}
+
+// ---- wrist / box / handover ----
+function applyWrist(){const g=id=>document.getElementById(id).value||0;
+  const q=`l_roll=${g('l-roll')}&l_pitch=${g('l-pitch')}&l_yaw=${g('l-yaw')}&r_roll=${g('r-roll')}&r_pitch=${g('r-pitch')}&r_yaw=${g('r-yaw')}`;
+  fetch('/set_wrist?'+q).then(()=>toast('Wrist applied'));}
+function applyBoxSize(){const w=document.getElementById('bx-w').value/100,d=document.getElementById('bx-d').value/100,h=document.getElementById('bx-h').value/100;
+  fetch(`/set_box_size?width=${w}&depth=${d}&height=${h}`).then(()=>toast('Box size applied'));}
+function setHandover(dir){const yaw=document.getElementById('ho-yaw').value||30;
+  fetch(`/set_handover_direction?direction=${dir}&yaw_deg=${yaw}`).then(r=>r.json()).then(d=>{
+    const lbl={left:'Left',center:'Center',right:'Right'}[d.direction];
+    document.getElementById('ho-tag').textContent=lbl;
+    ['left','center','right'].forEach(k=>document.getElementById('ho-'+k).classList.toggle('on',k===d.direction));});}
+
+// ---- motions ----
+async function refreshMotions(){const el=document.getElementById('mlist');
+  try{const d=await(await fetch('/motions')).json();
+    if(!d.motions.length){el.innerHTML='<div class="hint" style="text-align:center">None</div>';return;}
+    el.innerHTML=d.motions.map(m=>`<div class="mitem"><span class="nm">${m}</span><button class="play" onclick="runMotion('${m.replace(/'/g,"\\'")}')">▶</button></div>`).join('');
+  }catch(e){el.innerHTML='<div class="hint" style="text-align:center;color:var(--warn)">Connection failed</div>';}}
+async function runMotion(n){try{const r=await fetch(`/motions/run/${encodeURIComponent(n)}`,{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.detail);toast('▶ '+n);}catch(e){toast('Error: '+e.message);}}
+async function sendGift(){try{const r=await fetch('/send_gift',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.detail);toast('🎁 Gift');}catch(e){toast('Error: '+e.message);}}
+async function stopMotion(){await fetch('/stop',{method:'POST'});toast('⏹ Stopped');}
+async function goHome(){await fetch('/home',{method:'POST'});toast('⌂ Home');}
+
+// ---- loco ----
+const speed=document.getElementById('speed'),spdv=document.getElementById('spdv');
+speed.oninput=()=>spdv.textContent=(+speed.value).toFixed(2);
+const cmap={forward:()=>({vx:+speed.value,vy:0,vyaw:0}),backward:()=>({vx:-speed.value,vy:0,vyaw:0}),
+  left:()=>({vx:0,vy:+speed.value,vyaw:0}),right:()=>({vx:0,vy:-speed.value,vyaw:0}),
+  turn_left:()=>({vx:0,vy:0,vyaw:+speed.value}),turn_right:()=>({vx:0,vy:0,vyaw:-speed.value})};
+let lt=null,ab=null;
+function startLoco(c,b){if(lt)return;ab=b;if(b)b.classList.add('active');
+  const s=()=>fetch('/loco/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cmap[c]())}).catch(()=>{});
+  s();lt=setInterval(s,50);}
+function stopLoco(){if(lt){clearInterval(lt);lt=null;}if(ab){ab.classList.remove('active');ab=null;}fetch('/loco/stop',{method:'POST'}).catch(()=>{});}
+function locoStopBtn(){stopLoco();toast('⏹ Stopped');}
+document.querySelectorAll('.pad button[data-cmd]').forEach(b=>{const c=b.dataset.cmd;
+  b.addEventListener('mousedown',e=>{e.preventDefault();startLoco(c,b);});
+  b.addEventListener('mouseup',e=>{e.preventDefault();stopLoco();});
+  b.addEventListener('mouseleave',()=>stopLoco());
+  b.addEventListener('touchstart',e=>{e.preventDefault();startLoco(c,b);},{passive:false});
+  b.addEventListener('touchend',e=>{e.preventDefault();stopLoco();});});
+const km={'ArrowUp':'forward','ArrowDown':'backward','ArrowLeft':'left','ArrowRight':'right','q':'turn_left','e':'turn_right'};
+document.addEventListener('keydown',e=>{if(e.repeat)return;if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;const c=km[e.key];if(c){e.preventDefault();startLoco(c,document.querySelector(`[data-cmd="${c}"]`));}});
+document.addEventListener('keyup',e=>{if(km[e.key]){e.preventDefault();stopLoco();}});
+window.addEventListener('beforeunload',stopLoco);
+
+// ---- status poll ----
+let pollFail=0;
+function pollStatus(){
+  fetch('/grab_status').then(r=>r.json()).then(d=>{
+    pollFail=0;
+    const sl=document.getElementById('statusline'),bi=document.getElementById('busy-ind');
+    if(d.busy){sl.classList.add('busy');document.getElementById('grab-msg').textContent='Grabbing...';bi.textContent='busy';bi.style.color='var(--amber)';}
+    else{sl.classList.remove('busy');bi.textContent='idle';bi.style.color='var(--dim)';}
+  }).catch(()=>{pollFail++;});
+}
+setInterval(pollStatus, 2000);
+
+// 현재 모드의 detect 서버에서 마커/박스 좌표(cm) 폴링
+function pollCoord(){
+  const co=document.getElementById('coord');
+  if(curMode==='none'){co.textContent='';return;}
+  const port=curMode==='marker'?50011:50010;
+  fetch(`http://${host}:${port}/status`).then(r=>r.json()).then(d=>{
+    if(d.found&&d.torso){
+      const x=(d.torso.x*100).toFixed(1),y=(d.torso.y*100).toFixed(1),z=(d.torso.z*100).toFixed(1);
+      let s=`X ${x}  Y ${y}  Z ${z} cm`;
+      if(d.box_h_cm)s+=`  H ${d.box_h_cm}`;
+      co.textContent=s;
+    }else{co.textContent='no target';}
+  }).catch(()=>{co.textContent='';});
+}
+setInterval(pollCoord, 400);
+
+// ---- init ----
+fetch('/active_mode').then(r=>r.json()).then(d=>applyMode(d.mode||'none')).catch(()=>{});
+refreshMotions();
+</script>
+</body></html>

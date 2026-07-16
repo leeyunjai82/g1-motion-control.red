@@ -1,0 +1,18 @@
+[2026-06-02 18:27:58] INFO:     Started server process [8912]
+[2026-06-02 18:27:58] INFO:     Waiting for application startup.
+[2026-06-02 18:27:58] [detect_marker] http://0.0.0.0:50011/
+[2026-06-02 18:27:58] INFO:     Application startup complete.
+[2026-06-02 18:27:58] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-02 18:27:58] [STREAM] 연결 성공
+[2026-06-02 18:29:47] INFO:     Started server process [9300]
+[2026-06-02 18:29:47] INFO:     Waiting for application startup.
+[2026-06-02 18:29:47] [detect_marker] http://0.0.0.0:50011/
+[2026-06-02 18:29:47] INFO:     Application startup complete.
+[2026-06-02 18:29:47] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-02 18:29:47] [STREAM] 연결 성공
+[2026-06-02 18:30:25] INFO:     Started server process [9624]
+[2026-06-02 18:30:25] INFO:     Waiting for application startup.
+[2026-06-02 18:30:25] [detect_marker] http://0.0.0.0:50011/
+[2026-06-02 18:30:25] INFO:     Application startup complete.
+[2026-06-02 18:30:25] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-02 18:30:25] [STREAM] 연결 성공

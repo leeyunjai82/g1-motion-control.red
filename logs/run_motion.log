@@ -1,0 +1,128 @@
+INFO:     Started server process [3778]
+INFO:     Waiting for application startup.
+[Motion Runner] 시작
+['BalanceStand', 'Damp', 'GetApiVersion', 'GetLeaseId', 'GetServerApiVersion', 'HighStand', 'Init', 'Lie2StandUp', 'LowStand', 'Move', 'SetBalanceMode', 'SetFsmId', 'SetStandHeight', 'SetTaskId', 'SetTimeout', 'SetVelocity', 'ShakeHand', 'Sit', 'Squat2StandUp', 'StandUp2Squat', 'Start', 'StopMove', 'WaitLeaseApplied', 'WaveHand', 'ZeroTorque', '_Call', '_CallBase', '_CallBinary', '_CallBinaryBase', '_CallBinaryNoReply', '_CallBinaryNoReplyBase', '_CallNoReply', '_CallNoReplyBase', '_CallRequestWithParamAndBin', '_CallRequestWithParamAndBinBase', '_CallRequestWithParamAndBinNoReply', '_CallRequestWithParamAndBinNoReplyBase', '_ClientBase__SetHeader', '_ClientBase__stub', '_ClientBase__timeout', '_Client__CheckApi', '_Client__apiMapping', '_Client__apiVersion', '_Client__enableLease', '_Client__leaseClient', '_RegistApi', '_SetApiVerson', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'first_shake_hand_stage_']
+✅ Loco 초기화 성공
+INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+INFO:ctrl.robot_arm:DDS 연결 성공.
+INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+INFO:ctrl.robot_arm:관절 고정 완료.
+INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+✅ Arm 초기화 성공
+⚠️ 손 초기화 실패: [Errno 2] could not open port /dev/ttyACM0: [Errno 2] No such file or directory: '/dev/ttyACM0'
+✅ TTS 초기화 성공
+[Motion Runner] 준비 완료
+  웹:        http://localhost:50003/
+  로봇만:    http://localhost:50003/robot-only
+  motions/:  /home/circulus/project/g1-motion-control/high/motions
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+INFO:     192.168.123.50:55952 - "GET /api/joint_states HTTP/1.1" 200 OK
+INFO:     192.168.123.50:61076 - "GET /api/joint_states HTTP/1.1" 200 OK
+INFO:     192.168.123.50:57984 - "GET /robot-only HTTP/1.1" 200 OK
+INFO:     192.168.123.50:57984 - "GET /api/meshes HTTP/1.1" 200 OK
+INFO:     192.168.123.50:57984 - "GET /api/robot_status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:57984 - "GET /api/joint_states HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59107 - "OPTIONS /motions/run/look_around.json HTTP/1.1" 200 OK
+INFO:     192.168.123.50:59107 - "POST /motions/run/look_around.json HTTP/1.1" 200 OK
+[Runner] 프레임 1/6 (2.0s)
+INFO:     127.0.0.1:58990 - "POST /motions/run/look_around.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 2/6 (2.0s)
+[Runner] 프레임 3/6 (2.5s)
+[Runner] 프레임 4/6 (5.0s)
+[Runner] 프레임 5/6 (2.5s)
+[Runner] 프레임 6/6 (2.0s)
+[Runner] 완료
+INFO:     192.168.123.50:57255 - "OPTIONS /motions/run/both_pose.json HTTP/1.1" 200 OK
+INFO:     192.168.123.50:57255 - "POST /motions/run/both_pose.json HTTP/1.1" 200 OK
+[Runner] 프레임 1/19 (2.0s)
+[Runner] 프레임 2/19 (2.5s)
+[Runner] 프레임 3/19 (2.5s)
+[Runner] 프레임 4/19 (2.5s)
+[Runner] 프레임 5/19 (2.5s)
+[Runner] 프레임 6/19 (2.5s)
+[Runner] 프레임 7/19 (2.5s)
+[Runner] 프레임 8/19 (2.5s)
+[Runner] 프레임 9/19 (2.5s)
+[Runner] 프레임 10/19 (5.0s)
+[Runner] 프레임 11/19 (2.5s)
+[Runner] 프레임 12/19 (2.5s)
+INFO:     192.168.123.50:50384 - "OPTIONS /motions/run/greet.json HTTP/1.1" 200 OK
+INFO:     192.168.123.50:50384 - "POST /motions/run/greet.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 13/19 (2.5s)
+[Runner] 프레임 14/19 (2.5s)
+[Runner] 프레임 15/19 (2.5s)
+[Runner] 프레임 16/19 (2.5s)
+[Runner] 프레임 17/19 (2.5s)
+[Runner] 프레임 18/19 (2.5s)
+[Runner] 프레임 19/19 (3.0s)
+[Runner] 완료
+INFO:     192.168.123.50:52938 - "GET /robot-only HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52938 - "GET /api/meshes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49594 - "POST /motions/run/greet.json HTTP/1.1" 200 OK
+[Runner] 프레임 1/10 (2.0s)
+INFO:     192.168.123.50:52938 - "GET /api/robot_status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52938 - "GET /api/joint_states HTTP/1.1" 200 OK
+[Runner] 프레임 2/10 (3.0s)
+INFO:     127.0.0.1:50462 - "POST /motions/run/look_around.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 3/10 (1.0s)
+[Runner] 프레임 4/10 (1.0s)
+INFO:     127.0.0.1:50478 - "POST /motions/run/both_pose.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 5/10 (1.0s)
+[Runner] 프레임 6/10 (1.0s)
+[Runner] 프레임 7/10 (1.0s)
+INFO:     127.0.0.1:50480 - "POST /motions/run/curious.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 8/10 (1.0s)
+[Runner] 프레임 9/10 (1.0s)
+[Runner] 프레임 10/10 (3.0s)
+INFO:     127.0.0.1:55592 - "POST /motions/run/right_pose.json HTTP/1.1" 409 Conflict
+[Runner] 완료
+INFO:     127.0.0.1:55598 - "POST /motions/run/left_pose.json HTTP/1.1" 200 OK
+[Runner] 프레임 1/10 (2.0s)
+[Runner] 프레임 2/10 (2.5s)
+INFO:     127.0.0.1:55600 - "POST /motions/run/both_pose.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 3/10 (2.5s)
+INFO:     127.0.0.1:53602 - "POST /motions/run/look_around.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 4/10 (2.5s)
+INFO:     127.0.0.1:53610 - "POST /motions/run/right_pose.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 5/10 (2.5s)
+[Runner] 프레임 6/10 (2.5s)
+[Runner] 프레임 7/10 (2.5s)
+[Runner] 프레임 8/10 (2.5s)
+[Runner] 프레임 9/10 (2.5s)
+[Runner] 프레임 10/10 (3.0s)
+[Runner] 완료
+INFO:     127.0.0.1:35106 - "POST /motions/run/greet.json HTTP/1.1" 200 OK
+[Runner] 프레임 1/10 (2.0s)
+[Runner] 프레임 2/10 (3.0s)
+INFO:     127.0.0.1:35108 - "POST /motions/run/look_around.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 3/10 (1.0s)
+[Runner] 프레임 4/10 (1.0s)
+INFO:     127.0.0.1:35120 - "POST /motions/run/both_pose.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 5/10 (1.0s)
+[Runner] 프레임 6/10 (1.0s)
+[Runner] 프레임 7/10 (1.0s)
+INFO:     127.0.0.1:49490 - "POST /motions/run/curious.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 8/10 (1.0s)
+[Runner] 프레임 9/10 (1.0s)
+[Runner] 프레임 10/10 (3.0s)
+INFO:     127.0.0.1:49506 - "POST /motions/run/right_pose.json HTTP/1.1" 409 Conflict
+[Runner] 완료
+INFO:     127.0.0.1:49516 - "POST /motions/run/left_pose.json HTTP/1.1" 200 OK
+[Runner] 프레임 1/10 (2.0s)
+[Runner] 프레임 2/10 (2.5s)
+INFO:     127.0.0.1:57926 - "POST /motions/run/both_pose.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 3/10 (2.5s)
+INFO:     127.0.0.1:57930 - "POST /motions/run/look_around.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 4/10 (2.5s)
+INFO:     127.0.0.1:57932 - "POST /motions/run/right_pose.json HTTP/1.1" 409 Conflict
+[Runner] 프레임 5/10 (2.5s)
+[Runner] 프레임 6/10 (2.5s)
+[Runner] 프레임 7/10 (2.5s)
+[Runner] 프레임 8/10 (2.5s)
+[Runner] 프레임 9/10 (2.5s)
+[Runner] 프레임 10/10 (3.0s)
+[Runner] 완료
+INFO:     Shutting down
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+INFO:     Finished server process [3778]

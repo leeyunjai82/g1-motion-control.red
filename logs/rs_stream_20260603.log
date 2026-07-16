@@ -1,0 +1,108 @@
+[2026-06-03 10:35:07] INFO:     Started server process [3548]
+[2026-06-03 10:35:07] INFO:     Waiting for application startup.
+[2026-06-03 10:35:22] ERROR:    Traceback (most recent call last):
+[2026-06-03 10:35:22]   File "/home/circulus/miniconda3/envs/tv/lib/python3.10/site-packages/starlette/routing.py", line 638, in lifespan
+[2026-06-03 10:35:22]     async with self.lifespan_context(app) as maybe_state:
+[2026-06-03 10:35:22]   File "/home/circulus/miniconda3/envs/tv/lib/python3.10/contextlib.py", line 199, in __aenter__
+[2026-06-03 10:35:22]     return await anext(self.gen)
+[2026-06-03 10:35:22]   File "/home/circulus/project/g1-motion-control/high/rs_stream.py", line 112, in lifespan
+[2026-06-03 10:35:22]     init_camera()
+[2026-06-03 10:35:22]   File "/home/circulus/project/g1-motion-control/high/rs_stream.py", line 61, in init_camera
+[2026-06-03 10:35:22]     pipeline.start(cfg)
+[2026-06-03 10:35:22] RuntimeError: No device connected
+[2026-06-03 10:35:22] 
+[2026-06-03 10:35:22] ERROR:    Application startup failed. Exiting.
+[2026-06-03 10:36:47] INFO:     Started server process [3870]
+[2026-06-03 10:36:47] INFO:     Waiting for application startup.
+[2026-06-03 10:36:48] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 10:36:48] INFO:     Application startup complete.
+[2026-06-03 10:36:48] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 10:36:54] INFO:     127.0.0.1:55326 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 10:36:56] INFO:     127.0.0.1:55350 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 10:36:56] INFO:     127.0.0.1:55340 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 12:20:13] INFO:     Started server process [3552]
+[2026-06-03 12:20:13] INFO:     Waiting for application startup.
+[2026-06-03 12:20:14] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 12:20:14] INFO:     Application startup complete.
+[2026-06-03 12:20:14] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 12:20:20] INFO:     127.0.0.1:57306 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:20:24] INFO:     127.0.0.1:57308 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:20:24] INFO:     127.0.0.1:57324 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 12:21:03] INFO:     Started server process [3848]
+[2026-06-03 12:21:03] INFO:     Waiting for application startup.
+[2026-06-03 12:21:04] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 12:21:04] INFO:     Application startup complete.
+[2026-06-03 12:21:04] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 12:21:10] INFO:     127.0.0.1:52128 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:21:13] INFO:     127.0.0.1:52130 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:21:13] INFO:     127.0.0.1:52134 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 12:33:43] INFO:     Started server process [4732]
+[2026-06-03 12:33:43] INFO:     Waiting for application startup.
+[2026-06-03 12:33:44] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 12:33:44] INFO:     Application startup complete.
+[2026-06-03 12:33:44] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 12:33:50] INFO:     127.0.0.1:37986 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:33:53] INFO:     127.0.0.1:38016 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:33:53] INFO:     127.0.0.1:38002 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 12:35:28] INFO:     Started server process [5083]
+[2026-06-03 12:35:28] INFO:     Waiting for application startup.
+[2026-06-03 12:35:29] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 12:35:29] INFO:     Application startup complete.
+[2026-06-03 12:35:29] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 12:35:35] INFO:     127.0.0.1:41518 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:35:38] INFO:     127.0.0.1:41534 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 12:35:38] INFO:     127.0.0.1:41536 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 13:16:30] INFO:     Started server process [7260]
+[2026-06-03 13:16:30] INFO:     Waiting for application startup.
+[2026-06-03 13:16:31] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 13:16:31] INFO:     Application startup complete.
+[2026-06-03 13:16:31] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 13:16:37] INFO:     127.0.0.1:45858 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 13:16:40] INFO:     127.0.0.1:45868 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 13:16:40] INFO:     127.0.0.1:45878 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 14:29:03] INFO:     Started server process [5255]
+[2026-06-03 14:29:03] INFO:     Waiting for application startup.
+[2026-06-03 14:29:04] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 14:29:04] INFO:     Application startup complete.
+[2026-06-03 14:29:04] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 14:29:09] INFO:     127.0.0.1:58070 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 14:29:13] INFO:     127.0.0.1:42354 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 14:29:13] INFO:     127.0.0.1:42362 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 15:58:30] INFO:     Started server process [3533]
+[2026-06-03 15:58:30] INFO:     Waiting for application startup.
+[2026-06-03 15:58:45] ERROR:    Traceback (most recent call last):
+[2026-06-03 15:58:45]   File "/home/circulus/miniconda3/envs/tv/lib/python3.10/site-packages/starlette/routing.py", line 638, in lifespan
+[2026-06-03 15:58:45]     async with self.lifespan_context(app) as maybe_state:
+[2026-06-03 15:58:45]   File "/home/circulus/miniconda3/envs/tv/lib/python3.10/contextlib.py", line 199, in __aenter__
+[2026-06-03 15:58:45]     return await anext(self.gen)
+[2026-06-03 15:58:45]   File "/home/circulus/project/g1-motion-control/high/rs_stream.py", line 112, in lifespan
+[2026-06-03 15:58:45]     init_camera()
+[2026-06-03 15:58:45]   File "/home/circulus/project/g1-motion-control/high/rs_stream.py", line 61, in init_camera
+[2026-06-03 15:58:45]     pipeline.start(cfg)
+[2026-06-03 15:58:45] RuntimeError: No device connected
+[2026-06-03 15:58:45] 
+[2026-06-03 15:58:45] ERROR:    Application startup failed. Exiting.
+[2026-06-03 15:59:24] INFO:     Started server process [3816]
+[2026-06-03 15:59:24] INFO:     Waiting for application startup.
+[2026-06-03 15:59:25] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 15:59:25] INFO:     Application startup complete.
+[2026-06-03 15:59:25] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 15:59:31] INFO:     127.0.0.1:58820 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 15:59:34] INFO:     127.0.0.1:58832 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 15:59:34] INFO:     127.0.0.1:58842 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 17:00:31] INFO:     Started server process [7069]
+[2026-06-03 17:00:31] INFO:     Waiting for application startup.
+[2026-06-03 17:00:32] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 17:00:32] INFO:     Application startup complete.
+[2026-06-03 17:00:32] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 17:00:38] INFO:     127.0.0.1:42732 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 17:00:41] INFO:     127.0.0.1:49782 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 17:00:41] INFO:     127.0.0.1:49786 - "GET /depth_raw HTTP/1.1" 200 OK
+[2026-06-03 17:33:36] INFO:     Started server process [3660]
+[2026-06-03 17:33:36] INFO:     Waiting for application startup.
+[2026-06-03 17:33:37] [RS] 카메라 시작 (640x480@30fps)
+[2026-06-03 17:33:37] INFO:     Application startup complete.
+[2026-06-03 17:33:37] INFO:     Uvicorn running on http://0.0.0.0:50001 (Press CTRL+C to quit)
+[2026-06-03 17:33:43] INFO:     127.0.0.1:48524 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 17:33:47] INFO:     127.0.0.1:37812 - "GET /video_feed HTTP/1.1" 200 OK
+[2026-06-03 17:33:47] INFO:     127.0.0.1:37820 - "GET /depth_raw HTTP/1.1" 200 OK

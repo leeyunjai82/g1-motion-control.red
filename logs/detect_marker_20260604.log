@@ -1,0 +1,132 @@
+[2026-06-04 10:23:12] INFO:     Started server process [3741]
+[2026-06-04 10:23:12] INFO:     Waiting for application startup.
+[2026-06-04 10:23:12] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 10:23:12] INFO:     Application startup complete.
+[2026-06-04 10:23:12] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 10:23:12] [STREAM] 연결 성공
+[2026-06-04 11:02:08] INFO:     Started server process [5628]
+[2026-06-04 11:02:08] INFO:     Waiting for application startup.
+[2026-06-04 11:02:08] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 11:02:08] INFO:     Application startup complete.
+[2026-06-04 11:02:08] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 11:02:08] [STREAM] 연결 성공
+[2026-06-04 11:30:53] INFO:     Started server process [3679]
+[2026-06-04 11:30:53] INFO:     Waiting for application startup.
+[2026-06-04 11:30:53] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 11:30:53] INFO:     Application startup complete.
+[2026-06-04 11:30:53] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 11:30:53] [STREAM] 연결 성공
+[2026-06-04 12:29:53] INFO:     Started server process [3640]
+[2026-06-04 12:29:53] INFO:     Waiting for application startup.
+[2026-06-04 12:29:53] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 12:29:53] INFO:     Application startup complete.
+[2026-06-04 12:29:53] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 12:29:53] [STREAM] 연결 성공
+[2026-06-04 12:30:25] INFO:     Started server process [3962]
+[2026-06-04 12:30:25] INFO:     Waiting for application startup.
+[2026-06-04 12:30:25] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 12:30:25] INFO:     Application startup complete.
+[2026-06-04 12:30:25] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 12:30:25] [STREAM] 연결 성공
+[2026-06-04 12:30:41] [STREAM] 오류: timed out
+[2026-06-04 12:30:43] [STREAM] 연결 성공
+[2026-06-04 12:31:03] INFO:     Started server process [4351]
+[2026-06-04 12:31:03] INFO:     Waiting for application startup.
+[2026-06-04 12:31:03] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 12:31:03] INFO:     Application startup complete.
+[2026-06-04 12:31:03] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 12:31:03] [STREAM] 연결 성공
+[2026-06-04 13:23:10] INFO:     Started server process [3719]
+[2026-06-04 13:23:10] INFO:     Waiting for application startup.
+[2026-06-04 13:23:10] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 13:23:10] INFO:     Application startup complete.
+[2026-06-04 13:23:10] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 13:23:10] [STREAM] 연결 성공
+[2026-06-04 14:53:50] INFO:     Started server process [3612]
+[2026-06-04 14:53:50] INFO:     Waiting for application startup.
+[2026-06-04 14:53:50] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 14:53:50] INFO:     Application startup complete.
+[2026-06-04 14:53:50] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 14:53:50] [STREAM] 연결 성공
+[2026-06-04 14:54:23] INFO:     Started server process [3989]
+[2026-06-04 14:54:23] INFO:     Waiting for application startup.
+[2026-06-04 14:54:23] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 14:54:23] INFO:     Application startup complete.
+[2026-06-04 14:54:23] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 14:54:23] [STREAM] 연결 성공
+[2026-06-04 14:54:56] INFO:     Started server process [4276]
+[2026-06-04 14:54:56] INFO:     Waiting for application startup.
+[2026-06-04 14:54:56] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 14:54:56] INFO:     Application startup complete.
+[2026-06-04 14:54:56] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 14:54:56] [STREAM] 연결 성공
+[2026-06-04 16:17:11] INFO:     Started server process [8575]
+[2026-06-04 16:17:11] INFO:     Waiting for application startup.
+[2026-06-04 16:17:11] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:17:11] INFO:     Application startup complete.
+[2026-06-04 16:17:11] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:17:11] [STREAM] 연결 성공
+[2026-06-04 16:38:32] INFO:     Started server process [3769]
+[2026-06-04 16:38:32] INFO:     Waiting for application startup.
+[2026-06-04 16:38:32] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:38:32] INFO:     Application startup complete.
+[2026-06-04 16:38:32] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:38:32] [STREAM] 연결 성공
+[2026-06-04 16:38:50] INFO:     Started server process [4054]
+[2026-06-04 16:38:50] INFO:     Waiting for application startup.
+[2026-06-04 16:38:50] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:38:50] INFO:     Application startup complete.
+[2026-06-04 16:38:50] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:38:50] [STREAM] 연결 성공
+[2026-06-04 16:39:18] INFO:     Started server process [4385]
+[2026-06-04 16:39:18] INFO:     Waiting for application startup.
+[2026-06-04 16:39:18] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:39:18] INFO:     Application startup complete.
+[2026-06-04 16:39:18] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:39:18] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:20] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:22] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:24] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:26] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:28] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:30] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:32] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:34] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:36] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:38] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:40] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:42] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:44] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:39:46] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-04 16:40:01] INFO:     Started server process [4722]
+[2026-06-04 16:40:01] INFO:     Waiting for application startup.
+[2026-06-04 16:40:01] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:40:01] INFO:     Application startup complete.
+[2026-06-04 16:40:01] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:40:01] [STREAM] 연결 성공
+[2026-06-04 16:40:28] INFO:     Started server process [4998]
+[2026-06-04 16:40:28] INFO:     Waiting for application startup.
+[2026-06-04 16:40:28] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:40:28] INFO:     Application startup complete.
+[2026-06-04 16:40:28] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:40:28] [STREAM] 연결 성공
+[2026-06-04 16:40:44] [STREAM] 오류: timed out
+[2026-06-04 16:40:46] [STREAM] 연결 성공
+[2026-06-04 16:41:04] INFO:     Started server process [5379]
+[2026-06-04 16:41:04] INFO:     Waiting for application startup.
+[2026-06-04 16:41:04] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:41:04] INFO:     Application startup complete.
+[2026-06-04 16:41:04] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:41:04] [STREAM] 연결 성공
+[2026-06-04 16:41:29] INFO:     Started server process [5668]
+[2026-06-04 16:41:29] INFO:     Waiting for application startup.
+[2026-06-04 16:41:29] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 16:41:29] INFO:     Application startup complete.
+[2026-06-04 16:41:29] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 16:41:29] [STREAM] 연결 성공
+[2026-06-04 17:39:54] INFO:     Started server process [8632]
+[2026-06-04 17:39:54] INFO:     Waiting for application startup.
+[2026-06-04 17:39:54] [detect_marker] http://0.0.0.0:50011/
+[2026-06-04 17:39:54] INFO:     Application startup complete.
+[2026-06-04 17:39:54] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-04 17:39:54] [STREAM] 연결 성공

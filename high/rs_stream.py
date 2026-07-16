@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+# Version: 1.1
 """
 RealSense → HTTP MJPEG 서버 (canvas viewer)
 
-라우트 (원본과 동일):
+라우트:
   /            : canvas 기반 뷰어
   /video_feed  : color MJPEG (ik_box.py 등에서 사용)
-  /depth_feed  : depth MJPEG (320x240 q60, 디버깅용)
+  /depth_feed  : depth MJPEG (320x240 q60, 디버깅용 시각화)
+  /depth_raw   : depth 16bit PNG 스트림 (mm 원본, detect_box용) ← v1.1 추가
 """
 
 import threading
@@ -19,47 +21,37 @@ from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
-# ==========================================
-# 설정
-# ==========================================
 COLOR_W, COLOR_H, FPS = 640, 480, 30
 DEPTH_W, DEPTH_H      = 320, 240
 COLOR_Q, DEPTH_Q      = 80, 60
 DEPTH_MAX_MM          = 3000
 
 
-# ==========================================
-# Frame buffer (1 producer / N consumer)
-# ==========================================
 class FrameBuffer:
     def __init__(self):
-        self.jpeg = None
+        self.data = None
         self.frame_id = 0
         self.cond = threading.Condition()
-
-    def update(self, jpeg_bytes: bytes):
+    def update(self, data: bytes):
         with self.cond:
-            self.jpeg = jpeg_bytes
+            self.data = data
             self.frame_id += 1
             self.cond.notify_all()
-
     def wait_new(self, last_id: int, timeout: float = 1.0):
         with self.cond:
             self.cond.wait_for(lambda: self.frame_id != last_id, timeout=timeout)
-            return self.jpeg, self.frame_id
+            return self.data, self.frame_id
 
 
-color_buf = FrameBuffer()
-depth_buf = FrameBuffer()
+color_buf     = FrameBuffer()
+depth_buf     = FrameBuffer()   # 시각화 JPEG
+depth_raw_buf = FrameBuffer()   # 16bit PNG (mm 원본)
 
 pipeline  = None
 align     = None
 stop_flag = threading.Event()
 
 
-# ==========================================
-# 카메라
-# ==========================================
 def init_camera():
     global pipeline, align
     pipeline = rs.pipeline()
@@ -79,6 +71,8 @@ def capture_loop():
     ).astype(np.uint8)
     color_enc = [cv2.IMWRITE_JPEG_QUALITY, COLOR_Q]
     depth_enc = [cv2.IMWRITE_JPEG_QUALITY, DEPTH_Q]
+    # PNG 압축 레벨 낮게 (속도 우선)
+    png_enc = [cv2.IMWRITE_PNG_COMPRESSION, 1]
 
     while not stop_flag.is_set():
         try:
@@ -97,8 +91,9 @@ def capture_loop():
         if ok:
             color_buf.update(buf.tobytes())
 
-        # --- depth (320x240, q60) ---
-        depth_img = np.asanyarray(df.get_data())
+        depth_img = np.asanyarray(df.get_data())   # uint16 mm
+
+        # --- depth 시각화 (JET) ---
         d_color = cv2.applyColorMap(depth_lut[depth_img], cv2.COLORMAP_JET)
         d_color[depth_img == 0] = 0
         d_small = cv2.resize(d_color, (DEPTH_W, DEPTH_H), interpolation=cv2.INTER_NEAREST)
@@ -106,10 +101,12 @@ def capture_loop():
         if ok:
             depth_buf.update(buf.tobytes())
 
+        # --- depth raw (16bit PNG, mm 원본) ---
+        ok, buf = cv2.imencode('.png', depth_img, png_enc)
+        if ok:
+            depth_raw_buf.update(buf.tobytes())
 
-# ==========================================
-# FastAPI
-# ==========================================
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_camera()
@@ -126,9 +123,9 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 
 
-def mjpeg_generator(buffer: FrameBuffer):
+def mjpeg_generator(buffer: FrameBuffer, content_type=b'image/jpeg'):
     last_id = -1
-    boundary = b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
+    boundary = b'--frame\r\nContent-Type: ' + content_type + b'\r\n\r\n'
     while True:
         data, fid = buffer.wait_new(last_id, timeout=1.0)
         if data is None or fid == last_id:
@@ -139,85 +136,28 @@ def mjpeg_generator(buffer: FrameBuffer):
 
 @app.get("/video_feed")
 async def video_feed():
-    return StreamingResponse(
-        mjpeg_generator(color_buf),
-        media_type="multipart/x-mixed-replace; boundary=frame",
-    )
+    return StreamingResponse(mjpeg_generator(color_buf),
+        media_type="multipart/x-mixed-replace; boundary=frame")
 
 
 @app.get("/depth_feed")
 async def depth_feed():
-    return StreamingResponse(
-        mjpeg_generator(depth_buf),
-        media_type="multipart/x-mixed-replace; boundary=frame",
-    )
+    return StreamingResponse(mjpeg_generator(depth_buf),
+        media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.get("/depth_raw")
+async def depth_raw():
+    """16bit PNG (mm 원본) 스트림 — detect_box.py가 디코딩해서 사용."""
+    return StreamingResponse(mjpeg_generator(depth_raw_buf, content_type=b'image/png'),
+        media_type="multipart/x-mixed-replace; boundary=frame")
 
 
 @app.get("/")
 async def index():
-    return HTMLResponse(r"""
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>RealSense Canvas Viewer</title>
-<style>
-  body { background:#1a1a1a; color:#fff; font-family:monospace; padding:20px; margin:0; }
-  h2 { color:#4CAF50; margin-top:0; }
-  .row { display:flex; gap:20px; flex-wrap:wrap; }
-  .card { display:flex; flex-direction:column; gap:6px; }
-  .label { font-size:13px; }
-  .stats { font-size:12px; color:#888; }
-  canvas { display:block; background:#000; }
-  #c_color { border:2px solid #4CAF50; }
-  #c_depth { border:2px solid #FF9800; }
-  /* MJPEG 수신용 hidden img */
-  .hidden-src { position:absolute; left:-9999px; width:1px; height:1px; }
-</style></head>
-<body>
-  <h2>RealSense Canvas Viewer</h2>
-  <div class="row">
-    <div class="card">
-      <div class="label">Color (640×480)</div>
-      <canvas id="c_color" width="640" height="480"></canvas>
-      <div class="stats" id="s_color">— fps</div>
-    </div>
-    <div class="card">
-      <div class="label">Depth (320×240, 0~3m JET)</div>
-      <canvas id="c_depth" width="320" height="240"></canvas>
-      <div class="stats" id="s_depth">— fps</div>
-    </div>
-  </div>
-
-  <!-- MJPEG는 브라우저가 알아서 decode → hidden img → canvas로 복사 -->
-  <img id="src_color" class="hidden-src" src="/video_feed" crossorigin="anonymous">
-  <img id="src_depth" class="hidden-src" src="/depth_feed" crossorigin="anonymous">
-
-<script>
-function attachCanvas(imgId, canvasId, statsId) {
-  const img    = document.getElementById(imgId);
-  const canvas = document.getElementById(canvasId);
-  const ctx    = canvas.getContext('2d');
-  const statEl = document.getElementById(statsId);
-
-  let n = 0, t0 = performance.now();
-
-  function tick() {
-    if (img.naturalWidth) {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      n++;
-      const now = performance.now();
-      if (now - t0 >= 1000) {
-        statEl.textContent = `${(n * 1000 / (now - t0)).toFixed(1)} fps`;
-        n = 0; t0 = now;
-      }
-    }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-attachCanvas('src_color', 'c_color', 's_color');
-attachCanvas('src_depth', 'c_depth', 's_depth');
-</script>
-</body></html>
-    """)
+    return HTMLResponse("<h2>RealSense Stream</h2>"
+                        "<p>/video_feed (color), /depth_feed (vis), /depth_raw (16bit mm)</p>"
+                        '<img src="/video_feed" width="480">')
 
 
 if __name__ == "__main__":

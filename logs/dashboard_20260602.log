@@ -1,0 +1,43 @@
+[2026-06-02 18:27:56] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+[2026-06-02 18:27:56] WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+[2026-06-02 18:27:56] INFO:ctrl.robot_arm:DDS 연결 성공.
+[2026-06-02 18:27:56] INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+[2026-06-02 18:27:56] INFO:ctrl.robot_arm:관절 고정 완료.
+[2026-06-02 18:27:56] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[2026-06-02 18:27:56] [System] Robot connected
+[2026-06-02 18:27:56] INFO:     Started server process [8881]
+[2026-06-02 18:27:56] INFO:     Waiting for application startup.
+[2026-06-02 18:27:56] INFO:     Application startup complete.
+[2026-06-02 18:27:56] INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+[2026-06-02 18:27:56] INFO:     192.168.123.50:57563 - "GET /api/joint_states HTTP/1.1" 200 OK
+[2026-06-02 18:28:05] INFO:     192.168.123.50:62481 - "GET /robot-only HTTP/1.1" 200 OK
+[2026-06-02 18:28:05] INFO:     192.168.123.50:62481 - "GET /api/meshes HTTP/1.1" 200 OK
+[2026-06-02 18:28:05] INFO:     192.168.123.50:62481 - "GET /api/status HTTP/1.1" 200 OK
+[2026-06-02 18:28:05] INFO:     192.168.123.50:62481 - "GET /api/joint_states HTTP/1.1" 200 OK
+[2026-06-02 18:29:45] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+[2026-06-02 18:29:46] WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+[2026-06-02 18:29:46] INFO:ctrl.robot_arm:DDS 연결 성공.
+[2026-06-02 18:29:46] INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+[2026-06-02 18:29:46] INFO:ctrl.robot_arm:관절 고정 완료.
+[2026-06-02 18:29:46] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[2026-06-02 18:29:46] [System] Robot connected
+[2026-06-02 18:29:46] INFO:     Started server process [9269]
+[2026-06-02 18:29:46] INFO:     Waiting for application startup.
+[2026-06-02 18:29:46] INFO:     Application startup complete.
+[2026-06-02 18:29:46] INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+[2026-06-02 18:29:46] INFO:     192.168.123.50:62560 - "GET /api/joint_states HTTP/1.1" 200 OK
+[2026-06-02 18:30:01] INFO:     192.168.123.50:56117 - "GET /robot-only HTTP/1.1" 200 OK
+[2026-06-02 18:30:01] INFO:     192.168.123.50:56117 - "GET /api/meshes HTTP/1.1" 200 OK
+[2026-06-02 18:30:01] INFO:     192.168.123.50:56117 - "GET /api/status HTTP/1.1" 200 OK
+[2026-06-02 18:30:01] INFO:     192.168.123.50:56117 - "GET /api/joint_states HTTP/1.1" 200 OK
+[2026-06-02 18:30:23] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+[2026-06-02 18:30:23] INFO:ctrl.robot_arm:DDS 연결 성공.
+[2026-06-02 18:30:23] INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+[2026-06-02 18:30:23] INFO:ctrl.robot_arm:관절 고정 완료.
+[2026-06-02 18:30:23] INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[2026-06-02 18:30:23] [System] Robot connected
+[2026-06-02 18:30:23] INFO:     Started server process [9593]
+[2026-06-02 18:30:23] INFO:     Waiting for application startup.
+[2026-06-02 18:30:23] INFO:     Application startup complete.
+[2026-06-02 18:30:23] INFO:     Uvicorn running on http://0.0.0.0:50003 (Press CTRL+C to quit)
+[2026-06-02 18:30:24] INFO:     192.168.123.50:60815 - "GET /api/joint_states HTTP/1.1" 200 OK

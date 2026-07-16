@@ -1,0 +1,129 @@
+[2026-06-03 10:35:14] INFO:     Started server process [3639]
+[2026-06-03 10:35:14] INFO:     Waiting for application startup.
+[2026-06-03 10:35:14] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 10:35:14] INFO:     Application startup complete.
+[2026-06-03 10:35:14] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 10:35:14] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:16] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:18] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:20] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:22] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:24] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:26] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:28] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:30] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:32] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:34] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:36] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:38] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:40] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:42] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:44] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:46] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:48] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:50] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:52] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:54] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:56] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:35:58] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:00] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:02] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:04] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:06] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:08] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:10] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:12] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:14] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:16] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:18] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:20] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:22] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:24] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:26] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:28] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:30] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:32] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 10:36:54] INFO:     Started server process [3990]
+[2026-06-03 10:36:54] INFO:     Waiting for application startup.
+[2026-06-03 10:36:54] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 10:36:54] INFO:     Application startup complete.
+[2026-06-03 10:36:54] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 10:36:54] [STREAM] 연결 성공
+[2026-06-03 12:20:20] INFO:     Started server process [3671]
+[2026-06-03 12:20:20] INFO:     Waiting for application startup.
+[2026-06-03 12:20:20] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 12:20:20] INFO:     Application startup complete.
+[2026-06-03 12:20:20] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 12:20:20] [STREAM] 연결 성공
+[2026-06-03 12:21:10] INFO:     Started server process [3966]
+[2026-06-03 12:21:10] INFO:     Waiting for application startup.
+[2026-06-03 12:21:10] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 12:21:10] INFO:     Application startup complete.
+[2026-06-03 12:21:10] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 12:21:10] [STREAM] 연결 성공
+[2026-06-03 12:33:50] INFO:     Started server process [4851]
+[2026-06-03 12:33:50] INFO:     Waiting for application startup.
+[2026-06-03 12:33:50] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 12:33:50] INFO:     Application startup complete.
+[2026-06-03 12:33:50] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 12:33:50] [STREAM] 연결 성공
+[2026-06-03 12:35:35] INFO:     Started server process [5201]
+[2026-06-03 12:35:35] INFO:     Waiting for application startup.
+[2026-06-03 12:35:35] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 12:35:35] INFO:     Application startup complete.
+[2026-06-03 12:35:35] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 12:35:35] [STREAM] 연결 성공
+[2026-06-03 13:16:37] INFO:     Started server process [7379]
+[2026-06-03 13:16:37] INFO:     Waiting for application startup.
+[2026-06-03 13:16:37] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 13:16:37] INFO:     Application startup complete.
+[2026-06-03 13:16:37] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 13:16:37] [STREAM] 연결 성공
+[2026-06-03 14:29:09] INFO:     Started server process [5375]
+[2026-06-03 14:29:09] INFO:     Waiting for application startup.
+[2026-06-03 14:29:09] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 14:29:09] INFO:     Application startup complete.
+[2026-06-03 14:29:09] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 14:29:09] [STREAM] 연결 성공
+[2026-06-03 15:58:37] INFO:     Started server process [3624]
+[2026-06-03 15:58:37] INFO:     Waiting for application startup.
+[2026-06-03 15:58:37] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 15:58:37] INFO:     Application startup complete.
+[2026-06-03 15:58:37] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 15:58:37] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:39] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:41] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:43] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:45] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:47] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:49] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:51] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:53] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:55] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:57] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:58:59] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:01] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:03] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:05] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:07] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:09] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:11] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:13] [STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[2026-06-03 15:59:31] INFO:     Started server process [3935]
+[2026-06-03 15:59:31] INFO:     Waiting for application startup.
+[2026-06-03 15:59:31] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 15:59:31] INFO:     Application startup complete.
+[2026-06-03 15:59:31] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 15:59:31] [STREAM] 연결 성공
+[2026-06-03 17:00:38] INFO:     Started server process [7187]
+[2026-06-03 17:00:38] INFO:     Waiting for application startup.
+[2026-06-03 17:00:38] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 17:00:38] INFO:     Application startup complete.
+[2026-06-03 17:00:38] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 17:00:38] [STREAM] 연결 성공
+[2026-06-03 17:33:43] INFO:     Started server process [3779]
+[2026-06-03 17:33:43] INFO:     Waiting for application startup.
+[2026-06-03 17:33:43] [detect_marker] http://0.0.0.0:50011/
+[2026-06-03 17:33:43] INFO:     Application startup complete.
+[2026-06-03 17:33:43] INFO:     Uvicorn running on http://0.0.0.0:50011 (Press CTRL+C to quit)
+[2026-06-03 17:33:43] [STREAM] 연결 성공

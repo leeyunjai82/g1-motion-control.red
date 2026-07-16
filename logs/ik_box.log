@@ -1,0 +1,79 @@
+[시스템] 로봇 라이브러리 로드 성공
+[시스템] TTS 비활성화 (USE_TTS=False)
+INFO:     Started server process [3642]
+INFO:     Waiting for application startup.
+[CALIB] 640x480, fx=606.8, fy=606.6, ppx=316.7, ppy=259.0
+[STREAM] 연결 시도: http://localhost:50001/video_feed[STREAM] 첫 프레임 대기...
+
+[STREAM] 연결 성공
+[STREAM] 프레임 수신 시작
+INFO:ctrl.robot_arm:G1_29_ArmController 초기화 중...
+WARNING:ctrl.robot_arm:DDS 데이터 수신 대기 중...
+INFO:ctrl.robot_arm:DDS 연결 성공.
+INFO:ctrl.robot_arm:모든 관절 고정 설정 중 (팔/허리 제외)...
+INFO:ctrl.robot_arm:관절 고정 완료.
+INFO:ctrl.robot_arm:G1_29_ArmController 초기화 완료!
+[로봇] 초기화 완료
+[로봇] waist 0으로 리셋
+[로봇] HOME 자세로 이동
+[DETECT] 검출 스레드 시작 (30fps)
+[AUTO] 자동 모니터 스레드 시작
+[CHATTER] 잡소리 스레드 시작
+[TTS-DUMMY] Hi, Red Hat Summit! I have gifts for you.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:50000 (Press CTRL+C to quit)
+INFO:     192.168.123.50:54873 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.123.50:54873 - "GET /video_feed HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+[TTS-DUMMY] Free Owala tumbler! Come and get one.
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     192.168.123.50:52397 - "GET /status HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+ERROR:    Cancel 1 running task(s), timeout graceful shutdown exceeded
+INFO:     Waiting for application shutdown.
+[shutdown] 종료 시퀀스 시작
+[shutdown] PARK 자세로 이동 (L:[0.2, 0.2, 0.0], R:[0.2, -0.2, 0.0])
+[STREAM] 오류: IncompleteRead(628 bytes read)
+[STREAM] 연결 시도: http://localhost:50001/video_feed
+[STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[shutdown] waist 0으로 리셋
+[STREAM] 연결 시도: http://localhost:50001/video_feed
+[STREAM] 오류: <urlopen error [Errno 111] Connection refused>
+[shutdown] 제어권 반납 (weight 1->0, 1초)
+[shutdown] 제어권 반납 완료
+[shutdown] 프로세스 종료 (총 5.57초 소요)

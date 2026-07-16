@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-# Version: 1.62
+# Version: 1.64
+# Changes from 1.63:
+#   - 박스 크기 (W/D/H) 웹에서 실시간 변경 가능
+#     · 전역 box_size dict
+#     · BOX_CORNERS_3D → get_box_corners() 동적 계산
+#     · grab_sequence가 매번 box_size 스냅샷 사용
+#     · /set_box_size?width=0.28&depth=0.09&height=0.09 엔드포인트
+#     · 웹 UI에 W/D/H 입력 카드 (cm 단위)
+# Changes from 1.62:
+#   - 건네기 방향 옵션 (center / left / right)
+#     · HANDOVER_DIRECTION, HANDOVER_YAW_DEG 상단 상수
+#     · 웹 UI에 ◀ 왼쪽 / ■ 중앙 / 오른쪽 ▶ 버튼 + yaw 각도 입력
+#     · /set_handover_direction?direction=left|center|right&yaw_deg=30 엔드포인트
+#     · 잡기 → 들기 후 waist yaw를 해당 각도로 회전한 뒤 건네기
 # Changes from 1.61:
 #   - USE_ARM_CONTROLLER / USE_TTS 상단 토글 추가
 #     · False면 해당 모듈을 import 자체를 건너뜀 (의존성 없는 환경에서 실행 가능)
@@ -47,7 +60,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # 모듈 활성화 토글 (False면 import 자체를 건너뜀)
 # ==========================================
 USE_ARM_CONTROLLER = True    # False = arm_controller import 안 함 (순수 시뮬)
-USE_TTS            = True    # False = TTS import 안 함 (조용히 더미)
+USE_TTS            = False    # False = TTS import 안 함 (조용히 더미)
 
 # ==========================================
 # 로봇 라이브러리 로드
@@ -93,41 +106,54 @@ RS_STREAM_URL = os.environ.get("RS_STREAM_URL", "http://localhost:50001/video_fe
 # 카메라 캘리브레이션 (camera_calib.py 실행해서 출력된 값을 여기에 붙여넣기)
 CAM_WIDTH  = 640
 CAM_HEIGHT = 480
-CAM_FX     = 604.802795
-CAM_FY     = 604.794739
-CAM_PPX    = 323.783539
-CAM_PPY    = 251.354050
+CAM_FX     = 606.756104
+CAM_FY     = 606.583374
+CAM_PPX    = 316.739441
+CAM_PPY    = 258.982391
 CAM_DIST   = [0.0, 0.0, 0.0, 0.0, 0.0]
 
 ARUCO_DICT_TYPE = cv2.aruco.DICT_4X4_50
 MARKER_SIZE     = 0.045
 
 CAMERA_X          = 0.0576235
-CAMERA_Y          = 0.045#0.05003 #0.01753 + 0.0175 + 0.015
+CAMERA_Y          = 0.03003#0.05003 #0.01753 + 0.0175 + 0.015
 CAMERA_Z          = 0.42987
 CAMERA_PITCH_URDF = 0.8307767239493009  # 47.6도
 
 # init / 일반 동작용 HOME (작업 대기 자세 — 살짝 앞으로 뻗음)
-HOME_LEFT  = [0.2,  0.2, 0.15]
-HOME_RIGHT = [0.2, -0.2, 0.15]
+HOME_LEFT  = [0.15,  0.25, 0.20]
+HOME_RIGHT = [0.15, -0.25, 0.20]
 
 # 종료용 PARK 자세 (차렷에 가까운 자연스러운 park 자세)
 SHUTDOWN_HOME_LEFT  = [0.2,  0.2, 0.0]
 SHUTDOWN_HOME_RIGHT = [0.2, -0.2, 0.0]
 
-HALF_W     = 0.28 / 2
-HALF_D     = 0.09 / 2
-HEIGHT_BOX = 0.09
-GRIP_EXTRA = -0.040
+GRIP_EXTRA = -0.050
 APPROACH_EXTRA = 0.10
-GRAB_Z_OFFSET = 0.10
+GRAB_Z_OFFSET = 0.08
 GRAB_X_OFFSET = -0.15
+
+# 박스 크기 (런타임 변경 가능 — 웹 UI에서 조정)
+box_size = {
+    "width":  0.28,   # 양손이 잡는 면 사이 폭 (m)
+    "depth":  0.09,
+    "height": 0.09,
+}
 
 # 왼손 Y 추가 오프셋 (양수 = 왼손이 박스에서 더 멀리 = 박스가 좌측으로 치우치는 거 보정)
 # 0.0이면 비활성. 카메라 좌표 보정 우선 시도 중이라 일단 0.
 LEFT_HAND_Y_OFFSET = 0.0
 
 HANDOVER_X = 0.30   # 건네기 X 거리 (작을수록 가까이, 이전 0.40)
+
+# ==========================================
+# Handover 방향 (center / left / right)
+# ==========================================
+# "center" = 정면 (waist 0)
+# "left"   = 받는 사람이 로봇의 왼쪽 → waist yaw 양수
+# "right"  = 받는 사람이 로봇의 오른쪽 → waist yaw 음수
+HANDOVER_DIRECTION = "center"   # "center" | "left" | "right"
+HANDOVER_YAW_DEG   = 30.0       # left/right일 때 회전 각도
 
 # ==========================================
 # 마커 pose 안정화 (튀는 값 outlier 제거)
@@ -141,7 +167,7 @@ AVERAGING_MIN_SAMPLES = 3     # 최소 N개 모이면 평균 적용 (미달 시 
 WEB_STREAM_WIDTH   = 320   # 출력 너비 (브라우저에서 2배 확대해서 표시)
 WEB_STREAM_HEIGHT  = 240
 WEB_STREAM_FPS_MAX = 5     # 출력 프레임율 상한 (시연용 — 검출에도 충분)
-WEB_STREAM_QUALITY = 50    # JPEG 품질 (기존 80 → 70)
+WEB_STREAM_QUALITY = 70    # JPEG 품질 (기존 80 → 70)
 
 # ==========================================
 # TTS 멘트 (영어 - 쉬운 단어)
@@ -177,16 +203,21 @@ MARKER_OBJ_PTS = np.array([
     [-MARKER_SIZE/2, -MARKER_SIZE/2, 0],
 ], dtype=np.float32)
 
-BOX_CORNERS_3D = np.array([
-    [-HALF_W, -HALF_D,       0],
-    [ HALF_W, -HALF_D,       0],
-    [ HALF_W,  HALF_D,       0],
-    [-HALF_W,  HALF_D,       0],
-    [-HALF_W, -HALF_D, -HEIGHT_BOX],
-    [ HALF_W, -HALF_D, -HEIGHT_BOX],
-    [ HALF_W,  HALF_D, -HEIGHT_BOX],
-    [-HALF_W,  HALF_D, -HEIGHT_BOX],
-], dtype=np.float32)
+def get_box_corners():
+    """현재 box_size 기준 8개 꼭짓점 (마커가 윗면 중심)"""
+    hw = box_size["width"]  / 2
+    hd = box_size["depth"]  / 2
+    h  = box_size["height"]
+    return np.array([
+        [-hw, -hd,  0],
+        [ hw, -hd,  0],
+        [ hw,  hd,  0],
+        [-hw,  hd,  0],
+        [-hw, -hd, -h],
+        [ hw, -hd, -h],
+        [ hw,  hd, -h],
+        [-hw,  hd, -h],
+    ], dtype=np.float32)
 
 BOX_EDGES = [
     (0,1),(1,2),(2,3),(3,0),
@@ -551,7 +582,8 @@ def rpy_to_quat(roll_deg, pitch_deg, yaw_deg):
 # 3D 박스 그리기
 # ==========================================
 def draw_box_3d(frame, rvec, tvec):
-    pts, _ = cv2.projectPoints(BOX_CORNERS_3D, rvec, tvec, camera_matrix, dist_coeffs)
+    box_corners = get_box_corners()
+    pts, _ = cv2.projectPoints(box_corners, rvec, tvec, camera_matrix, dist_coeffs)
     pts = pts.reshape(-1, 2).astype(int)
 
     overlay = frame.copy()
@@ -769,12 +801,16 @@ def grab_sequence(tvec_orig):
     print(f"[GRAB] torso: [{mx:.3f}, {my:.3f}, {mz:.3f}], box_x_axis (torso XY): "
           f"[{box_x_axis[0]:+.3f}, {box_x_axis[1]:+.3f}]")
 
+    # 현재 박스 크기 스냅샷
+    half_w   = box_size["width"]  / 2
+    height_b = box_size["height"]
+
     grab_x_base = mx + GRAB_X_OFFSET
-    grab_z = mz - HEIGHT_BOX / 2 + GRAB_Z_OFFSET
+    grab_z = mz - height_b / 2 + GRAB_Z_OFFSET
     above_z = mz + 0.10
     lift_z = mz + 0.15
-    app_off = HALF_W + GRIP_EXTRA + APPROACH_EXTRA
-    grp_off = HALF_W + GRIP_EXTRA
+    app_off = half_w + GRIP_EXTRA + APPROACH_EXTRA
+    grp_off = half_w + GRIP_EXTRA
 
     grip_dir = box_x_axis
 
@@ -815,9 +851,16 @@ def grab_sequence(tvec_orig):
     if not robot_move(ll, rl, 1.5, "⑦ 들기", l_rot, r_rot): return False, None, None
     time.sleep(0.2)
 
-    print("[GRAB] ⑦' 허리 0 복귀")
+    # ⑦' 허리 회전 — handover 방향에 따라
+    if HANDOVER_DIRECTION == "left":
+        handover_yaw = +HANDOVER_YAW_DEG
+    elif HANDOVER_DIRECTION == "right":
+        handover_yaw = -HANDOVER_YAW_DEG
+    else:
+        handover_yaw = 0.0
+    print(f"[GRAB] ⑦' 허리 yaw → {handover_yaw:.1f}도 (handover: {HANDOVER_DIRECTION})")
     if ROBOT_AVAILABLE and arm is not None:
-        arm.move_waist_smooth(yaw=0.0, roll=0.0, pitch=0.0, duration=1.5)
+        arm.move_waist_smooth(yaw=handover_yaw, roll=0.0, pitch=0.0, duration=1.5)
         time.sleep(0.5)
 
     hl = [HANDOVER_X, +grp_off + LEFT_HAND_Y_OFFSET, lift_z]
@@ -856,8 +899,12 @@ def grab_sequence(tvec_orig):
                    [HANDOVER_X, -grp_off-0.10, lift_z],
                    1.0, "⑩c 위로 후퇴", l_rot, r_rot)
 
-    print("[HANDOVER] 홈 복귀")
+    # ==========================================
+    # 마무리: 중앙 복귀 → 홈
+    # ==========================================
+    print("[HANDOVER] ⑪ 허리 중앙 복귀")
     reset_waist()
+    print("[HANDOVER] ⑪ 홈 자세 복귀")
     robot_move(HOME_LEFT, HOME_RIGHT, 2.0, "⑪ Home")
 
     # ⑪ 홈 복귀 완료 멘트
@@ -986,6 +1033,32 @@ HTML_PAGE = """<!DOCTYPE html>
                 <div id="auto-msg" style="font-size:11px; color:#666; margin-top:6px;">대기</div>
             </div>
 
+            <div class="card">
+                <div class="card-title">박스 크기 (cm)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; font-size:11px; color:#666;">
+                    <div>W<input class="rpy-input" id="bx-w" type="number" value="28" step="1" style="width:100%"></div>
+                    <div>D<input class="rpy-input" id="bx-d" type="number" value="9"  step="1" style="width:100%"></div>
+                    <div>H<input class="rpy-input" id="bx-h" type="number" value="9"  step="1" style="width:100%"></div>
+                </div>
+                <button class="btn btn-apply" onclick="applyBoxSize()" style="margin-top:8px; width:100%; padding:6px; font-size:11px;">크기 적용</button>
+                <div id="bx-msg" style="font-size:11px; color:#666; margin-top:6px;">현재: 28 × 9 × 9</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">건네기 방향</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                    <button class="btn btn-apply" id="ho-left"   onclick="setHandover('left')"   style="padding:8px; font-size:12px;">◀ 왼쪽</button>
+                    <button class="btn btn-apply" id="ho-center" onclick="setHandover('center')" style="padding:8px; font-size:12px;">■ 중앙</button>
+                    <button class="btn btn-apply" id="ho-right"  onclick="setHandover('right')"  style="padding:8px; font-size:12px;">오른쪽 ▶</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin-top:8px; font-size:11px; color:#666;">
+                    <span>Yaw</span>
+                    <input class="rpy-input" id="ho-yaw" type="number" value="30" step="5" style="width:60px;">
+                    <span>도</span>
+                </div>
+                <div id="ho-msg" style="font-size:11px; color:#666; margin-top:6px;">현재: 중앙</div>
+            </div>
+
             <div id="status-bar">대기 중</div>
 
             <div class="btn-group">
@@ -1094,6 +1167,40 @@ HTML_PAGE = """<!DOCTYPE html>
                 document.getElementById('wrist-msg').textContent = d.success ? '적용됨 ✓' : '실패';
                 document.getElementById('wrist-msg').style.color = d.success ? '#4CAF50' : '#ef5350';
             });
+        }
+        function applyBoxSize() {
+            const w = parseFloat(document.getElementById('bx-w').value) / 100;
+            const d = parseFloat(document.getElementById('bx-d').value) / 100;
+            const h = parseFloat(document.getElementById('bx-h').value) / 100;
+            fetch(`/set_box_size?width=${w}&depth=${d}&height=${h}`)
+                .then(r => r.json()).then(res => {
+                    if (res.success) {
+                        const s = res.box_size;
+                        const wcm = Math.round(s.width  * 100);
+                        const dcm = Math.round(s.depth  * 100);
+                        const hcm = Math.round(s.height * 100);
+                        const msg = document.getElementById('bx-msg');
+                        msg.textContent = `현재: ${wcm} × ${dcm} × ${hcm}`;
+                        msg.style.color = '#4CAF50';
+                    }
+                });
+        }
+        function setHandover(direction) {
+            const yaw = parseFloat(document.getElementById('ho-yaw').value) || 30;
+            fetch(`/set_handover_direction?direction=${direction}&yaw_deg=${yaw}`)
+                .then(r => r.json()).then(d => {
+                    if (d.success) {
+                        const label = {left: '왼쪽', center: '중앙', right: '오른쪽'}[d.direction];
+                        document.getElementById('ho-msg').textContent =
+                            `현재: ${label}` + (d.direction !== 'center' ? ` (${d.yaw_deg}도)` : '');
+                        document.getElementById('ho-msg').style.color = '#4CAF50';
+                        ['left','center','right'].forEach(k => {
+                            const b = document.getElementById('ho-' + k);
+                            b.style.background = (k === d.direction) ? '#4CAF50' : '';
+                            b.style.color      = (k === d.direction) ? '#000' : '';
+                        });
+                    }
+                });
         }
         function setSt(msg, cls) {
             const el = document.getElementById('status-bar');
@@ -1263,6 +1370,35 @@ async def set_wrist(
     }
     print(f"[WRIST] L: R={l_roll} P={l_pitch} Y={l_yaw}  R: R={r_roll} P={r_pitch} Y={r_yaw}")
     return {"success": True, "wrist_params": wrist_params}
+
+
+@app.get("/set_handover_direction")
+async def set_handover_direction(direction: str = "center", yaw_deg: float = None):
+    """건네기 방향 변경: center / left / right"""
+    global HANDOVER_DIRECTION, HANDOVER_YAW_DEG
+    if direction not in ("center", "left", "right"):
+        return {"success": False, "error": f"invalid direction: {direction}"}
+    HANDOVER_DIRECTION = direction
+    if yaw_deg is not None:
+        HANDOVER_YAW_DEG = float(yaw_deg)
+    print(f"[HANDOVER] 방향={HANDOVER_DIRECTION}, yaw={HANDOVER_YAW_DEG}도")
+    return {"success": True, "direction": HANDOVER_DIRECTION, "yaw_deg": HANDOVER_YAW_DEG}
+
+
+@app.get("/set_box_size")
+async def set_box_size(width: float = None, depth: float = None, height: float = None):
+    """박스 크기 변경 (단위: m). None이면 해당 항목 유지."""
+    global box_size
+    if width  is not None: box_size["width"]  = float(width)
+    if depth  is not None: box_size["depth"]  = float(depth)
+    if height is not None: box_size["height"] = float(height)
+    print(f"[BOX] 크기 변경: W={box_size['width']:.3f}, D={box_size['depth']:.3f}, H={box_size['height']:.3f}")
+    return {"success": True, "box_size": box_size}
+
+
+@app.get("/box_size")
+async def get_box_size():
+    return {"box_size": box_size}
 
 
 @app.get("/auto_mode")
