@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitree G1 | Advanced Motion Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #21262D;
+            --border-primary: #30363D;
+            --text-primary: #C9D1D9;
+            --text-secondary: #8B949E;
+            --accent-primary: #58A6FF;
+            --accent-primary-hover: #79C0FF;
+            --accent-secondary: #3FB950;
+            --accent-danger: #F85149;
+            --font-sans: 'Noto Sans KR', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        .app-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas: "header header" "simulator editor";
+            height: 100vh;
+            width: 100%;
+            padding: 1.5rem;
+            gap: 1.5rem;
+        }
+        .app-header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .app-title { font-size: 1.5rem; font-weight: 500; margin: 0; }
+        .app-title span { font-weight: 300; color: var(--text-secondary); }
+        #reset-all-button {
+            background-color: var(--bg-secondary);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        #reset-all-button:hover { background-color: var(--accent-danger); color: var(--bg-primary); }
+        #reset-all-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 1.5rem;
+        }
+        #simulator-panel { grid-area: simulator; }
+        #motion-editor-panel { grid-area: editor; }
+        .controls-container { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
+        .joint-controls-wrapper {
+            overflow-y: auto;
+            flex-grow: 1;
+            min-height: 0;
+            padding-right: 0.5rem;
+        }
+        .joint-controls-wrapper::-webkit-scrollbar { width: 8px; }
+        .joint-controls-wrapper::-webkit-scrollbar-track { background: transparent; }
+        .joint-controls-wrapper::-webkit-scrollbar-thumb { background-color: var(--border-primary); border-radius: 4px; }
+        .joint-controls-wrapper::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+        .joint-controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2.5rem; }
+        .joint-control-group.full-width { grid-column: 1 / -1; }
+        .joint-group-title {
+            font-size: 1rem; font-weight: 700;
+            margin: 0 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .control-item { margin-bottom: 0.75rem; }
+        .control-item .label-wrapper {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9rem; margin-bottom: 0.4rem;
+        }
+        .control-item .label-wrapper .label-name { font-weight: 500; }
+        .control-item .label-wrapper .motor-id { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); }
+        .input-wrapper { display: grid; grid-template-columns: 1fr 80px; align-items: center; gap: 1rem; }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 4px;
+            background: var(--bg-tertiary); border-radius: 2px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px;
+            background: var(--accent-primary); border-radius: 50%;
+            box-shadow: 0 0 5px rgba(88,166,255,0.5);
+        }
+        input[type="number"] {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            -moz-appearance: textfield;
+        }
+        .locomotion-container { flex-shrink: 0; padding-top: 0.5rem; }
+
+        /* Speed sliders */
+        .speed-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .speed-item label {
+            display: flex; justify-content: space-between;
+            font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.3rem;
+        }
+        .speed-item label span { font-family: var(--font-mono); color: var(--accent-primary); }
+
+        #locomotion-controls {
+            width: 400px; height: 200px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        .loco-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.5rem; cursor: pointer;
+            transition: all 0.2s; font-size: 1.5rem;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .loco-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .loco-btn:active { background-color: var(--accent-primary); transform: scale(0.95); }
+        #loco-forward    { grid-area: 1 / 3 / 2 / 4; }
+        #loco-backward   { grid-area: 3 / 3 / 4 / 4; }
+        #loco-left       { grid-area: 2 / 2 / 3 / 3; }
+        #loco-right      { grid-area: 2 / 4 / 3 / 5; }
+        #loco-stop       { grid-area: 2 / 3 / 3 / 4; }
+        #loco-turn_left  { grid-area: 2 / 1 / 3 / 2; }
+        #loco-turn_right { grid-area: 2 / 5 / 3 / 6; }
+
+        .panel-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 1.5rem 0; }
+        #motion-editor-panel .settings-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 1.5rem 1rem; margin-bottom: 1.5rem;
+        }
+        #motion-editor-panel .settings-grid .control-item { margin-bottom: 0; }
+        #motion-editor-panel label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary); }
+        #motion-editor-panel input, #motion-editor-panel select {
+            width: 100%; background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary); color: var(--text-primary);
+            border-radius: 0.375rem; padding: 0.6rem; font-size: 0.9rem;
+        }
+        .checkbox-item {
+            display: flex; align-items: center;
+            background-color: var(--bg-tertiary); border: 1px solid var(--border-primary);
+            padding: 0.6rem; border-radius: 0.375rem; cursor: pointer;
+        }
+        .checkbox-item input { width: auto; margin-right: 0.75rem; }
+        .checkbox-item label { margin: 0; color: var(--text-primary); white-space: nowrap; }
+        #timeline-container {
+            flex-grow: 1; overflow-y: auto;
+            border: 1px solid var(--border-primary); border-radius: 0.5rem;
+            min-height: 0; margin: 1.5rem 0;
+        }
+        #timeline-table { width: 100%; border-collapse: collapse; }
+        #timeline-table th, #timeline-table td {
+            border-bottom: 1px solid var(--border-primary);
+            padding: 0.75rem 1rem; text-align: left; vertical-align: middle;
+        }
+        #timeline-table th {
+            background-color: var(--bg-tertiary); color: var(--text-secondary);
+            font-weight: 500; position: sticky; top: 0; z-index: 1;
+        }
+        #timeline-table tbody tr { cursor: grab; transition: background-color 0.2s; }
+        #timeline-table tbody tr:hover { background-color: var(--bg-tertiary); }
+        .delete-frame-btn {
+            background: transparent; border: none; color: var(--text-secondary);
+            cursor: pointer; font-size: 1.25rem; transition: color 0.2s;
+        }
+        .delete-frame-btn:hover { color: var(--accent-danger); }
+        .btn {
+            background-color: var(--bg-tertiary); border: 1px solid var(--border-primary);
+            color: var(--text-primary); border-radius: 0.5rem;
+            padding: 0.75rem; font-size: 0.9rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn:hover { border-color: var(--text-primary); }
+        .btn-primary { background-color: var(--accent-primary); border-color: var(--accent-primary); color: var(--bg-primary); }
+        .btn-primary:hover { background-color: var(--accent-primary-hover); border-color: var(--accent-primary-hover); }
+        .btn-group { display: flex; gap: 1rem; }
+        .btn-group .btn { flex-grow: 1; }
+        @media (max-width: 1400px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                grid-template-areas: "header" "simulator" "editor";
+                overflow-y: auto; height: auto;
+            }
+            body { overflow: auto; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <header class="app-header">
+        <h1 class="app-title">G1 Motion Editor <span>v2.3</span></h1>
+        <button id="reset-all-button">EMERGENCY STOP</button>
+    </header>
+
+    <div id="simulator-panel" class="panel">
+        <div class="controls-container">
+            <div class="joint-controls-wrapper">
+                <div class="joint-controls-grid">
+                    <div class="joint-control-group">
+                        <h4 class="joint-group-title">오른쪽 팔</h4>
+                        <div id="R_ARM_CONTROLS"></div>
+                    </div>
+                    <div class="joint-control-group">
+                        <h4 class="joint-group-title">왼쪽 팔</h4>
+                        <div id="L_ARM_CONTROLS"></div>
+                    </div>
+                    <div class="joint-control-group full-width">
+                        <h4 class="joint-group-title">허리</h4>
+                        <div id="WAIST_CONTROLS"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="locomotion-container">
+                <h4 class="joint-group-title" style="text-align:center; border:none; margin-bottom:0.75rem;">이동</h4>
+                <div class="speed-controls">
+                    <div class="speed-item">
+                        <label>직선 속도 (m/s) <span id="linear-speed-value">0.30</span></label>
+                        <input type="range" id="linear-speed" min="0.05" max="1.0" step="0.05" value="0.30">
+                    </div>
+                    <div class="speed-item">
+                        <label>회전 속도 (rad/s) <span id="angular-speed-value">0.40</span></label>
+                        <input type="range" id="angular-speed" min="0.05" max="1.5" step="0.05" value="0.40">
+                    </div>
+                </div>
+                <div id="locomotion-controls">
+                    <button id="loco-forward"    class="loco-btn">↑</button>
+                    <button id="loco-turn_left"  class="loco-btn">↶</button>
+                    <button id="loco-left"       class="loco-btn">←</button>
+                    <button id="loco-stop"       class="loco-btn">■</button>
+                    <button id="loco-right"      class="loco-btn">→</button>
+                    <button id="loco-turn_right" class="loco-btn">↷</button>
+                    <button id="loco-backward"   class="loco-btn">↓</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="motion-editor-panel" class="panel">
+        <h3 class="panel-title">타임라인 에디터</h3>
+        <div class="settings-grid">
+            <div class="control-item">
+                <label for="travel-time-input">프레임 시간 (초)</label>
+                <input type="number" id="travel-time-input" value="1.0" min="0.1" step="0.1">
+            </div>
+            <div class="control-item">
+                <label for="locomotion-command-select">이동 명령</label>
+                <select id="locomotion-command-select">
+                    <option value="none">없음</option>
+                    <option value="forward">전진</option>
+                    <option value="backward">후진</option>
+                    <option value="left">좌측</option>
+                    <option value="right">우측</option>
+                    <option value="turn_left">좌회전</option>
+                    <option value="turn_right">우회전</option>
+                    <option value="stop">정지</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label>현재 자세 저장</label>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="save-pose-checkbox" checked>
+                    <label for="save-pose-checkbox"></label>
+                </div>
+            </div>
+            <div class="control-item">
+                <label>안전 모드 (x0.5)</label>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="safe-mode-checkbox">
+                    <label for="safe-mode-checkbox"></label>
+                </div>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button id="add-frame-btn" class="btn">타임라인에 프레임 추가</button>
+        </div>
+        <div id="timeline-container">
+            <table id="timeline-table">
+                <thead>
+                    <tr><th>#</th><th>동작</th><th>시간(초)</th><th>관리</th></tr>
+                </thead>
+                <tbody id="timeline-table-body"></tbody>
+            </table>
+        </div>
+        <div class="btn-group">
+            <button id="play-motion-btn" class="btn btn-primary">재생</button>
+            <button id="stop-motion-btn" class="btn" style="display:none; background-color:var(--accent-danger);">정지</button>
+            <button id="save-motion-btn" class="btn">모션 저장</button>
+            <button id="load-motion-btn" class="btn">불러오기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE_URL   = `http://${location.hostname}:8000`;
+    const MOTOR_API_URL  = `${API_BASE_URL}/set_motor`;
+    const LOCO_API_URL   = `${API_BASE_URL}/set_loco_motion`;
+    const MOTION_API_URL = `${API_BASE_URL}/set_motion`;
+    const STOP_API_URL   = `${API_BASE_URL}/stop_motion`;
+
+    const G1JointIndex = {
+        WaistYaw: 12, WaistRoll: 13, WaistPitch: 14,
+        LeftShoulderPitch: 15, LeftShoulderRoll: 16, LeftShoulderYaw: 17, LeftElbow: 18,
+        LeftWristRoll: 19, LeftWristPitch: 20, LeftWristYaw: 21,
+        RightShoulderPitch: 22, RightShoulderRoll: 23, RightShoulderYaw: 24, RightElbow: 25,
+        RightWristRoll: 26, RightWristPitch: 27, RightWristYaw: 28,
+    };
+
+    let JOINT_LIMITS = {
+        12: { min: -150, max: 150 }, 13: { min: -30,  max: 30  }, 14: { min: -30,  max: 30  },
+        15: { min: -177, max: 153 }, 16: { min: -91,  max: 129 }, 17: { min: -150, max: 150 }, 18: { min: -60, max: 120 },
+        19: { min: -113, max: 113 }, 20: { min: -92.5, max: 92.5 }, 21: { min: -92.5, max: 92.5 },
+        22: { min: -177, max: 153 }, 23: { min: -129, max: 91  }, 24: { min: -150, max: 150 }, 25: { min: -60, max: 120 },
+        26: { min: -113, max: 113 }, 27: { min: -92.5, max: 92.5 }, 28: { min: -92.5, max: 92.5 },
+    };
+    const originalLimits = JSON.parse(JSON.stringify(JOINT_LIMITS));
+
+    const controlGroups = {
+        'R_ARM_CONTROLS': [
+            { label: 'Shoulder Pitch', index: G1JointIndex.RightShoulderPitch },
+            { label: 'Shoulder Roll',  index: G1JointIndex.RightShoulderRoll  },
+            { label: 'Shoulder Yaw',   index: G1JointIndex.RightShoulderYaw   },
+            { label: 'Elbow',          index: G1JointIndex.RightElbow         },
+            { label: 'Wrist Roll',     index: G1JointIndex.RightWristRoll     },
+            { label: 'Wrist Pitch',    index: G1JointIndex.RightWristPitch    },
+            { label: 'Wrist Yaw',      index: G1JointIndex.RightWristYaw      },
+        ],
+        'L_ARM_CONTROLS': [
+            { label: 'Shoulder Pitch', index: G1JointIndex.LeftShoulderPitch },
+            { label: 'Shoulder Roll',  index: G1JointIndex.LeftShoulderRoll  },
+            { label: 'Shoulder Yaw',   index: G1JointIndex.LeftShoulderYaw   },
+            { label: 'Elbow',          index: G1JointIndex.LeftElbow         },
+            { label: 'Wrist Roll',     index: G1JointIndex.LeftWristRoll     },
+            { label: 'Wrist Pitch',    index: G1JointIndex.LeftWristPitch    },
+            { label: 'Wrist Yaw',      index: G1JointIndex.LeftWristYaw      },
+        ],
+        'WAIST_CONTROLS': [
+            { label: 'Waist Yaw',   index: G1JointIndex.WaistYaw   },
+            { label: 'Waist Roll',  index: G1JointIndex.WaistRoll  },
+            { label: 'Waist Pitch', index: G1JointIndex.WaistPitch },
+        ],
+    };
+
+    let motionFrames = [];
+    let isPlaying = false;
+
+    // --- 요청 중복 방지: 모터별 AbortController + debounce 타이머 ---
+    const motorAbortControllers = {};
+    const motorDebounceTimers = {};
+    let locoAbortController = null;
+    const DEBOUNCE_MS = 80;
+
+    function debounceMotor(motor_index, fn) {
+        clearTimeout(motorDebounceTimers[motor_index]);
+        motorDebounceTimers[motor_index] = setTimeout(fn, DEBOUNCE_MS);
+    }
+
+    // --- Speed helpers ---
+    function getLinearSpeed()  { return parseFloat(document.getElementById('linear-speed').value); }
+    function getAngularSpeed() { return parseFloat(document.getElementById('angular-speed').value); }
+
+    document.getElementById('linear-speed').addEventListener('input', e => {
+        document.getElementById('linear-speed-value').textContent = parseFloat(e.target.value).toFixed(2);
+    });
+    document.getElementById('angular-speed').addEventListener('input', e => {
+        document.getElementById('angular-speed-value').textContent = parseFloat(e.target.value).toFixed(2);
+    });
+
+    // --- Joint controls ---
+    function initializeControls() {
+        for (const [panelId, joints] of Object.entries(controlGroups)) {
+            const parent = document.getElementById(panelId);
+            if (!parent) continue;
+            parent.innerHTML = '';
+            joints.forEach(({ label, index }) => {
+                const limits = JOINT_LIMITS[index] || { min: -180, max: 180 };
+                parent.innerHTML += `
+                  <div class="control-item">
+                    <div class="label-wrapper">
+                      <span class="label-name">${label}</span>
+                      <span class="motor-id">ID: ${index}</span>
+                    </div>
+                    <div class="input-wrapper">
+                      <input type="range"  id="slider-${index}" min="${limits.min}" max="${limits.max}" value="0" step="0.1">
+                      <input type="number" id="number-${index}" min="${limits.min}" max="${limits.max}" value="0" step="0.1" aria-label="${label} angle">
+                    </div>
+                  </div>`;
+            });
+        }
+        document.querySelectorAll('input[type="range"], input[type="number"]').forEach(el => {
+            el.addEventListener('input', handleInputChange);
+        });
+    }
+
+    function updateMotorLimits() {
+        const safe = document.getElementById('safe-mode-checkbox').checked;
+        for (const index in originalLimits) {
+            const o = originalLimits[index];
+            JOINT_LIMITS[index] = safe ? { min: o.min / 2, max: o.max / 2 } : { ...o };
+        }
+        initializeControls();
+        handleResetAll();
+    }
+
+    function handleInputChange(e) {
+        const index = parseInt(e.target.id.split('-')[1]);
+        let value = parseFloat(e.target.value) || 0;
+        const slider = document.getElementById(`slider-${index}`);
+        const number = document.getElementById(`number-${index}`);
+        if (!slider || !number) return;  // detached 엘리먼트 guard
+        const clamped = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), value));
+        if (e.target.type === 'range') number.value = clamped.toFixed(1);
+        else slider.value = clamped;
+        debounceMotor(index, () => setMotorAngle(index, clamped, 1.0));
+    }
+
+    function updateSimulatorControls(index, value) {
+        const slider = document.getElementById(`slider-${index}`);
+        const number = document.getElementById(`number-${index}`);
+        if (slider) slider.value = value;
+        if (number) number.value = value.toFixed(1);
+    }
+
+    // --- API calls ---
+    async function setMotorAngle(motor_index, target_degree, duration) {
+        if (motorAbortControllers[motor_index]) {
+            motorAbortControllers[motor_index].abort();
+        }
+        const controller = new AbortController();
+        motorAbortControllers[motor_index] = controller;
+        try {
+            await fetch(MOTOR_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motor_index, target_degree: +target_degree.toFixed(2), duration: +duration.toFixed(2) }),
+                signal: controller.signal,
+            });
+        } catch (e) {
+            if (e.name !== 'AbortError') console.error(e);
+        } finally {
+            delete motorAbortControllers[motor_index];
+        }
+    }
+
+    async function sendLocoCommand(direction) {
+        if (locoAbortController) locoAbortController.abort();
+        locoAbortController = new AbortController();
+        try {
+            await fetch(LOCO_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    direction,
+                    linear_speed: getLinearSpeed(),
+                    angular_speed: getAngularSpeed(),
+                }),
+                signal: locoAbortController.signal,
+            });
+        } catch (e) {
+            if (e.name !== 'AbortError') console.error(e);
+        } finally {
+            locoAbortController = null;
+        }
+    }
+
+    async function handleResetAll() {
+        const targets = Object.values(G1JointIndex).map(index => ({
+            motor_index: index,
+            target_degree: (index === 18 || index === 25) ? Math.min(50, JOINT_LIMITS[index].max) : 0,
+        }));
+        await playMotionSequence([{ duration: 1.0, pose: { targets }, locomotion: { direction: 'stop', linear_speed: 0, angular_speed: 0 } }]);
+        targets.forEach(t => updateSimulatorControls(t.motor_index, t.target_degree));
+    }
+
+    // --- Timeline ---
+    function addFrame() {
+        const savePose  = document.getElementById('save-pose-checkbox').checked;
+        const locoCmd   = document.getElementById('locomotion-command-select').value;
+        if (!savePose && locoCmd === 'none') return;
+        const duration  = parseFloat(document.getElementById('travel-time-input').value);
+        if (isNaN(duration) || duration <= 0) return;
+
+        const frame = { duration };
+        if (savePose) {
+            frame.pose = { targets: Object.values(G1JointIndex).map(index => ({
+                motor_index: index,
+                target_degree: parseFloat(document.getElementById(`slider-${index}`).value),
+            }))};
+        }
+        if (locoCmd !== 'none') {
+            frame.locomotion = {
+                direction: locoCmd,
+                linear_speed: getLinearSpeed(),
+                angular_speed: getAngularSpeed(),
+            };
+        }
+        motionFrames.push(frame);
+        renderMotionTable();
+    }
+
+    function renderMotionTable() {
+        const tbody = document.getElementById('timeline-table-body');
+        tbody.innerHTML = '';
+        motionFrames.forEach((frame, i) => {
+            const row = tbody.insertRow();
+            row.draggable = true;
+            row.dataset.frameIndex = i;
+            const actions = [];
+            if (frame.pose) actions.push('자세');
+            if (frame.locomotion) actions.push(`이동: ${frame.locomotion.direction}`);
+            row.insertCell(0).textContent = i + 1;
+            row.insertCell(1).textContent = actions.join(' + ');
+            row.insertCell(2).textContent = frame.duration.toFixed(1);
+            const btn = document.createElement('button');
+            btn.innerHTML = '&times;';
+            btn.className = 'delete-frame-btn';
+            btn.onclick = e => { e.stopPropagation(); motionFrames.splice(i, 1); renderMotionTable(); };
+            row.insertCell(3).appendChild(btn);
+            row.addEventListener('click', () => loadFrameToSimulator(i));
+        });
+    }
+
+    function loadFrameToSimulator(index) {
+        const frame = motionFrames[index];
+        if (!frame?.pose) return;
+        playMotionSequence([{ duration: 1.0, pose: frame.pose }]);
+        frame.pose.targets.forEach(t => updateSimulatorControls(t.motor_index, t.target_degree));
+    }
+
+    function optimizeMotionSequence(sequence) {
+        if (!sequence?.length) return [];
+        const lastPose = {};
+        Object.values(G1JointIndex).forEach(i => {
+            lastPose[i] = parseFloat(document.getElementById(`slider-${i}`)?.value || 0);
+        });
+        const result = [];
+        for (const frame of sequence) {
+            const newFrame = { duration: frame.duration };
+            if (frame.locomotion) newFrame.locomotion = frame.locomotion;
+            if (frame.pose) {
+                const changed = frame.pose.targets.filter(t => {
+                    const prev = lastPose[t.motor_index];
+                    return prev === undefined || Math.round(prev * 10) !== Math.round(t.target_degree * 10);
+                }).map(t => ({ motor_index: t.motor_index, target_degree: +t.target_degree.toFixed(1) }));
+                if (changed.length) newFrame.pose = { targets: changed };
+                frame.pose.targets.forEach(t => lastPose[t.motor_index] = t.target_degree);
+            }
+            if (newFrame.pose || newFrame.locomotion) result.push(newFrame);
+        }
+        return result;
+    }
+
+    function saveMotionToFile() {
+        const fileName = prompt('파일 이름을 입력하세요:', 'motion_01');
+        if (!fileName) return;
+        const blob = new Blob([JSON.stringify(optimizeMotionSequence(motionFrames), null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${fileName}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function loadMotionFromFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    const loaded = JSON.parse(ev.target.result);
+                    if (!Array.isArray(loaded)) throw new Error('JSON이 배열이 아닙니다.');
+                    const lastPose = {};
+                    Object.values(G1JointIndex).forEach(i => {
+                        lastPose[i] = parseFloat(document.getElementById(`slider-${i}`)?.value || 0);
+                    });
+                    motionFrames = loaded.map(frame => {
+                        const full = { ...lastPose };
+                        if (frame.pose) frame.pose.targets.forEach(t => full[t.motor_index] = t.target_degree);
+                        Object.assign(lastPose, full);
+                        return {
+                            ...frame,
+                            pose: { targets: Object.entries(full).map(([i, d]) => ({ motor_index: +i, target_degree: d })) },
+                        };
+                    });
+                    renderMotionTable();
+                } catch (err) { alert('파일 로딩 오류: ' + err.message); }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    async function playMotionSequence(sequence) {
+        if (isPlaying || !sequence.length) return;
+        isPlaying = true;
+        toggleControls(false);
+        try {
+            const res = await fetch(MOTION_API_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(optimizeMotionSequence(sequence)),
+            });
+            if (!res.ok) throw new Error(res.statusText);
+        } catch (err) { console.error('Motion API Error:', err); }
+        finally { isPlaying = false; toggleControls(true); }
+    }
+
+    async function stopMotion() {
+        await fetch(STOP_API_URL, { method: 'POST' }).catch(console.error);
+        isPlaying = false;
+        toggleControls(true);
+    }
+
+    function toggleControls(enable) {
+        document.getElementById('play-motion-btn').style.display = enable ? 'block' : 'none';
+        document.getElementById('stop-motion-btn').style.display = enable ? 'none' : 'block';
+        ['add-frame-btn', 'reset-all-button', 'save-motion-btn', 'load-motion-btn'].forEach(id => {
+            document.getElementById(id).disabled = !enable;
+        });
+        document.querySelectorAll('.delete-frame-btn').forEach(btn => btn.disabled = !enable);
+    }
+
+    // --- Drag & Drop ---
+    let draggedIndex = null;
+    const tbody = document.getElementById('timeline-table-body');
+    tbody.addEventListener('dragstart', e => { if (e.target.tagName === 'TR') { draggedIndex = +e.target.dataset.frameIndex; e.target.style.opacity = '0.5'; } });
+    tbody.addEventListener('dragend',   e => { if (e.target.tagName === 'TR') e.target.style.opacity = '1'; draggedIndex = null; });
+    tbody.addEventListener('dragover',  e => e.preventDefault());
+    tbody.addEventListener('drop', e => {
+        e.preventDefault();
+        const target = e.target.closest('tr');
+        if (!target || draggedIndex === null) return;
+        const dropIdx = +target.dataset.frameIndex;
+        if (draggedIndex !== dropIdx) {
+            motionFrames.splice(dropIdx, 0, motionFrames.splice(draggedIndex, 1)[0]);
+            renderMotionTable();
+        }
+    });
+
+    // --- Locomotion buttons ---
+    const locoControls = document.getElementById('locomotion-controls');
+    locoControls.addEventListener('mousedown', e => {
+        const btn = e.target.closest('.loco-btn');
+        if (!btn) return;
+        const direction = btn.id.replace('loco-', '');
+        if (direction !== 'stop') sendLocoCommand(direction);
+    });
+    locoControls.addEventListener('click', e => {
+        if (e.target.id === 'loco-stop') sendLocoCommand('stop');
+    });
+    ['mouseup', 'mouseleave'].forEach(evt => locoControls.addEventListener(evt, () => sendLocoCommand('stop')));
+
+    // --- Keyboard ---
+    const KEY_DIR_MAP = {
+        ArrowUp: 'forward', ArrowDown: 'backward',
+        w: 'forward', W: 'forward', s: 'backward', S: 'backward',
+        a: 'turn_left', A: 'turn_left', d: 'turn_right', D: 'turn_right',
+        q: 'left', Q: 'left', e: 'right', E: 'right',
+    };
+    let currentDirection = null;
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        const dir = KEY_DIR_MAP[e.key];
+        if (dir && dir !== currentDirection) { currentDirection = dir; sendLocoCommand(dir); }
+    });
+    document.addEventListener('keyup', e => {
+        if (KEY_DIR_MAP[e.key]) { currentDirection = null; sendLocoCommand('stop'); }
+    });
+
+    // --- Init ---
+    initializeControls();
+    handleResetAll();
+    document.getElementById('reset-all-button').addEventListener('click', handleResetAll);
+    document.getElementById('add-frame-btn').addEventListener('click', addFrame);
+    document.getElementById('play-motion-btn').addEventListener('click', () => playMotionSequence(motionFrames));
+    document.getElementById('stop-motion-btn').addEventListener('click', stopMotion);
+    document.getElementById('save-motion-btn').addEventListener('click', saveMotionToFile);
+    document.getElementById('load-motion-btn').addEventListener('click', loadMotionFromFile);
+    document.getElementById('safe-mode-checkbox').addEventListener('change', updateMotorLimits);
+});
+</script>
+</body>
+</html>

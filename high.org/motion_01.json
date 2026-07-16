@@ -1,0 +1,96 @@
+[
+  {
+    "duration": 1.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 18,
+          "target_degree": 11.8
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -70.7
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -44.8
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 5.1
+        }
+      ]
+    }
+  },
+  {
+    "duration": 1,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 24,
+          "target_degree": -6
+        }
+      ]
+    }
+  },
+  {
+    "duration": 1,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 24,
+          "target_degree": 13.5
+        }
+      ]
+    }
+  },
+  {
+    "duration": 1,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 24,
+          "target_degree": -10.9
+        }
+      ]
+    }
+  },
+  {
+    "duration": 1,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 24,
+          "target_degree": 30.4
+        }
+      ]
+    }
+  },
+  {
+    "duration": 1,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 18,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 22,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 23,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        }
+      ]
+    }
+  }
+]
