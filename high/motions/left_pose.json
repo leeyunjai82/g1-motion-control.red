@@ -1,0 +1,752 @@
+[
+  {
+    "duration": 2,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": 10
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 15
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 18,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": 10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": -20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": 20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": -20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": 20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": -20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": 20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": -20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 2.5,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 22.5
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": -40
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 30
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 40
+        },
+        {
+          "motor_index": 18,
+          "target_degree": -20
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": -10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  },
+  {
+    "duration": 3,
+    "pose": {
+      "targets": [
+        {
+          "motor_index": 0,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 1,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 2,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 15,
+          "target_degree": 10
+        },
+        {
+          "motor_index": 16,
+          "target_degree": 15
+        },
+        {
+          "motor_index": 17,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 18,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 19,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 20,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 21,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 22,
+          "target_degree": 10
+        },
+        {
+          "motor_index": 23,
+          "target_degree": -15
+        },
+        {
+          "motor_index": 24,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 25,
+          "target_degree": 50
+        },
+        {
+          "motor_index": 26,
+          "target_degree": 0
+        },
+        {
+          "motor_index": 27,
+          "target_degree": 0.05
+        },
+        {
+          "motor_index": 28,
+          "target_degree": 0.05
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitree G1 | IK Motion Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #21262D;
+            --border-primary: #30363D;
+            --text-primary: #C9D1D9;
+            --text-secondary: #8B949E;
+            --accent-primary: #58A6FF;
+            --accent-ik: #A371F7;
+            --accent-rot: #F0883E;
+            --accent-danger: #F85149;
+            --accent-hand: #F778BA;
+            --font-sans: 'Noto Sans KR', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { font-size: 14px; }
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+        }
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.5fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas: "header header header" "ik-panel controls-panel editor-panel";
+            height: 100vh;
+            padding: 1rem;
+            gap: 1rem;
+        }
+        .app-header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .app-title { font-size: 1.4rem; font-weight: 500; margin: 0; }
+        .app-title span { font-weight: 300; color: var(--text-secondary); }
+        .header-status { display: flex; gap: 0.8rem; align-items: center; }
+        .hand-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0.3rem 0.6rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.4rem;
+        }
+        .hand-status.connected { color: var(--accent-hand); border-color: var(--accent-hand); }
+        #reset-all-button {
+            background-color: var(--bg-secondary);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            padding: 0.5rem 1rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        #reset-all-button:hover { background-color: var(--accent-danger); color: var(--bg-primary); }
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            padding: 1.2rem;
+            overflow-y: auto;
+        }
+        #ik-panel { grid-area: ik-panel; }
+        #controls-panel { grid-area: controls-panel; }
+        #motion-editor-panel { grid-area: editor-panel; }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-primary);
+            color: var(--accent-ik);
+        }
+        .section-title.rot { color: var(--accent-rot); }
+
+        .ik-arm-group {
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            background: var(--bg-tertiary);
+            border-radius: 0.5rem;
+        }
+        .ik-arm-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.6rem; }
+        .ik-control { margin-bottom: 0.6rem; }
+        .ik-control .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+        .ik-control .label-name { color: var(--accent-ik); font-weight: 500; }
+        .ik-control .label-name.rot { color: var(--accent-rot); }
+        .ik-control .label-value { font-family: var(--font-mono); color: var(--text-secondary); }
+        .ik-control .input-row { display: grid; grid-template-columns: 1fr 60px; gap: 0.5rem; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            background: var(--accent-ik);
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 0 6px rgba(163,113,247,0.5);
+        }
+        input[type="range"].rot-slider::-webkit-slider-thumb {
+            background: var(--accent-rot);
+            box-shadow: 0 0 6px rgba(240,136,62,0.5);
+        }
+        input[type="number"] {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.3rem;
+            padding: 0.3rem;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        #locomotion-controls {
+            width: 100%;
+            max-width: 280px;
+            height: 180px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+        }
+        .loco-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .loco-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .loco-btn:active { background-color: var(--accent-primary); }
+        #loco-forward    { grid-area: 1 / 3 / 2 / 4; }
+        #loco-backward   { grid-area: 3 / 3 / 4 / 4; }
+        #loco-left       { grid-area: 2 / 2 / 3 / 3; }
+        #loco-right      { grid-area: 2 / 4 / 3 / 5; }
+        #loco-stop       { grid-area: 2 / 3 / 3 / 4; }
+        #loco-turn_left  { grid-area: 2 / 1 / 3 / 2; }
+        #loco-turn_right { grid-area: 2 / 5 / 3 / 6; }
+
+        .hand-controls-container { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-primary); }
+        .hand-selector { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+        .hand-selector button {
+            flex: 1;
+            padding: 0.4rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .hand-selector button.active { background: var(--accent-hand); border-color: var(--accent-hand); color: var(--bg-primary); }
+
+        .hand-motions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+        .hand-motion-btn {
+            padding: 0.5rem 0.3rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.7rem;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .hand-motion-btn:hover { border-color: var(--accent-hand); color: var(--accent-hand); }
+        .hand-motion-btn.active {
+            background-color: var(--accent-hand);
+            border-color: var(--accent-hand);
+            color: var(--bg-primary);
+            font-weight: 700;
+        }
+        #hand-release-btn {
+            width: 100%;
+            margin-top: 0.6rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-danger);
+            color: var(--accent-danger);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        #hand-release-btn:hover { background: var(--accent-danger); color: var(--bg-primary); }
+
+        .panel-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem 0; }
+        #motion-editor-panel .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1rem; }
+        #motion-editor-panel label { display: block; margin-bottom: 0.3rem; font-size: 0.8rem; color: var(--text-secondary); }
+        #motion-editor-panel input, #motion-editor-panel select {
+            width: 100%;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.3rem;
+            padding: 0.4rem;
+            font-size: 0.85rem;
+        }
+        .checkbox-item {
+            display: flex; align-items: center;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            padding: 0.4rem; border-radius: 0.3rem;
+        }
+        .checkbox-item input { width: auto; margin-right: 0.5rem; }
+        #timeline-container { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-primary); border-radius: 0.4rem; margin: 0.8rem 0; }
+        #timeline-table { width: 100%; border-collapse: collapse; }
+        #timeline-table th, #timeline-table td { border-bottom: 1px solid var(--border-primary); padding: 0.4rem; text-align: left; font-size: 0.75rem; }
+        #timeline-table th { background-color: var(--bg-tertiary); color: var(--text-secondary); position: sticky; top: 0; }
+        #timeline-table tbody tr { cursor: pointer; }
+        #timeline-table tbody tr:hover { background-color: var(--bg-tertiary); }
+        .delete-frame-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; }
+        .delete-frame-btn:hover { color: var(--accent-danger); }
+        .btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.4rem;
+            padding: 0.5rem; font-weight: 500; cursor: pointer; font-size: 0.85rem;
+        }
+        .btn:hover { border-color: var(--text-primary); }
+        .btn-primary { background-color: var(--accent-primary); border-color: var(--accent-primary); }
+        .btn-ik { background-color: var(--accent-ik); border-color: var(--accent-ik); color: white; }
+        .btn-group { display: flex; gap: 0.5rem; }
+        .btn-group .btn { flex-grow: 1; }
+        .rot-controls { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-primary); }
+        .rot-label { font-size: 0.75rem; color: var(--accent-rot); margin-bottom: 0.3rem; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 class="app-title">G1 IK Motion Editor <span>v6.2 + Rotation</span></h1>
+            <div class="header-status">
+                <div id="hand-status" class="hand-status">손: 확인 중...</div>
+                <button id="reset-all-button">HOME</button>
+            </div>
+        </header>
+
+        <!-- IK 제어 패널 -->
+        <div id="ik-panel" class="panel">
+            <h3 class="section-title">IK 제어 (XYZ + Rotation)</h3>
+
+            <!-- 오른손 -->
+            <div class="ik-arm-group">
+                <div class="ik-arm-title">🤚 오른손</div>
+                <div class="ik-control">
+                    <div class="label-row"><span class="label-name">X (전후)</span><span class="label-value" id="r-x-val">0.30</span></div>
+                    <div class="input-row"><input type="range" id="ik-r-x" min="0.1" max="0.5" value="0.3" step="0.01"><input type="number" id="ik-r-x-num" min="0.1" max="0.5" value="0.3" step="0.01"></div>
+                </div>
+                <div class="ik-control">
+                    <div class="label-row"><span class="label-name">Y (좌우)</span><span class="label-value" id="r-y-val">-0.20</span></div>
+                    <div class="input-row"><input type="range" id="ik-r-y" min="-0.5" max="-0.05" value="-0.2" step="0.01"><input type="number" id="ik-r-y-num" min="-0.5" max="-0.05" value="-0.2" step="0.01"></div>
+                </div>
+                <div class="ik-control">
+                    <div class="label-row"><span class="label-name">Z (상하)</span><span class="label-value" id="r-z-val">0.00</span></div>
+                    <div class="input-row"><input type="range" id="ik-r-z" min="-0.3" max="0.5" value="0.0" step="0.01"><input type="number" id="ik-r-z-num" min="-0.3" max="0.5" value="0.0" step="0.01"></div>
+                </div>
+                <div class="rot-controls">
+                    <div class="rot-label">🔄 Rotation (deg)</div>
+                    <div class="ik-control">
+                        <div class="label-row"><span class="label-name rot">Roll</span><span class="label-value" id="r-roll-val">0</span></div>
+                        <div class="input-row"><input type="range" class="rot-slider" id="ik-r-roll" min="-180" max="180" value="0" step="1"><input type="number" id="ik-r-roll-num" min="-180" max="180" value="0" step="1"></div>
+                    </div>
+                    <div class="ik-control">
+                        <div class="label-row"><span class="label-name rot">Pitch</span><span class="label-value" id="r-pitch-val">0</span></div>
+                        <div class="input-row"><input type="range" class="rot-slider" id="ik-r-pitch" min="-180" max="180" value="0" step="1"><input type="number" id="ik-r-pitch-num" min="-180" max="180" value="0" step="1"></div>
+                    </div>
+                    <div class="ik-control">
+                        <div class="label-row"><span class="label-name rot">Yaw</span><span class="label-value" id="r-yaw-val">0</span></div>
+                        <div class="input-row"><input type="range" class="rot-slider" id="ik-r-yaw" min="-180" max="180" value="0" step="1"><input type="number" id="ik-r-yaw-num" min="-180" max="180" value="0" step="1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 왼손 -->
+            <div class="ik-arm-group">
+                <div class="ik-arm-title">🤚 왼손</div>
+                <div class="ik-control">
+                    <div class="label-row"><span class="label-name">X (전후)</span><span class="label-value" id="l-x-val">0.30</span></div>
+                    <div class="input-row"><input type="range" id="ik-l-x" min="0.1" max="0.5" value="0.3" step="0.01"><input type="number" id="ik-l-x-num" min="0.1" max="0.5" value="0.3" step="0.01"></div>
+                </div>
+                <div class="ik-control">
+                    <div class="label-row"><span class="label-name">Y (좌우)</span><span class="label-value" id="l-y-val">0.20</span></div>
+                    <div class="input-row"><input type="range" id="ik-l-y" min="0.05" max="0.5" value="0.2" step="0.01"><input type="number" id="ik-l-y-num" min="0.05" max="0.5" value="0.2" step="0.01"></div>
+                </div>
+                <div class="ik-control">
+                    <div class="label-row"><span class="label-name">Z (상하)</span><span class="label-value" id="l-z-val">0.00</span></div>
+                    <div class="input-row"><input type="range" id="ik-l-z" min="-0.3" max="0.5" value="0.0" step="0.01"><input type="number" id="ik-l-z-num" min="-0.3" max="0.5" value="0.0" step="0.01"></div>
+                </div>
+                <div class="rot-controls">
+                    <div class="rot-label">🔄 Rotation (deg)</div>
+                    <div class="ik-control">
+                        <div class="label-row"><span class="label-name rot">Roll</span><span class="label-value" id="l-roll-val">0</span></div>
+                        <div class="input-row"><input type="range" class="rot-slider" id="ik-l-roll" min="-180" max="180" value="0" step="1"><input type="number" id="ik-l-roll-num" min="-180" max="180" value="0" step="1"></div>
+                    </div>
+                    <div class="ik-control">
+                        <div class="label-row"><span class="label-name rot">Pitch</span><span class="label-value" id="l-pitch-val">0</span></div>
+                        <div class="input-row"><input type="range" class="rot-slider" id="ik-l-pitch" min="-180" max="180" value="0" step="1"><input type="number" id="ik-l-pitch-num" min="-180" max="180" value="0" step="1"></div>
+                    </div>
+                    <div class="ik-control">
+                        <div class="label-row"><span class="label-name rot">Yaw</span><span class="label-value" id="l-yaw-val">0</span></div>
+                        <div class="input-row"><input type="range" class="rot-slider" id="ik-l-yaw" min="-180" max="180" value="0" step="1"><input type="number" id="ik-l-yaw-num" min="-180" max="180" value="0" step="1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 이동 + 손 패널 -->
+        <div id="controls-panel" class="panel">
+            <h4 class="section-title" style="color: var(--accent-primary);">이동</h4>
+            <div id="locomotion-controls">
+                <button id="loco-forward"    class="loco-btn">↑</button>
+                <button id="loco-turn_left"  class="loco-btn">↶</button>
+                <button id="loco-left"       class="loco-btn">←</button>
+                <button id="loco-stop"       class="loco-btn">■</button>
+                <button id="loco-right"      class="loco-btn">→</button>
+                <button id="loco-turn_right" class="loco-btn">↷</button>
+                <button id="loco-backward"   class="loco-btn">↓</button>
+            </div>
+
+            <div class="hand-controls-container">
+                <h4 class="section-title" style="color: var(--accent-hand);">손 제어</h4>
+                <div class="hand-selector">
+                    <button id="hand-select-left">왼손</button>
+                    <button id="hand-select-both" class="active">양손</button>
+                    <button id="hand-select-right">오른손</button>
+                </div>
+                <div id="hand-motions-grid" class="hand-motions-grid">
+                    <div style="grid-column:1/-1;text-align:center;color:var(--text-secondary);font-size:0.8rem;padding:1rem 0">
+                        서버 연결 대기 중...
+                    </div>
+                </div>
+                <button id="hand-release-btn">✋ 손 펴기 (unfold)</button>
+            </div>
+        </div>
+
+        <!-- 타임라인 패널 -->
+        <div id="motion-editor-panel" class="panel">
+            <h3 class="panel-title">IK 타임라인</h3>
+            <div class="settings-grid">
+                <div><label for="travel-time-input">프레임 시간 (초)</label><input type="number" id="travel-time-input" value="1.0" min="0.1" step="0.1"></div>
+                <div><label for="locomotion-command-select">이동 명령</label>
+                    <select id="locomotion-command-select">
+                        <option value="none">없음</option><option value="forward">전진</option><option value="backward">후진</option>
+                        <option value="left">좌측</option><option value="right">우측</option>
+                        <option value="turn_left">좌회전</option><option value="turn_right">우회전</option>
+                    </select>
+                </div>
+                <div><label for="hand-motion-select">손 모션</label><select id="hand-motion-select"><option value="none">없음</option></select></div>
+                <div><label for="hand-target-select">손 선택</label>
+                    <select id="hand-target-select"><option value="both">양손</option><option value="left">왼손</option><option value="right">오른손</option></select>
+                </div>
+                <div><label>IK 위치 저장</label><div class="checkbox-item"><input type="checkbox" id="save-ik-checkbox" checked><label for="save-ik-checkbox">XYZ + Rotation</label></div></div>
+            </div>
+            <div class="btn-group"><button id="add-frame-btn" class="btn btn-ik">프레임 추가</button></div>
+            <div id="timeline-container">
+                <table id="timeline-table">
+                    <thead><tr><th>#</th><th>XYZ</th><th>Rotation</th><th>동작</th><th>시간</th><th></th></tr></thead>
+                    <tbody id="timeline-table-body"></tbody>
+                </table>
+            </div>
+            <div class="btn-group">
+                <button id="play-motion-btn" class="btn btn-primary">재생</button>
+                <button id="stop-motion-btn" class="btn" style="display:none;background:var(--accent-danger);">정지</button>
+                <button id="save-motion-btn" class="btn">저장</button>
+                <button id="load-motion-btn" class="btn">불러오기</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = `http://${location.hostname}:8000`;
+    const API = {
+        IK:           `${API_BASE}/set_ik`,
+        LOCO:         `${API_BASE}/set_loco_motion`,
+        MOTION:       `${API_BASE}/set_motion`,
+        STOP:         `${API_BASE}/stop_motion`,
+        HAND:         `${API_BASE}/set_hand`,
+        HAND_MOTIONS: `${API_BASE}/hand_motions`
+    };
+
+    let motionFrames   = [];
+    let isPlaying      = false;
+    let selectedHand   = 'both';
+    let activeHandMotion = null;
+
+    let currentIK = { left: [0.3, 0.2, 0.0], right: [0.3, -0.2, 0.0] };
+    let currentRPY = { left: [0, 0, 0], right: [0, 0, 0] };
+
+    // ==================== 유틸 ====================
+
+    async function apiCall(url, data) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (e) { return null; }
+    }
+
+    async function apiGet(url) {
+        try { const res = await fetch(url); return res.ok ? await res.json() : null; }
+        catch (e) { return null; }
+    }
+
+    function getIKValues() {
+        return {
+            left:  ['x','y','z'].map(a => parseFloat(document.getElementById(`ik-l-${a}`).value)),
+            right: ['x','y','z'].map(a => parseFloat(document.getElementById(`ik-r-${a}`).value))
+        };
+    }
+
+    function getRPYValues() {
+        return {
+            left:  ['roll','pitch','yaw'].map(a => parseFloat(document.getElementById(`ik-l-${a}`).value)),
+            right: ['roll','pitch','yaw'].map(a => parseFloat(document.getElementById(`ik-r-${a}`).value))
+        };
+    }
+
+    function setIKValues(left, right) {
+        ['x','y','z'].forEach((axis, i) => {
+            document.getElementById(`ik-l-${axis}`).value     = left[i];
+            document.getElementById(`ik-l-${axis}-num`).value = left[i].toFixed(2);
+            document.getElementById(`l-${axis}-val`).textContent = left[i].toFixed(2);
+            document.getElementById(`ik-r-${axis}`).value     = right[i];
+            document.getElementById(`ik-r-${axis}-num`).value = right[i].toFixed(2);
+            document.getElementById(`r-${axis}-val`).textContent = right[i].toFixed(2);
+        });
+        currentIK = { left, right };
+    }
+
+    function setRPYValues(left, right) {
+        ['roll','pitch','yaw'].forEach((axis, i) => {
+            document.getElementById(`ik-l-${axis}`).value     = left[i];
+            document.getElementById(`ik-l-${axis}-num`).value = left[i];
+            document.getElementById(`l-${axis}-val`).textContent = left[i];
+            document.getElementById(`ik-r-${axis}`).value     = right[i];
+            document.getElementById(`ik-r-${axis}-num`).value = right[i];
+            document.getElementById(`r-${axis}-val`).textContent = right[i];
+        });
+        currentRPY = { left, right };
+    }
+
+    // ==================== IK 슬라이더 ====================
+
+    let ikTimeout;
+    function initIKControls() {
+        const triggerIKUpdate = () => {
+            clearTimeout(ikTimeout);
+            ikTimeout = setTimeout(() => {
+                const ik  = getIKValues();
+                const rpy = getRPYValues();
+                currentIK  = ik;
+                currentRPY = rpy;
+                apiCall(API.IK, {
+                    left_xyz:  ik.left,  right_xyz:  ik.right,
+                    left_rpy:  rpy.left, right_rpy:  rpy.right,
+                    duration:  0.5
+                });
+            }, 50);
+        };
+
+        ['l','r'].forEach(side => {
+            ['x','y','z'].forEach(axis => {
+                const slider = document.getElementById(`ik-${side}-${axis}`);
+                const number = document.getElementById(`ik-${side}-${axis}-num`);
+                const disp   = document.getElementById(`${side}-${axis}-val`);
+                const handle = v => {
+                    slider.value = v; number.value = parseFloat(v).toFixed(2);
+                    disp.textContent = parseFloat(v).toFixed(2);
+                    triggerIKUpdate();
+                };
+                slider.addEventListener('input', e => handle(e.target.value));
+                number.addEventListener('input', e => handle(e.target.value));
+            });
+            ['roll','pitch','yaw'].forEach(axis => {
+                const slider = document.getElementById(`ik-${side}-${axis}`);
+                const number = document.getElementById(`ik-${side}-${axis}-num`);
+                const disp   = document.getElementById(`${side}-${axis}-val`);
+                const handle = v => {
+                    slider.value = v; number.value = parseInt(v);
+                    disp.textContent = parseInt(v);
+                    triggerIKUpdate();
+                };
+                slider.addEventListener('input', e => handle(e.target.value));
+                number.addEventListener('input', e => handle(e.target.value));
+            });
+        });
+    }
+
+    // ==================== 손 제어 ====================
+
+    async function initHandControls() {
+        const info = await apiGet(API.HAND_MOTIONS);
+
+        // 연결 상태 표시 (단일 상태)
+        const statusEl = document.getElementById('hand-status');
+        if (info?.left_connected || info?.right_connected) {
+            statusEl.textContent = '손: 연결됨';
+            statusEl.classList.add('connected');
+        } else {
+            statusEl.textContent = '손: 미연결';
+        }
+
+        // 미연결 시 fallback 목록
+        const motionList = (info?.motions && info.motions.length > 0)
+            ? info.motions
+            : ['unfold_a','fold_a','fold_ha','point','handshake','ok','thumbup','victory','rock','promise','grab'];
+
+        // 버튼 그리드
+        const grid = document.getElementById('hand-motions-grid');
+        grid.innerHTML = motionList.map(m =>
+            `<button class="hand-motion-btn" data-motion="${m}">${m.replace(/_/g,' ')}</button>`
+        ).join('');
+
+        grid.addEventListener('click', async e => {
+            const btn = e.target.closest('.hand-motion-btn');
+            if (!btn) return;
+            const motion = btn.dataset.motion;
+            if (activeHandMotion === motion) {
+                btn.classList.remove('active');
+                activeHandMotion = null;
+                await apiCall(API.HAND, { hand: selectedHand, motion: 'unfold_a', release: false });
+            } else {
+                grid.querySelectorAll('.hand-motion-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeHandMotion = motion;
+                await apiCall(API.HAND, { hand: selectedHand, motion, release: false });
+            }
+        });
+
+        // 해제 버튼
+        document.getElementById('hand-release-btn').addEventListener('click', async () => {
+            grid.querySelectorAll('.hand-motion-btn').forEach(b => b.classList.remove('active'));
+            activeHandMotion = null;
+            await apiCall(API.HAND, { hand: selectedHand, motion: 'unfold_a', release: false });
+        });
+
+        // 타임라인 select
+        const sel = document.getElementById('hand-motion-select');
+        sel.innerHTML = '<option value="none">없음</option>';
+        motionList.forEach(m => {
+            const o = document.createElement('option');
+            o.value = m; o.textContent = m.replace(/_/g,' ');
+            sel.appendChild(o);
+        });
+    }
+
+    ['left','both','right'].forEach(h => {
+        document.getElementById(`hand-select-${h}`).addEventListener('click', function() {
+            selectedHand = h;
+            document.querySelectorAll('.hand-selector button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // ==================== 걷기 ====================
+
+    let locoTimeout;
+    function sendLoco(dir) {
+        clearTimeout(locoTimeout);
+        locoTimeout = setTimeout(() => apiCall(API.LOCO, { direction: dir }), 30);
+    }
+    document.getElementById('locomotion-controls').addEventListener('mousedown', e => {
+        const btn = e.target.closest('.loco-btn');
+        if (btn) sendLoco(btn.id.replace('loco-',''));
+    });
+    const KEY_MAP = {
+        'ArrowUp':'forward','w':'forward','ArrowDown':'backward','s':'backward',
+        'ArrowLeft':'turn_left','a':'turn_left','ArrowRight':'turn_right','d':'turn_right',
+        'q':'left','e':'right'
+    };
+    document.addEventListener('keydown', e => { if (['INPUT','SELECT'].includes(e.target.tagName)) return; if (KEY_MAP[e.key]) sendLoco(KEY_MAP[e.key]); });
+    document.addEventListener('keyup',   e => { if (KEY_MAP[e.key]) sendLoco('stop'); });
+
+    // ==================== 홈 ====================
+
+    async function goHome() {
+        const homeLeft  = [0.3,  0.2, 0.0];
+        const homeRight = [0.3, -0.2, 0.0];
+        const homeRPY   = [0, 0, 0];
+        setIKValues(homeLeft, homeRight);
+        setRPYValues(homeRPY, homeRPY);
+        await apiCall(API.IK, {
+            left_xyz: homeLeft, right_xyz: homeRight,
+            left_rpy: homeRPY,  right_rpy: homeRPY,
+            duration: 1.0
+        });
+    }
+
+    // ==================== 타임라인 ====================
+
+    function addFrame() {
+        const duration   = parseFloat(document.getElementById('travel-time-input').value) || 1.0;
+        const loco       = document.getElementById('locomotion-command-select').value;
+        const hand       = document.getElementById('hand-motion-select').value;
+        const handTarget = document.getElementById('hand-target-select').value;
+        const saveIK     = document.getElementById('save-ik-checkbox').checked;
+
+        if (!saveIK && loco === 'none' && hand === 'none') return;
+
+        const frame = { duration };
+        if (saveIK) {
+            const ik  = getIKValues();
+            const rpy = getRPYValues();
+            frame.left_xyz  = ik.left;  frame.right_xyz  = ik.right;
+            frame.left_rpy  = rpy.left; frame.right_rpy  = rpy.right;
+        }
+        if (loco !== 'none') frame.locomotion  = { direction: loco };
+        if (hand !== 'none') frame.hand_motion = { hand: handTarget, motion: hand };
+
+        motionFrames.push(frame);
+        renderTimeline();
+    }
+
+    function renderTimeline() {
+        const tbody = document.getElementById('timeline-table-body');
+        tbody.innerHTML = motionFrames.map((f, i) => {
+            const xyzInfo = f.left_xyz
+                ? `L(${f.left_xyz.map(v=>v.toFixed(2)).join(',')}) R(${f.right_xyz.map(v=>v.toFixed(2)).join(',')})`
+                : '-';
+            const rpyInfo = f.left_rpy
+                ? `L(${f.left_rpy.map(v=>Math.round(v)).join(',')}) R(${f.right_rpy.map(v=>Math.round(v)).join(',')})`
+                : '-';
+            const actions = [];
+            if (f.locomotion)  actions.push(f.locomotion.direction);
+            if (f.hand_motion) actions.push(`${f.hand_motion.hand}: ${f.hand_motion.motion}`);
+            return `<tr data-index="${i}">
+                <td>${i+1}</td>
+                <td style="font-family:var(--font-mono);font-size:0.65rem">${xyzInfo}</td>
+                <td style="font-family:var(--font-mono);font-size:0.65rem;color:var(--accent-rot)">${rpyInfo}</td>
+                <td>${actions.join(' + ') || '-'}</td>
+                <td>${f.duration.toFixed(1)}s</td>
+                <td><button class="delete-frame-btn" data-index="${i}">&times;</button></td>
+            </tr>`;
+        }).join('');
+        tbody.querySelectorAll('tr').forEach(row =>
+            row.addEventListener('click', () => loadFrame(parseInt(row.dataset.index)))
+        );
+        tbody.querySelectorAll('.delete-frame-btn').forEach(btn =>
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                motionFrames.splice(parseInt(btn.dataset.index), 1);
+                renderTimeline();
+            })
+        );
+    }
+
+    async function loadFrame(i) {
+        const f = motionFrames[i];
+        if (f?.left_xyz && f?.right_xyz) {
+            setIKValues(f.left_xyz, f.right_xyz);
+            setRPYValues(f.left_rpy || [0,0,0], f.right_rpy || [0,0,0]);
+            await apiCall(API.IK, {
+                left_xyz: f.left_xyz, right_xyz: f.right_xyz,
+                left_rpy: f.left_rpy || [0,0,0], right_rpy: f.right_rpy || [0,0,0],
+                duration: 1.0
+            });
+        }
+        if (f?.hand_motion) {
+            await apiCall(API.HAND, { hand: f.hand_motion.hand, motion: f.hand_motion.motion, release: false });
+        }
+    }
+
+    async function playMotion() {
+        if (isPlaying || !motionFrames.length) return;
+        isPlaying = true; togglePlayUI(false);
+        await apiCall(API.MOTION, motionFrames);
+        isPlaying = false; togglePlayUI(true);
+    }
+
+    async function stopMotion() {
+        await apiCall(API.STOP);
+        isPlaying = false; togglePlayUI(true);
+    }
+
+    function togglePlayUI(en) {
+        document.getElementById('play-motion-btn').style.display = en ? 'block' : 'none';
+        document.getElementById('stop-motion-btn').style.display = en ? 'none'  : 'block';
+    }
+
+    function saveMotion() {
+        const name = prompt('파일 이름:', 'ik_motion');
+        if (!name) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(motionFrames, null, 2)], { type: 'application/json' }));
+        a.download = `${name}.json`;
+        a.click();
+    }
+
+    function loadMotion() {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.json';
+        input.onchange = e => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = evt => {
+                try { motionFrames = JSON.parse(evt.target.result); renderTimeline(); }
+                catch { alert('파일 오류'); }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    // ==================== 이벤트 바인딩 ====================
+
+    document.getElementById('reset-all-button').addEventListener('click', goHome);
+    document.getElementById('add-frame-btn').addEventListener('click', addFrame);
+    document.getElementById('play-motion-btn').addEventListener('click', playMotion);
+    document.getElementById('stop-motion-btn').addEventListener('click', stopMotion);
+    document.getElementById('save-motion-btn').addEventListener('click', saveMotion);
+    document.getElementById('load-motion-btn').addEventListener('click', loadMotion);
+
+    // ==================== 초기화 ====================
+    initIKControls();
+    initHandControls();
+});
+</script>
+</body>
+</html>

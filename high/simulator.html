@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitree G1 | Motion Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #21262D;
+            --border-primary: #30363D;
+            --text-primary: #C9D1D9;
+            --text-secondary: #8B949E;
+            --accent-primary: #58A6FF;
+            --accent-primary-hover: #79C0FF;
+            --accent-danger: #F85149;
+            --accent-hand: #F778BA;
+            --accent-waist: #F0A050;
+            --font-sans: 'Noto Sans KR', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html { font-size: 13.5px; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1.8fr 1fr 1.5fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas:
+                "header header header"
+                "arm-panel controls-panel editor-panel";
+            height: 100vh;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        .app-header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .app-title { font-size: 1.4rem; font-weight: 500; margin: 0; }
+        .app-title span { font-weight: 300; color: var(--text-secondary); }
+
+        .header-status { display: flex; gap: 0.8rem; align-items: center; }
+
+        .hand-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0.3rem 0.6rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.4rem;
+        }
+        .hand-status.connected { color: var(--accent-hand); border-color: var(--accent-hand); }
+
+        #reset-all-button {
+            background-color: var(--bg-secondary);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            padding: 0.5rem 1rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        #reset-all-button:hover { background-color: var(--accent-danger); color: var(--bg-primary); }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 1.2rem;
+            overflow-y: auto;
+        }
+
+        #arm-panel { grid-area: arm-panel; }
+        #controls-panel { grid-area: controls-panel; }
+        #motion-editor-panel { grid-area: editor-panel; }
+
+        #arm-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem 2rem;
+        }
+
+        #waist-section {
+            margin-top: 1rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid var(--border-primary);
+        }
+
+        #WAIST_CONTROLS {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+        }
+
+        .joint-group-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin: 0 0 0.8rem 0;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .joint-group-title.waist-title { color: var(--accent-waist); border-color: var(--accent-waist); }
+
+        .control-item { margin-bottom: 0.6rem; }
+        .control-item .label-wrapper {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+        .control-item .label-name { font-weight: 500; }
+        .control-item .motor-id { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary); }
+        .control-item .input-wrapper { display: grid; grid-template-columns: 1fr 60px; gap: 0.8rem; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: grab;
+        }
+        #waist-section input[type="range"]::-webkit-slider-thumb { background: var(--accent-waist); }
+
+        input[type="number"] {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.3rem;
+            padding: 0.4rem;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        #locomotion-controls {
+            width: 100%;
+            max-width: 350px;
+            height: 200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .loco-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.3rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .loco-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .loco-btn:active { background-color: var(--accent-primary); }
+
+        #loco-forward    { grid-area: 1 / 3 / 2 / 4; }
+        #loco-backward   { grid-area: 3 / 3 / 4 / 4; }
+        #loco-left       { grid-area: 2 / 2 / 3 / 3; }
+        #loco-right      { grid-area: 2 / 4 / 3 / 5; }
+        #loco-stop       { grid-area: 2 / 3 / 3 / 4; }
+        #loco-turn_left  { grid-area: 2 / 1 / 3 / 2; }
+        #loco-turn_right { grid-area: 2 / 5 / 3 / 6; }
+
+        .hand-controls-container {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-primary);
+            margin-top: 1rem;
+        }
+
+        /* 손 선택 탭 */
+        .hand-selector { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+        .hand-selector button {
+            flex: 1;
+            padding: 0.4rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .hand-selector button.active {
+            background: var(--accent-hand);
+            border-color: var(--accent-hand);
+            color: var(--bg-primary);
+        }
+
+        /* 손 모션 버튼 그리드 */
+        .hand-motions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+
+        .hand-motion-btn {
+            padding: 0.5rem 0.3rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .hand-motion-btn:hover { border-color: var(--accent-hand); color: var(--accent-hand); }
+        .hand-motion-btn.active {
+            background-color: var(--accent-hand);
+            border-color: var(--accent-hand);
+            color: var(--bg-primary);
+            font-weight: 700;
+        }
+
+        /* 빠른 해제 버튼 */
+        #hand-release-btn {
+            width: 100%;
+            margin-top: 0.6rem;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-danger);
+            color: var(--accent-danger);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        #hand-release-btn:hover { background: var(--accent-danger); color: var(--bg-primary); }
+
+        .panel-title { font-size: 1.15rem; font-weight: 700; margin: 0 0 1rem 0; }
+
+        #motion-editor-panel .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        #motion-editor-panel label { display: block; margin-bottom: 0.4rem; font-size: 0.85rem; color: var(--text-secondary); }
+
+        #motion-editor-panel input, #motion-editor-panel select {
+            width: 100%;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.3rem;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            padding: 0.5rem;
+            border-radius: 0.3rem;
+        }
+        .checkbox-item input { width: auto; margin-right: 0.6rem; }
+
+        #timeline-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-primary);
+            border-radius: 0.4rem;
+            margin: 1rem 0;
+        }
+
+        #timeline-table { width: 100%; border-collapse: collapse; }
+        #timeline-table th, #timeline-table td {
+            border-bottom: 1px solid var(--border-primary);
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        #timeline-table th { background-color: var(--bg-tertiary); color: var(--text-secondary); position: sticky; top: 0; }
+        #timeline-table tbody tr { cursor: pointer; }
+        #timeline-table tbody tr:hover { background-color: var(--bg-tertiary); }
+
+        .delete-frame-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; }
+        .delete-frame-btn:hover { color: var(--accent-danger); }
+
+        .btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            border-radius: 0.4rem;
+            padding: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn:hover { border-color: var(--text-primary); }
+        .btn-primary { background-color: var(--accent-primary); border-color: var(--accent-primary); }
+
+        .btn-group { display: flex; gap: 0.8rem; }
+        .btn-group .btn { flex-grow: 1; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 class="app-title">G1 Motion Editor <span>v5.2</span></h1>
+            <div class="header-status">
+                <div id="hand-status" class="hand-status">손: 확인 중...</div>
+                <button id="reset-all-button">EMERGENCY STOP</button>
+            </div>
+        </header>
+
+        <div id="arm-panel" class="panel">
+            <div id="arm-grid">
+                <div>
+                    <h4 class="joint-group-title">오른쪽 팔</h4>
+                    <div id="R_ARM_CONTROLS"></div>
+                </div>
+                <div>
+                    <h4 class="joint-group-title">왼쪽 팔</h4>
+                    <div id="L_ARM_CONTROLS"></div>
+                </div>
+            </div>
+            <div id="waist-section">
+                <h4 class="joint-group-title waist-title">허리 (Waist)</h4>
+                <div id="WAIST_CONTROLS"></div>
+            </div>
+        </div>
+
+        <div id="controls-panel" class="panel">
+            <h4 class="joint-group-title" style="text-align:center; border:none;">이동</h4>
+            <div id="locomotion-controls">
+                <button id="loco-forward"    class="loco-btn">↑</button>
+                <button id="loco-turn_left"  class="loco-btn">↶</button>
+                <button id="loco-left"       class="loco-btn">←</button>
+                <button id="loco-stop"       class="loco-btn">■</button>
+                <button id="loco-right"      class="loco-btn">→</button>
+                <button id="loco-turn_right" class="loco-btn">↷</button>
+                <button id="loco-backward"   class="loco-btn">↓</button>
+            </div>
+
+            <div id="hand-controls-container" class="hand-controls-container">
+                <h4 class="joint-group-title" style="text-align:center; border:none;">손 제어</h4>
+                <div class="hand-selector">
+                    <button id="hand-select-left">왼손</button>
+                    <button id="hand-select-both" class="active">양손</button>
+                    <button id="hand-select-right">오른손</button>
+                </div>
+                <div id="hand-motions-grid" class="hand-motions-grid">
+                    <div style="grid-column:1/-1;text-align:center;color:var(--text-secondary);font-size:0.8rem;padding:1rem 0">
+                        서버 연결 대기 중...
+                    </div>
+                </div>
+                <button id="hand-release-btn">✋ 손 펴기 (unfold)</button>
+            </div>
+        </div>
+
+        <div id="motion-editor-panel" class="panel">
+            <h3 class="panel-title">타임라인 에디터</h3>
+            <div class="settings-grid">
+                <div>
+                    <label for="travel-time-input">프레임 시간 (초)</label>
+                    <input type="number" id="travel-time-input" value="1.0" min="0.1" step="0.1">
+                </div>
+                <div>
+                    <label for="locomotion-command-select">이동 명령</label>
+                    <select id="locomotion-command-select">
+                        <option value="none">없음</option>
+                        <option value="forward">전진</option>
+                        <option value="backward">후진</option>
+                        <option value="left">좌측</option>
+                        <option value="right">우측</option>
+                        <option value="turn_left">좌회전</option>
+                        <option value="turn_right">우회전</option>
+                        <option value="stop">정지</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="hand-motion-select">손 모션</label>
+                    <select id="hand-motion-select"><option value="none">없음</option></select>
+                </div>
+                <div>
+                    <label for="hand-target-select">손 선택</label>
+                    <select id="hand-target-select">
+                        <option value="both">양손</option>
+                        <option value="left">왼손</option>
+                        <option value="right">오른손</option>
+                    </select>
+                </div>
+                <div>
+                    <label>현재 자세 저장</label>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="save-pose-checkbox" checked>
+                        <label for="save-pose-checkbox">포함 (팔 + 허리)</label>
+                    </div>
+                </div>
+                <div>
+                    <label>안전 모드</label>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="safe-mode-checkbox" checked>
+                        <label for="safe-mode-checkbox">x0.5 제한</label>
+                    </div>
+                </div>
+            </div>
+            <div class="btn-group"><button id="add-frame-btn" class="btn">프레임 추가</button></div>
+            <div id="timeline-container">
+                <table id="timeline-table">
+                    <thead><tr><th>#</th><th>동작</th><th>시간</th><th></th></tr></thead>
+                    <tbody id="timeline-table-body"></tbody>
+                </table>
+            </div>
+            <div class="btn-group">
+                <button id="play-motion-btn" class="btn btn-primary">재생</button>
+                <button id="stop-motion-btn" class="btn" style="display:none;background:var(--accent-danger);">정지</button>
+                <button id="save-motion-btn" class="btn">저장</button>
+                <button id="load-motion-btn" class="btn">불러오기</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = `http://${location.hostname}:8000`;
+    const API = {
+        MOTOR:        `${API_BASE}/set_motor`,
+        WAIST:        `${API_BASE}/set_waist`,
+        LOCO:         `${API_BASE}/set_loco_motion`,
+        MOTION:       `${API_BASE}/set_motion`,
+        STOP:         `${API_BASE}/stop_motion`,
+        HAND:         `${API_BASE}/set_hand`,
+        HAND_MOTIONS: `${API_BASE}/hand_motions`
+    };
+
+    const G1Joint = {
+        WaistYaw:   0, WaistRoll:  1, WaistPitch: 2,
+        LeftShoulderPitch: 15, LeftShoulderRoll: 16, LeftShoulderYaw: 17, LeftElbow: 18,
+        LeftWristRoll: 19, LeftWristPitch: 20, LeftWristYaw: 21,
+        RightShoulderPitch: 22, RightShoulderRoll: 23, RightShoulderYaw: 24, RightElbow: 25,
+        RightWristRoll: 26, RightWristPitch: 27, RightWristYaw: 28,
+    };
+
+    const JOINT_LIMITS = {
+        0: [-45, 45], 1: [-20, 20], 2: [-30, 30],
+        15: [-177, 153], 16: [-91, 129], 17: [-150, 150], 18: [-60, 120],
+        19: [-113, 113], 20: [-92.5, 92.5], 21: [-92.5, 92.5],
+        22: [-177, 153], 23: [-129, 91], 24: [-150, 150], 25: [-60, 120],
+        26: [-113, 113], 27: [-92.5, 92.5], 28: [-92.5, 92.5],
+    };
+
+    const CONTROL_GROUPS = {
+        'R_ARM_CONTROLS': [
+            ['Shoulder Pitch', 22], ['Shoulder Roll', 23], ['Shoulder Yaw', 24], ['Elbow', 25],
+            ['Wrist Roll', 26], ['Wrist Pitch', 27], ['Wrist Yaw', 28],
+        ],
+        'L_ARM_CONTROLS': [
+            ['Shoulder Pitch', 15], ['Shoulder Roll', 16], ['Shoulder Yaw', 17], ['Elbow', 18],
+            ['Wrist Roll', 19], ['Wrist Pitch', 20], ['Wrist Yaw', 21],
+        ],
+        'WAIST_CONTROLS': [
+            ['Yaw (좌우)', 0], ['Roll (기울기)', 1], ['Pitch (숙임)', 2],
+        ]
+    };
+
+    const WAIST_INDICES = new Set([0, 1, 2]);
+
+    let originalLimits = JSON.parse(JSON.stringify(JOINT_LIMITS));
+    let currentLimits = { ...JOINT_LIMITS };
+    let motionFrames = [];
+    let isPlaying = false;
+    let selectedHand = 'both';
+    let activeHandMotion = null; // 현재 활성화된 손 모션
+
+    async function apiCall(url, data) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (e) { return null; }
+    }
+
+    async function apiGet(url) {
+        try { const res = await fetch(url); return res.ok ? await res.json() : null; }
+        catch (e) { return null; }
+    }
+
+    function getMotorValue(index) {
+        const s = document.getElementById(`slider-${index}`);
+        return s ? parseFloat(s.value) : 0;
+    }
+
+    function setMotorValue(index, value) {
+        const s = document.getElementById(`slider-${index}`);
+        const n = document.getElementById(`number-${index}`);
+        if (s) s.value = value;
+        if (n) n.value = value.toFixed(1);
+    }
+
+    function initControls() {
+        Object.entries(CONTROL_GROUPS).forEach(([id, joints]) => {
+            const panel = document.getElementById(id);
+            if (!panel) return;
+            panel.innerHTML = joints.map(([label, idx]) => {
+                const [min, max] = currentLimits[idx];
+                return `<div class="control-item">
+                    <div class="label-wrapper">
+                        <span class="label-name">${label}</span>
+                        <span class="motor-id">ID:${idx}</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="range" id="slider-${idx}" min="${min}" max="${max}" value="0" step="0.1">
+                        <input type="number" id="number-${idx}" min="${min}" max="${max}" value="0" step="0.1">
+                    </div>
+                </div>`;
+            }).join('');
+        });
+        document.getElementById('arm-panel').addEventListener('input', handleMotorInput);
+    }
+
+    let motorTimeout = {};
+    function handleMotorInput(e) {
+        const m = e.target.id?.match(/^(slider|number)-(\d+)$/);
+        if (!m) return;
+        const [, type, idxStr] = m;
+        const idx = parseInt(idxStr);
+        const [min, max] = currentLimits[idx] || [-180, 180];
+        let val = Math.max(min, Math.min(max, parseFloat(e.target.value) || 0));
+        if (type === 'slider') document.getElementById(`number-${idx}`).value = val.toFixed(1);
+        else document.getElementById(`slider-${idx}`).value = val;
+        clearTimeout(motorTimeout[idx]);
+        motorTimeout[idx] = setTimeout(() => {
+            apiCall(API.MOTOR, { motor_index: idx, target_degree: val, duration: 0.5 });
+        }, 50);
+    }
+
+    // ==================== 손 제어 ====================
+
+    async function initHandControls() {
+        const info = await apiGet(API.HAND_MOTIONS);
+
+        // 연결 상태 표시
+        const statusEl = document.getElementById('hand-status');
+        if (info?.left_connected || info?.right_connected) {
+            statusEl.textContent = '손: 연결됨';
+            statusEl.classList.add('connected');
+        } else {
+            statusEl.textContent = '손: 미연결';
+        }
+
+        // 모션 목록 - 서버 응답 없으면 기본값 사용
+        const motionList = (info?.motions && info.motions.length > 0)
+            ? info.motions
+            : ['unfold_a','fold_a','fold_ha','point','handshake','ok','thumbup','victory','rock','promise','grab'];
+
+        // 버튼 그리드 생성
+        const grid = document.getElementById('hand-motions-grid');
+        grid.innerHTML = motionList.map(m =>
+            `<button class="hand-motion-btn" data-motion="${m}">${m.replace(/_/g,' ')}</button>`
+        ).join('');
+
+        // 버튼 클릭 이벤트
+        grid.addEventListener('click', async e => {
+            const btn = e.target.closest('.hand-motion-btn');
+            if (!btn) return;
+            const motion = btn.dataset.motion;
+
+            if (activeHandMotion === motion) {
+                // 같은 버튼 다시 클릭 → 해제
+                btn.classList.remove('active');
+                activeHandMotion = null;
+                await apiCall(API.HAND, { hand: selectedHand, motion: 'unfold_a', release: false });
+            } else {
+                // 다른 버튼 클릭 → 이전 해제 후 새 모션
+                grid.querySelectorAll('.hand-motion-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeHandMotion = motion;
+                await apiCall(API.HAND, { hand: selectedHand, motion, release: false });
+            }
+        });
+
+        // 빠른 해제 버튼
+        document.getElementById('hand-release-btn').addEventListener('click', async () => {
+            grid.querySelectorAll('.hand-motion-btn').forEach(b => b.classList.remove('active'));
+            activeHandMotion = null;
+            await apiCall(API.HAND, { hand: selectedHand, motion: 'unfold_a', release: false });
+        });
+
+        // 타임라인 select에도 추가
+        const sel = document.getElementById('hand-motion-select');
+        sel.innerHTML = '<option value="none">없음</option>';
+        motionList.forEach(m => {
+            const o = document.createElement('option');
+            o.value = m;
+            o.textContent = m.replace(/_/g,' ');
+            sel.appendChild(o);
+        });
+    }
+
+    // 손 선택 탭
+    ['left', 'both', 'right'].forEach(h => {
+        document.getElementById(`hand-select-${h}`).addEventListener('click', function() {
+            selectedHand = h;
+            document.querySelectorAll('.hand-selector button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // ==================== 걷기 ====================
+
+    let locoTimeout;
+    function sendLoco(dir) {
+        clearTimeout(locoTimeout);
+        locoTimeout = setTimeout(() => apiCall(API.LOCO, { direction: dir }), 30);
+    }
+    document.getElementById('locomotion-controls').addEventListener('mousedown', e => {
+        const btn = e.target.closest('.loco-btn');
+        if (btn) sendLoco(btn.id.replace('loco-', ''));
+    });
+
+    const KEY_MAP = {
+        'ArrowUp':'forward', 'w':'forward',
+        'ArrowDown':'backward', 's':'backward',
+        'ArrowLeft':'turn_left', 'a':'turn_left',
+        'ArrowRight':'turn_right', 'd':'turn_right',
+        'q':'left', 'e':'right'
+    };
+    document.addEventListener('keydown', e => {
+        if (['INPUT','SELECT'].includes(e.target.tagName)) return;
+        if (KEY_MAP[e.key]) sendLoco(KEY_MAP[e.key]);
+    });
+    document.addEventListener('keyup', e => {
+        if (KEY_MAP[e.key]) sendLoco('stop');
+    });
+
+    // ==================== 안전 모드 ====================
+
+    function toggleSafeMode() {
+        const safe = document.getElementById('safe-mode-checkbox').checked;
+        Object.keys(originalLimits).forEach(i => {
+            const [min, max] = originalLimits[i];
+            currentLimits[i] = safe ? [min * 0.5, max * 0.5] : [min, max];
+        });
+        initControls();
+        resetRobot();
+    }
+
+    async function resetRobot() {
+        const targets = Object.values(G1Joint).map(i => ({ motor_index: i, target_degree: 0 }));
+        await apiCall(API.MOTION, [{ duration: 0.5, pose: { targets }, locomotion: { direction: 'stop' } }]);
+        Object.values(G1Joint).forEach(i => setMotorValue(i, 0));
+    }
+
+    // ==================== 타임라인 ====================
+
+    function addFrame() {
+        const duration  = parseFloat(document.getElementById('travel-time-input').value) || 1.0;
+        const loco      = document.getElementById('locomotion-command-select').value;
+        const hand      = document.getElementById('hand-motion-select').value;
+        const handTarget= document.getElementById('hand-target-select').value;
+        const savePose  = document.getElementById('save-pose-checkbox').checked;
+        if (!savePose && loco === 'none' && hand === 'none') return;
+        const frame = { duration };
+        if (savePose) {
+            frame.pose = {
+                targets: Object.values(G1Joint).map(i => ({
+                    motor_index: i,
+                    target_degree: getMotorValue(i)
+                }))
+            };
+        }
+        if (loco !== 'none') frame.locomotion = { direction: loco };
+        if (hand !== 'none') frame.hand_motion = { hand: handTarget, motion: hand };
+        motionFrames.push(frame);
+        renderTimeline();
+    }
+
+    function getFrameDescription(f) {
+        const actions = [];
+        if (f.pose) {
+            const hasWaist = f.pose.targets.some(t => WAIST_INDICES.has(t.motor_index) && t.target_degree !== 0);
+            const hasArm   = f.pose.targets.some(t => t.motor_index >= 15);
+            if (hasArm)   actions.push('팔');
+            if (hasWaist) actions.push('허리');
+            if (!hasArm && !hasWaist) actions.push('자세');
+        }
+        if (f.locomotion)  actions.push(f.locomotion.direction);
+        if (f.hand_motion) actions.push(`${f.hand_motion.hand}: ${f.hand_motion.motion}`);
+        return actions.join(' + ') || '자세';
+    }
+
+    function renderTimeline() {
+        const tbody = document.getElementById('timeline-table-body');
+        tbody.innerHTML = motionFrames.map((f, i) =>
+            `<tr data-index="${i}">
+                <td>${i+1}</td>
+                <td>${getFrameDescription(f)}</td>
+                <td>${f.duration.toFixed(1)}s</td>
+                <td><button class="delete-frame-btn" data-index="${i}">&times;</button></td>
+            </tr>`
+        ).join('');
+        tbody.querySelectorAll('tr').forEach(row =>
+            row.addEventListener('click', () => loadFrame(parseInt(row.dataset.index)))
+        );
+        tbody.querySelectorAll('.delete-frame-btn').forEach(btn =>
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                motionFrames.splice(parseInt(btn.dataset.index), 1);
+                renderTimeline();
+            })
+        );
+    }
+
+    async function loadFrame(i) {
+        const f = motionFrames[i];
+        if (f?.pose) {
+            await apiCall(API.MOTION, [{ duration: 1.0, pose: f.pose }]);
+            f.pose.targets.forEach(t => setMotorValue(t.motor_index, t.target_degree));
+        }
+        // 손 모션도 미리보기
+        if (f?.hand_motion) {
+            await apiCall(API.HAND, { hand: f.hand_motion.hand, motion: f.hand_motion.motion, release: false });
+        }
+    }
+
+    async function playMotion() {
+        if (isPlaying || !motionFrames.length) return;
+        isPlaying = true;
+        togglePlayUI(false);
+        await apiCall(API.MOTION, motionFrames);
+        isPlaying = false;
+        togglePlayUI(true);
+    }
+
+    async function stopMotion() {
+        await apiCall(API.STOP);
+        isPlaying = false;
+        togglePlayUI(true);
+    }
+
+    function togglePlayUI(en) {
+        document.getElementById('play-motion-btn').style.display = en ? 'block' : 'none';
+        document.getElementById('stop-motion-btn').style.display = en ? 'none' : 'block';
+    }
+
+    function saveMotion() {
+        const name = prompt('파일 이름:', 'motion');
+        if (!name) return;
+        const blob = new Blob([JSON.stringify(motionFrames, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${name}.json`;
+        a.click();
+    }
+
+    function loadMotion() {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.json';
+        input.onchange = e => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = evt => {
+                try { motionFrames = JSON.parse(evt.target.result); renderTimeline(); }
+                catch (err) { alert('파일 오류'); }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    // ==================== 이벤트 바인딩 ====================
+
+    document.getElementById('reset-all-button').addEventListener('click', resetRobot);
+    document.getElementById('add-frame-btn').addEventListener('click', addFrame);
+    document.getElementById('play-motion-btn').addEventListener('click', playMotion);
+    document.getElementById('stop-motion-btn').addEventListener('click', stopMotion);
+    document.getElementById('save-motion-btn').addEventListener('click', saveMotion);
+    document.getElementById('load-motion-btn').addEventListener('click', loadMotion);
+    document.getElementById('safe-mode-checkbox').addEventListener('change', toggleSafeMode);
+
+    // ==================== 초기화 ====================
+    initControls();
+    initHandControls();
+    toggleSafeMode();
+});
+</script>
+</body>
+</html>
