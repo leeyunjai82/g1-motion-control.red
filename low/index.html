@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unitree G1 3D 웹 시뮬레이터 (숫자 입력 추가)</title>
+    <style>
+        :root {
+            --color-bg: #111827;
+            --color-text: #e5e7eb;
+            --color-primary: #f59e0b;
+            --color-primary-hover: #fcd34d;
+            --color-secondary: #4b5563;
+            --color-tertiary: #374151;
+            --color-surface: rgba(31, 41, 55, 0.8);
+            --color-border: #4b5563;
+            --color-log-text: #6ee7b7;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            overflow: hidden;
+            margin: 0;
+        }
+        .main-container {
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 1.5fr auto 1.5fr;
+            grid-template-rows: auto 1fr;
+            padding: 1rem;
+            gap: 1rem;
+            box-sizing: border-box;
+        }
+        .main-title-container {
+            grid-column: span 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .main-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #d1d5db;
+            text-align: center;
+        }
+        #reset-all-button {
+            position: absolute;
+            right: 1rem;
+            background-color: var(--color-secondary);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #reset-all-button:hover {
+            background-color: #6b7280;
+        }
+
+        .control-area {
+            grid-row-start: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2rem;
+        }
+        .control-area.left { align-items: flex-end; padding-right: 2rem; }
+        .control-area.right { align-items: flex-start; padding-left: 2rem; }
+
+        #robot-container {
+            grid-row-start: 2;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            perspective: 1500px;
+        }
+        #robot-model {
+            position: relative;
+            width: 200px;
+            height: 400px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s linear;
+            transform: scale(1.2);
+        }
+        .robot-part {
+            position: absolute;
+            background-image: linear-gradient(to right, #8892a1, #6b7280, #4b5563);
+            border: 1px solid var(--color-tertiary);
+            transform-origin: center;
+            transition: transform 0.2s ease-out;
+            transform-style: preserve-3d;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .limb { border-radius: 9999px; }
+        .joint {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-image: radial-gradient(circle, #fcd34d, var(--color-primary));
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+
+        .control-group {
+            background-color: var(--color-surface);
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--color-border);
+            padding: 16px;
+            border-radius: 12px;
+            width: 240px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .control-group h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #fcd34d;
+            text-align: center;
+        }
+        .control-group .control-item { margin-bottom: 0.5rem; }
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+        .control-group .value-display {
+            font-family: monospace;
+            background-color: #1f2937;
+            padding: 0 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+        .control-group input[type="range"] {
+            flex-grow: 1;
+            height: 0.5rem;
+            background-color: var(--color-secondary);
+            border-radius: 9999px;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+        .control-group input[type="number"] {
+            width: 60px;
+            background-color: #374151;
+            border: 1px solid var(--color-border);
+            color: var(--color-text);
+            border-radius: 0.25rem;
+            padding: 0.25rem;
+            text-align: center;
+            font-family: monospace;
+            -moz-appearance: textfield;
+        }
+        .control-group input[type="number"]::-webkit-outer-spin-button,
+        .control-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        #api-log {
+            position: absolute;
+            bottom: 1.25rem;
+            left: 1.25rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-family: monospace;
+            opacity: 0;
+            transition: opacity 0.5s;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #api-log p { color: var(--color-log-text); }
+        #api-log pre { color: #a7f3d0; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="main-title-container">
+            <h1 class="main-title">G1 3D 웹 시뮬레이터 (API 연동)</h1>
+            <button id="reset-all-button">전체 초기화</button>
+        </div>
+
+        <div class="control-area left">
+            <div id="R_ARM_CONTROLS" class="control-group"></div>
+            <div id="R_LEG_CONTROLS" class="control-group"></div>
+        </div>
+
+        <div id="robot-container">
+            <div id="robot-model">
+                <!-- 몸통 -->
+                <div id="torso" class="robot-part" style="width: 80px; height: 120px; top: 100px; left: 60px; border-radius: 10px; background-image: linear-gradient(to right, #5a6678, #4b5563, #374151);"></div>
+                <div id="waist" class="robot-part" style="width: 60px; height: 20px; top: 220px; left: 70px; border-radius: 5px;"></div>
+                <!-- 머리 -->
+                <div id="head" class="robot-part" style="width: 50px; height: 50px; top: 50px; left: 75px;"></div>
+                <!-- 오른쪽 팔 -->
+                <div class="joint" style="top: 120px; left: 50px;"></div>
+                <div id="R_SHOULDER" class="robot-part limb" style="width: 20px; height: 80px; top: 120px; left: 40px; transform-origin: top center;">
+                    <div id="R_ELBOW" class="robot-part limb" style="width: 20px; height: 70px; top: 80px; left: 0px; transform-origin: top center;">
+                        <div id="R_WRIST" class="robot-part limb" style="width: 18px; height: 40px; top: 70px; left: 1px; transform-origin: top center; background-color: #9ca3af;"></div>
+                    </div>
+                </div>
+                <!-- 왼쪽 팔 -->
+                <div class="joint" style="top: 120px; left: 150px;"></div>
+                <div id="L_SHOULDER" class="robot-part limb" style="width: 20px; height: 80px; top: 120px; left: 140px; transform-origin: top center;">
+                     <div id="L_ELBOW" class="robot-part limb" style="width: 20px; height: 70px; top: 80px; left: 0px; transform-origin: top center;">
+                        <div id="L_WRIST" class="robot-part limb" style="width: 18px; height: 40px; top: 70px; left: 1px; transform-origin: top center; background-color: #9ca3af;"></div>
+                     </div>
+                </div>
+                <!-- 오른쪽 다리 -->
+                <div class="joint" style="top: 240px; left: 70px;"></div>
+                <div id="R_HIP" class="robot-part limb" style="width: 20px; height: 90px; top: 240px; left: 60px; transform-origin: top center;">
+                    <div id="R_KNEE" class="robot-part limb" style="width: 20px; height: 80px; top: 90px; left: 0px; transform-origin: top center;"></div>
+                </div>
+                <!-- 왼쪽 다리 -->
+                <div class="joint" style="top: 240px; left: 130px;"></div>
+                 <div id="L_HIP" class="robot-part limb" style="width: 20px; height: 90px; top: 240px; left: 120px; transform-origin: top center;">
+                    <div id="L_KNEE" class="robot-part limb" style="width: 20px; height: 80px; top: 90px; left: 0px; transform-origin: top center;"></div>
+                </div>
+            </div>
+            <div style="position: absolute; bottom: 15%;">
+                <div id="WAIST_CONTROLS" class="control-group"></div>
+            </div>
+        </div>
+
+        <div class="control-area right">
+            <div id="L_ARM_CONTROLS" class="control-group"></div>
+            <div id="L_LEG_CONTROLS" class="control-group"></div>
+        </div>
+        
+        <div id="api-log">
+            <p>> API Call: /set_motor (POST)</p>
+            <pre id="api-log-content"></pre>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = '/set_motor';
+
+    const G1JointIndex = {
+        LeftHipPitch: 0, LeftHipRoll: 1, LeftHipYaw: 2, LeftKnee: 3,
+        RightHipPitch: 6, RightHipRoll: 7, RightHipYaw: 8, RightKnee: 9,
+        WaistYaw: 12, WaistRoll: 13, WaistPitch: 14,
+        LeftShoulderPitch: 15, LeftShoulderRoll: 16, LeftShoulderYaw: 17, LeftElbow: 18,
+        LeftWristRoll: 19, LeftWristPitch: 20, LeftWristYaw: 21,
+        RightShoulderPitch: 22, RightShoulderRoll: 23, RightShoulderYaw: 24, RightElbow: 25,
+        RightWristRoll: 26, RightWristPitch: 27, RightWristYaw: 28,
+    };
+
+    const JOINT_LIMITS_DEGREE = {
+        0: { min: -145, max: 165 }, 1: { min: -30, max: 170 }, 2: { min: -158, max: 158 }, 3: { min: -5, max: 165 },
+        6: { min: -145, max: 165 }, 7: { min: -170, max: 30 }, 8: { min: -158, max: 158 }, 9: { min: -5, max: 165 },
+        12: { min: -150, max: 150 }, 13: { min: -30, max: 30 }, 14: { min: -30, max: 30 },
+        15: { min: -177, max: 153 }, 16: { min: -91, max: 129 }, 17: { min: -150, max: 150 }, 18: { min: -60, max: 120 },
+        19: { min: -113, max: 113 }, 20: { min: -92.5, max: 92.5 }, 21: { min: -92.5, max: 92.5 },
+        22: { min: -177, max: 153 }, 23: { min: -129, max: 91 }, 24: { min: -150, max: 150 }, 25: { min: -60, max: 120 },
+        26: { min: -113, max: 113 }, 27: { min: -92.5, max: 92.5 }, 28: { min: -92.5, max: 92.5 },
+    };
+    
+    const VISUAL_MAP = {
+        0: { part: 'L_HIP', axis: 'pitch' }, 1: { part: 'L_HIP', axis: 'roll' }, 2: { part: 'L_HIP', axis: 'yaw' }, 3: { part: 'L_KNEE', axis: 'pitch' },
+        6: { part: 'R_HIP', axis: 'pitch' }, 7: { part: 'R_HIP', axis: 'roll' }, 8: { part: 'R_HIP', axis: 'yaw' }, 9: { part: 'R_KNEE', axis: 'pitch' },
+        12: { part: 'torso', axis: 'yaw' }, 13: { part: 'waist', axis: 'roll' }, 14: { part: 'torso', axis: 'pitch' },
+        15: { part: 'L_SHOULDER', axis: 'pitch' }, 16: { part: 'L_SHOULDER', axis: 'roll' }, 17: { part: 'L_SHOULDER', axis: 'yaw' }, 18: { part: 'L_ELBOW', axis: 'pitch' },
+        19: { part: 'L_WRIST', axis: 'roll' }, 20: { part: 'L_WRIST', axis: 'pitch' }, 21: { part: 'L_WRIST', axis: 'yaw' },
+        22: { part: 'R_SHOULDER', axis: 'pitch' }, 23: { part: 'R_SHOULDER', axis: 'roll' }, 24: { part: 'R_SHOULDER', axis: 'yaw' }, 25: { part: 'R_ELBOW', axis: 'pitch' },
+        26: { part: 'R_WRIST', axis: 'roll' }, 27: { part: 'R_WRIST', axis: 'pitch' }, 28: { part: 'R_WRIST', axis: 'yaw' },
+    };
+
+    const currentRotations = {};
+
+    const controlGroups = {
+        '오른쪽 팔': { parent: 'R_ARM_CONTROLS', joints: [
+            { label: 'Shoulder Pitch', index: G1JointIndex.RightShoulderPitch }, { label: 'Shoulder Roll', index: G1JointIndex.RightShoulderRoll },
+            { label: 'Shoulder Yaw', index: G1JointIndex.RightShoulderYaw }, { label: 'Elbow', index: G1JointIndex.RightElbow },
+            { label: 'Wrist Roll', index: G1JointIndex.RightWristRoll }, { label: 'Wrist Pitch', index: G1JointIndex.RightWristPitch },
+            { label: 'Wrist Yaw', index: G1JointIndex.RightWristYaw },
+        ]},
+        '왼쪽 팔': { parent: 'L_ARM_CONTROLS', joints: [
+            { label: 'Shoulder Pitch', index: G1JointIndex.LeftShoulderPitch }, { label: 'Shoulder Roll', index: G1JointIndex.LeftShoulderRoll },
+            { label: 'Shoulder Yaw', index: G1JointIndex.LeftShoulderYaw }, { label: 'Elbow', index: G1JointIndex.LeftElbow },
+            { label: 'Wrist Roll', index: G1JointIndex.LeftWristRoll }, { label: 'Wrist Pitch', index: G1JointIndex.LeftWristPitch },
+            { label: 'Wrist Yaw', index: G1JointIndex.LeftWristYaw },
+        ]},
+        '오른쪽 다리': { parent: 'R_LEG_CONTROLS', joints: [
+            { label: 'Hip Pitch', index: G1JointIndex.RightHipPitch }, { label: 'Hip Roll', index: G1JointIndex.RightHipRoll },
+            { label: 'Hip Yaw', index: G1JointIndex.RightHipYaw }, { label: 'Knee', index: G1JointIndex.RightKnee },
+        ]},
+        '왼쪽 다리': { parent: 'L_LEG_CONTROLS', joints: [
+            { label: 'Hip Pitch', index: G1JointIndex.LeftHipPitch }, { label: 'Hip Roll', index: G1JointIndex.LeftHipRoll },
+            { label: 'Hip Yaw', index: G1JointIndex.LeftHipYaw }, { label: 'Knee', index: G1JointIndex.LeftKnee },
+        ]},
+        '허리': { parent: 'WAIST_CONTROLS', joints: [
+            { label: 'Waist Yaw', index: G1JointIndex.WaistYaw }, { label: 'Waist Roll', index: G1JointIndex.WaistRoll },
+            { label: 'Waist Pitch', index: G1JointIndex.WaistPitch },
+        ]}
+    };
+
+    // 컨트롤러 UI 생성
+    for (const [groupName, {parent, joints}] of Object.entries(controlGroups)) {
+        const parentDiv = document.getElementById(parent);
+        const title = document.createElement('h3');
+        title.textContent = groupName;
+        parentDiv.appendChild(title);
+
+        joints.forEach(({label, index}) => {
+            const limits = JOINT_LIMITS_DEGREE[index] || { min: -180, max: 180 };
+            const wrapper = document.createElement('div');
+            wrapper.className = 'control-item';
+            
+            const labelEl = document.createElement('label');
+            labelEl.textContent = `${label} (${index})`;
+            
+            const valueSpan = document.createElement('span');
+            valueSpan.id = `value-${index}`;
+            valueSpan.className = 'value-display';
+            valueSpan.textContent = '0°';
+            labelEl.appendChild(valueSpan);
+            
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'input-wrapper';
+
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.id = `slider-${index}`;
+            slider.min = limits.min;
+            slider.max = limits.max;
+            slider.value = 0;
+            slider.step = 0.1; 
+            
+            const numberInput = document.createElement('input');
+            numberInput.type = 'number';
+            numberInput.id = `number-${index}`;
+            numberInput.min = limits.min;
+            numberInput.max = limits.max;
+            numberInput.value = 0;
+            numberInput.step = 0.1;
+
+            inputWrapper.appendChild(slider);
+            inputWrapper.appendChild(numberInput);
+
+            wrapper.appendChild(labelEl);
+            wrapper.appendChild(inputWrapper);
+            parentDiv.appendChild(wrapper);
+            
+            if(VISUAL_MAP[index]) {
+                const partId = VISUAL_MAP[index].part;
+                if(!currentRotations[partId]) {
+                    currentRotations[partId] = { pitch: 0, roll: 0, yaw: 0 };
+                }
+            }
+        });
+    }
+    
+    document.querySelectorAll('input[type="range"], input[type="number"]').forEach(input => {
+        input.addEventListener('input', handleInputChange);
+    });
+
+    document.getElementById('reset-all-button').addEventListener('click', handleResetAll);
+
+    function handleInputChange(event) {
+        const changedInput = event.target;
+        const motorIndex = parseInt(changedInput.id.split('-')[1]);
+        let value = parseFloat(changedInput.value);
+
+        const limits = JOINT_LIMITS_DEGREE[motorIndex] || { min: -180, max: 180 };
+        
+        // [수정] 입력값이 비어있거나 숫자가 아니면 0으로 처리
+        if (isNaN(value)) {
+            value = 0;
+        }
+
+        // [수정] 입력값이 한계를 벗어나면 조정 (blur 이벤트에서 최종 확인)
+        if (event.type === 'input') {
+            const slider = document.getElementById(`slider-${motorIndex}`);
+            const numberInput = document.getElementById(`number-${motorIndex}`);
+            
+            // Clamp the value for real-time feedback
+            const clampedValue = Math.max(limits.min, Math.min(limits.max, value));
+
+            if (changedInput.type === 'range') {
+                numberInput.value = clampedValue.toFixed(1);
+            } else {
+                slider.value = clampedValue;
+            }
+            value = clampedValue;
+        }
+
+        let currentDegree = 0;
+        const visualInfo = VISUAL_MAP[motorIndex];
+        if (visualInfo) {
+            const { part, axis } = visualInfo;
+            if (currentRotations[part]) {
+                currentDegree = currentRotations[part][axis];
+            }
+        }
+        const angleDifference = Math.abs(value - currentDegree);
+        let calculatedDuration = angleDifference * (2.0 / 50.0);
+        const duration = Math.max(0.5, calculatedDuration);
+
+        document.getElementById(`value-${motorIndex}`).textContent = `${value.toFixed(0)}°`;
+        
+        setMotorAngle(motorIndex, value, duration); 
+        updateRobotVisual(motorIndex, value);
+    }
+
+    function handleResetAll() {
+        console.log("전체 모터 초기화 실행");
+        for (const indexStr in G1JointIndex) {
+            const motorIndex = G1JointIndex[indexStr];
+            if (typeof motorIndex !== 'number') continue;
+
+            const slider = document.getElementById(`slider-${motorIndex}`);
+            const numberInput = document.getElementById(`number-${motorIndex}`);
+            
+            if (slider) {
+                slider.value = 0;
+                numberInput.value = 0;
+                document.getElementById(`value-${motorIndex}`).textContent = '0°';
+                
+                setMotorAngle(motorIndex, 0, 1.0); 
+                updateRobotVisual(motorIndex, 0);
+            }
+        }
+    }
+
+    const apiLogDiv = document.getElementById('api-log');
+    const apiLogContent = document.getElementById('api-log-content');
+    let logTimeout;
+
+    async function setMotorAngle(motor_index, target_degree, duration) {
+        const payload = {
+            motor_index: motor_index,
+            target_degree: parseFloat(target_degree.toFixed(2)),
+            duration: parseFloat(duration.toFixed(2))
+        };
+        
+        apiLogContent.textContent = JSON.stringify(payload, null, 2);
+        apiLogDiv.style.opacity = 1;
+
+        clearTimeout(logTimeout);
+        logTimeout = setTimeout(() => {
+            apiLogDiv.style.opacity = 0;
+        }, 2000);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                console.error('API 요청 실패:', response.statusText);
+            }
+        } catch (error) {
+            console.error('API 통신 오류:', error);
+        }
+    }
+
+    function updateRobotVisual(motorIndex, degree) {
+        const visualInfo = VISUAL_MAP[motorIndex];
+        if (!visualInfo) return;
+        const { part, axis } = visualInfo;
+        const element = document.getElementById(part);
+        if (!element) return;
+        currentRotations[part][axis] = degree;
+        const { pitch, roll, yaw } = currentRotations[part];
+        element.style.transform = `rotateZ(${yaw}deg) rotateY(${roll}deg) rotateX(${pitch}deg)`;
+    }
+
+    const robotContainer = document.getElementById('robot-container');
+    const robotModel = document.getElementById('robot-model');
+
+    robotContainer.addEventListener('mousemove', (e) => {
+        const rect = robotContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = (y - centerY) / centerY * -15;
+        const rotateY = (x - centerX) / centerX * 15;
+        robotModel.style.transform = `scale(1.2) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+
+    robotContainer.addEventListener('mouseleave', () => {
+        robotModel.style.transform = 'scale(1.2) rotateX(0deg) rotateY(0deg)';
+    });
+});
+</script>
+
+</body>
+</html>
+
