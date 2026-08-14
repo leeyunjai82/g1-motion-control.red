@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-# Version: 1.64
+# Version: 1.65
+# Changes from 1.64:
+#   - 건네기(handover) → 테이블에 내려놓기(place)로 변경
+#     · 잡기 → 들기 → 허리 회전 → 놓을 위치로 이동 까지는 동일
+#     · 이후: PLACE_DROP(기본 5cm) 만큼 하강해 테이블에 놓기
+#             → 양손 벌림 → 벌린 채로 박스 위로 상승 → 허리 중앙 → HOME
+#     · 마커 가림 감지 10초 대기 / 받음·타임아웃 분기 전부 제거
+#     · PLACE_DROP, PLACE_OPEN_MARGIN 상수 추가 (현장 조정용)
+#     · /set_place?drop=0.05&open_margin=0.10 엔드포인트 추가
 # Changes from 1.63:
 #   - 박스 크기 (W/D/H) 웹에서 실시간 변경 가능
 #     · 전역 box_size dict
@@ -144,14 +152,24 @@ box_size = {
 # 0.0이면 비활성. 카메라 좌표 보정 우선 시도 중이라 일단 0.
 LEFT_HAND_Y_OFFSET = 0.0
 
-HANDOVER_X = 0.30   # 건네기 X 거리 (작을수록 가까이, 이전 0.40)
+HANDOVER_X = 0.30   # 놓는 위치 X 거리 (작을수록 가까이, 이전 0.40)
 
 # ==========================================
-# Handover 방향 (center / left / right)
+# 내려놓기 (place) 파라미터  ← 1.65 신규
+# ==========================================
+# PLACE_DROP       : 잡았던 높이(grab_z)에서 얼마나 더 내려서 놓을지 (m)
+#                    · 놓을 테이블이 집어온 곳보다 낮으면 그 차이만큼 키운다
+#                    · 값이 작으면 박스를 떨어뜨리고, 크면 테이블에 눌러 박는다
+# PLACE_OPEN_MARGIN: 놓은 뒤 양손을 좌우로 벌리는 거리 (m, 한쪽당)
+PLACE_DROP        = 0.05
+PLACE_OPEN_MARGIN = 0.10
+
+# ==========================================
+# 놓는 방향 (center / left / right)
 # ==========================================
 # "center" = 정면 (waist 0)
-# "left"   = 받는 사람이 로봇의 왼쪽 → waist yaw 양수
-# "right"  = 받는 사람이 로봇의 오른쪽 → waist yaw 음수
+# "left"   = 로봇의 왼쪽에 놓기 → waist yaw 양수
+# "right"  = 로봇의 오른쪽에 놓기 → waist yaw 음수
 HANDOVER_DIRECTION = "center"   # "center" | "left" | "right"
 HANDOVER_YAW_DEG   = 30.0       # left/right일 때 회전 각도
 
@@ -175,9 +193,8 @@ WEB_STREAM_QUALITY = 70    # JPEG 품질 (기존 80 → 70)
 MSG_INIT     = "Hi, Red Hat Summit! I have gifts for you."
 MSG_TRIGGER  = "A box! Let me pick it up."
 MSG_PICKED   = "I got it."
-MSG_HANDOVER = "This is for you! Please grab the top of the box."
-MSG_RECEIVED = "Enjoy your gift!"
-MSG_TIMEOUT  = "Nobody? I will put it back."
+MSG_PLACE    = "Let me put this down."
+MSG_PLACED   = "All done. There you go."
 MSG_HOME     = "Who is next? Bring me another box."
 
 # 대기 잡소리 (Red Hat 6 + Intel 2 + Circulus 2)
@@ -851,63 +868,59 @@ def grab_sequence(tvec_orig):
     if not robot_move(ll, rl, 1.5, "⑦ 들기", l_rot, r_rot): return False, None, None
     time.sleep(0.2)
 
-    # ⑦' 허리 회전 — handover 방향에 따라
+    # ⑦' 허리 회전 — 놓는 방향에 따라
     if HANDOVER_DIRECTION == "left":
         handover_yaw = +HANDOVER_YAW_DEG
     elif HANDOVER_DIRECTION == "right":
         handover_yaw = -HANDOVER_YAW_DEG
     else:
         handover_yaw = 0.0
-    print(f"[GRAB] ⑦' 허리 yaw → {handover_yaw:.1f}도 (handover: {HANDOVER_DIRECTION})")
+    print(f"[GRAB] ⑦' 허리 yaw → {handover_yaw:.1f}도 (놓는 방향: {HANDOVER_DIRECTION})")
     if ROBOT_AVAILABLE and arm is not None:
         arm.move_waist_smooth(yaw=handover_yaw, roll=0.0, pitch=0.0, duration=1.5)
         time.sleep(0.5)
 
+    # ==========================================
+    # ⑧~⑪ 테이블에 내려놓기 (1.65 — 기존 건네기/대기 로직 대체)
+    #   ⑧ 놓을 위치로 팔 뻗기 (들고 있는 높이 유지)
+    #   ⑨ PLACE_DROP 만큼 하강 → 테이블에 안착
+    #   ⑩ 양손 벌림 → 박스 놓음
+    #   ⑪ 벌린 채로 박스 위로 상승 (손이 박스를 긁지 않게)
+    # ==========================================
     hl = [HANDOVER_X, +grp_off + LEFT_HAND_Y_OFFSET, lift_z]
     hr = [HANDOVER_X, -grp_off, lift_z]
-    if not robot_move(hl, hr, 1.5, "⑧ 건네기", l_rot, r_rot): return False, None, None
+    if not robot_move(hl, hr, 1.5, "⑧ 놓을 위치로 이동", l_rot, r_rot): return False, None, None
+    time.sleep(0.3)
+    speak(MSG_PLACE)
+
+    place_z = grab_z - PLACE_DROP
+    print(f"[PLACE] grab_z={grab_z:.3f} → place_z={place_z:.3f} (drop {PLACE_DROP*100:.0f}cm)")
+
+    pl = [HANDOVER_X, +grp_off + LEFT_HAND_Y_OFFSET, place_z]
+    pr = [HANDOVER_X, -grp_off, place_z]
+    if not robot_move(pl, pr, 1.5, "⑨ 내려놓기", l_rot, r_rot): return False, None, None
     time.sleep(0.3)
 
-    # ⑧ 건네기 완료 → 사용자 행동 유도 멘트
-    speak(MSG_HANDOVER)
+    open_l = [HANDOVER_X, +grp_off + PLACE_OPEN_MARGIN + LEFT_HAND_Y_OFFSET, place_z]
+    open_r = [HANDOVER_X, -grp_off - PLACE_OPEN_MARGIN, place_z]
+    if not robot_move(open_l, open_r, 1.0, "⑩ 손 벌림 (놓음)", l_rot, r_rot): return False, None, None
+    time.sleep(0.2)
 
-    print("[HANDOVER] 10초 대기 (마커 가려지면 받음, 안 가려지면 내려놓음)")
-    start = time.time()
-    received = False
-    while time.time() - start < 10.0:
-        if not is_marker_visible(threshold_sec=0.5):
-            received = True
-            print(f"[HANDOVER] 마커 가려짐 → 받음 감지 ({time.time()-start:.1f}초)")
-            break
-        time.sleep(0.1)
-
-    if received:
-        speak(MSG_RECEIVED)
-        robot_move([HANDOVER_X, +grp_off+0.10, lift_z],
-                   [HANDOVER_X, -grp_off-0.10, lift_z],
-                   1.0, "⑩ 손 벌림 (수령)", l_rot, r_rot)
-    else:
-        print("[HANDOVER] 타임아웃 → 박스 내려놓기")
-        speak(MSG_TIMEOUT)
-        robot_move([HANDOVER_X, +grp_off, grab_z],
-                   [HANDOVER_X, -grp_off, grab_z],
-                   1.5, "⑩a 내려놓기", l_rot, r_rot)
-        robot_move([HANDOVER_X, +grp_off+0.10, grab_z],
-                   [HANDOVER_X, -grp_off-0.10, grab_z],
-                   1.0, "⑩b 손 벌림", l_rot, r_rot)
-        robot_move([HANDOVER_X, +grp_off+0.10, lift_z],
-                   [HANDOVER_X, -grp_off-0.10, lift_z],
-                   1.0, "⑩c 위로 후퇴", l_rot, r_rot)
+    up_l = [HANDOVER_X, +grp_off + PLACE_OPEN_MARGIN + LEFT_HAND_Y_OFFSET, lift_z]
+    up_r = [HANDOVER_X, -grp_off - PLACE_OPEN_MARGIN, lift_z]
+    if not robot_move(up_l, up_r, 1.0, "⑪ 박스 위로 상승", l_rot, r_rot): return False, None, None
+    time.sleep(0.2)
+    speak(MSG_PLACED)
 
     # ==========================================
     # 마무리: 중앙 복귀 → 홈
     # ==========================================
-    print("[HANDOVER] ⑪ 허리 중앙 복귀")
+    print("[PLACE] ⑫ 허리 중앙 복귀")
     reset_waist()
-    print("[HANDOVER] ⑪ 홈 자세 복귀")
-    robot_move(HOME_LEFT, HOME_RIGHT, 2.0, "⑪ Home")
+    print("[PLACE] ⑫ 홈 자세 복귀")
+    robot_move(HOME_LEFT, HOME_RIGHT, 2.0, "⑫ Home")
 
-    # ⑪ 홈 복귀 완료 멘트
+    # ⑫ 홈 복귀 완료 멘트
     speak(MSG_HOME)
 
     return False, None, None
@@ -973,7 +986,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <body>
     <div id="wrap">
     <h1>G1 Box Grab</h1>
-    <p class="sub">원격 MJPEG → 마커 감지 → 가로면 잡기 → 정면 대칭 → 건네기</p>
+    <p class="sub">원격 MJPEG → 마커 감지 → 가로면 잡기 → 정면 대칭 → 테이블에 내려놓기</p>
 
     <div id="layout">
         <img id="stream" src="/video_feed" width="640" height="480" style="image-rendering:auto;">
@@ -1045,7 +1058,17 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
 
             <div class="card">
-                <div class="card-title">건네기 방향</div>
+                <div class="card-title">내려놓기 (cm)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; color:#666;">
+                    <div>하강<input class="rpy-input" id="pl-drop" type="number" value="5" step="1" style="width:100%"></div>
+                    <div>벌림<input class="rpy-input" id="pl-open" type="number" value="10" step="1" style="width:100%"></div>
+                </div>
+                <button class="btn btn-apply" onclick="applyPlace()" style="margin-top:8px; width:100%; padding:6px; font-size:11px;">적용</button>
+                <div id="pl-msg" style="font-size:11px; color:#666; margin-top:6px;">현재: 하강 5 / 벌림 10</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">놓는 방향</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
                     <button class="btn btn-apply" id="ho-left"   onclick="setHandover('left')"   style="padding:8px; font-size:12px;">◀ 왼쪽</button>
                     <button class="btn btn-apply" id="ho-center" onclick="setHandover('center')" style="padding:8px; font-size:12px;">■ 중앙</button>
@@ -1181,6 +1204,18 @@ HTML_PAGE = """<!DOCTYPE html>
                         const hcm = Math.round(s.height * 100);
                         const msg = document.getElementById('bx-msg');
                         msg.textContent = `현재: ${wcm} × ${dcm} × ${hcm}`;
+                        msg.style.color = '#4CAF50';
+                    }
+                });
+        }
+        function applyPlace() {
+            const drop = parseFloat(document.getElementById('pl-drop').value) / 100;
+            const open = parseFloat(document.getElementById('pl-open').value) / 100;
+            fetch(`/set_place?drop=${drop}&open_margin=${open}`)
+                .then(r => r.json()).then(res => {
+                    if (res.success) {
+                        const msg = document.getElementById('pl-msg');
+                        msg.textContent = `현재: 하강 ${Math.round(res.drop*100)} / 벌림 ${Math.round(res.open_margin*100)}`;
                         msg.style.color = '#4CAF50';
                     }
                 });
@@ -1372,16 +1407,35 @@ async def set_wrist(
     return {"success": True, "wrist_params": wrist_params}
 
 
+@app.get("/set_place")
+async def set_place(drop: float = None, open_margin: float = None):
+    """내려놓기 파라미터 변경 (단위: m).
+    drop        = 잡았던 높이에서 얼마나 더 내려서 놓을지
+    open_margin = 놓은 뒤 양손을 좌우로 벌리는 거리 (한쪽당)"""
+    global PLACE_DROP, PLACE_OPEN_MARGIN
+    if drop is not None:
+        PLACE_DROP = float(drop)
+    if open_margin is not None:
+        PLACE_OPEN_MARGIN = float(open_margin)
+    print(f"[PLACE] drop={PLACE_DROP:.3f}m, open_margin={PLACE_OPEN_MARGIN:.3f}m")
+    return {"success": True, "drop": PLACE_DROP, "open_margin": PLACE_OPEN_MARGIN}
+
+
+@app.get("/place_params")
+async def get_place_params():
+    return {"drop": PLACE_DROP, "open_margin": PLACE_OPEN_MARGIN}
+
+
 @app.get("/set_handover_direction")
 async def set_handover_direction(direction: str = "center", yaw_deg: float = None):
-    """건네기 방향 변경: center / left / right"""
+    """놓는 방향 변경: center / left / right"""
     global HANDOVER_DIRECTION, HANDOVER_YAW_DEG
     if direction not in ("center", "left", "right"):
         return {"success": False, "error": f"invalid direction: {direction}"}
     HANDOVER_DIRECTION = direction
     if yaw_deg is not None:
         HANDOVER_YAW_DEG = float(yaw_deg)
-    print(f"[HANDOVER] 방향={HANDOVER_DIRECTION}, yaw={HANDOVER_YAW_DEG}도")
+    print(f"[PLACE] 방향={HANDOVER_DIRECTION}, yaw={HANDOVER_YAW_DEG}도")
     return {"success": True, "direction": HANDOVER_DIRECTION, "yaw_deg": HANDOVER_YAW_DEG}
 
 

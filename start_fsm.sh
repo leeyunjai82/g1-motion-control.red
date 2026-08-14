@@ -1,6 +1,6 @@
 #!/bin/bash
-if [ "$#" -ne 1 ] || { [ "$1" != "stand" ] && [ "$1" != "sit" ] && [ "$1" != "bal" ] && [ "$1" != "no-bal" ]; }; then
-    echo "Usage: $0 [stand|sit|bal|no-bal]"
+if [ "$#" -ne 1 ] || { [ "$1" != "stand" ] && [ "$1" != "sit" ] && [ "$1" != "bal" ] && [ "$1" != "damp" ] && [ "$1" != "no-bal" ]; }; then
+    echo "Usage: $0 [stand|sit|bal|damp|no-bal]"
     exit 1
 fi
 

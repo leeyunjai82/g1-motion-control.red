@@ -8,7 +8,7 @@ def setfsmid(n):
     res = loco_client.SetFsmId(n)
     print(f"[setfsmid-END]: Result({res})")
 
-if len(sys.argv) < 2 or sys.argv[1] not in ("stand", "sit", "bal", "no-bal"):
+if len(sys.argv) < 2 or sys.argv[1] not in ("stand", "sit", "bal", "damp", "no-bal"):
     print("Usage: python init_fsm.py [stand|sit]")
     sys.exit(1)
 
@@ -34,3 +34,6 @@ elif mode == "bal":
 elif mode == "no-bal":
     time.sleep(3)
     setfsmid(4)
+elif mode == "damp":
+    time.sleep(3)
+    setfsmid(1)
