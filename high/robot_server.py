@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
-# Version: 1.3
+# Version: 1.2
 # Changes:
-#   1.3 - 건네기(handover) → 테이블에 내려놓기(place)로 변경
-#         · _finish_sequence 후반부 교체. 대칭정렬 → 들기 → 허리회전 →
-#           놓을 위치로 이동 까지는 동일
-#         · 이후: PLACE_DROP(기본 5cm) 하강해 테이블에 놓기 → 양손 벌림 →
-#                 벌린 채로 박스 위로 상승 → 허리 중앙 → HOME
-#         · marker 가림 8초 감지 / box 3초 대기 / 받음·타임아웃 분기 전부 제거
-#         · PLACE_DROP, PLACE_OPEN_MARGIN 상수 + GET /set_place 로 현장 조정
 #   1.2 - grab_box가 L/R 실제좌표 직접 사용(기울어진 박스 양손 정확)
 #   1.1 - handover 허리 yaw 회전 각도비례 감속(90도시 느리게), reset 1.5초
 #   1.0 - box 놓기 5초→3초, 미수령 시 약간 내려놓기(타임아웃)
@@ -71,6 +64,7 @@ VENDOR_DIR  = os.path.join(current_dir, 'assets', 'vendor')
 
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from ctrl.arm_controller_wrapper import ArmControllerWrapper, LocoClientWrapper, GLOBAL_TO_INTERNAL
+from ctrl.arm_sdk_gate import ArmSdkGate
 
 
 
@@ -129,19 +123,9 @@ GRIP_EXTRA     = -0.050
 APPROACH_EXTRA = 0.10
 GRAB_Z_OFFSET  = 0.08
 GRAB_X_OFFSET  = -0.15
-HANDOVER_X     = 0.30    # 놓을 위치 X 거리 (몸에서 얼마나 앞으로)
+HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
 WAIST_BASE_PITCH = 0.0   # 기본 상체 각도 (0=중립)
-
-# ==========================================
-# 내려놓기(place) 파라미터  ← 1.3 신규
-# ==========================================
-# PLACE_DROP       : 잡았던 높이(grab_z)에서 얼마나 더 내려서 놓을지 (m)
-#                    · 놓을 테이블이 집어온 곳보다 낮으면 그 차이만큼 키운다
-#                    · 작으면 박스를 떨어뜨리고, 크면 테이블에 눌러 박는다
-# PLACE_OPEN_MARGIN: 놓은 뒤 양손을 좌우로 벌리는 거리 (m, 한쪽당)
-PLACE_DROP        = 0.05
-PLACE_OPEN_MARGIN = 0.10
 
 
 # ==========================================
@@ -163,29 +147,26 @@ class GrabController:
             'left':  {'roll': -10.0, 'pitch': -10.0, 'yaw': -15.0},
             'right': {'roll':  10.0, 'pitch': -10.0, 'yaw':  15.0},
         }
-        # 놓는 방향 (기존 handover 방향 — 허리 yaw 회전)
+        # handover 방향
         self.handover_direction = "center"   # center|left|right
         self.handover_yaw_deg   = 30.0
-
-        # 내려놓기 파라미터 (런타임 변경 — /set_place)
-        self.place_drop        = PLACE_DROP
-        self.place_open_margin = PLACE_OPEN_MARGIN
 
         # 박스 크기 (marker 모드 고정값, box 모드는 측정값 사용)
         self.box_size = {"width": 0.28, "depth": 0.09, "height": 0.09}
 
-        # TTS 멘트
-        self.MSG_PICKED = "I got it."
-        self.MSG_PLACE  = "Let me put this down."
-        self.MSG_PLACED = "All done. There you go."
-        self.MSG_HOME   = "Bring me another box."
+        # TTS 멘트 (선물 컨셉 제거, 잡기 위주)
+        self.MSG_PICKED   = "I got it."
+        self.MSG_HANDOVER = "Here you go. Please take the box."
+        self.MSG_RECEIVED = "Nicely done!"
+        self.MSG_TIMEOUT  = "No one? I will put it down."
+        self.MSG_HOME      = "Bring me another box."
 
         self.HOME_LEFT  = [0.15,  0.25, 0.20]
         self.HOME_RIGHT = [0.15, -0.25, 0.20]
 
         # 허리 정렬 후 재감지 콜백 (robot_server가 주입) — None이면 재감지 안 함
         self.redetect = None
-        self._last_kind = "marker"   # 마지막 잡기 종류
+        self._last_kind = "marker"   # 마지막 잡기 종류 (handover 가림 판정용)
 
     # ---- 로봇 저수준 래퍼 ----
     def _rpy_to_quat(self, roll_deg, pitch_deg, yaw_deg):
@@ -237,7 +218,7 @@ class GrabController:
         return (self._rpy_to_quat(lp['roll'], lp['pitch'], lp['yaw']),
                 self._rpy_to_quat(rp['roll'], rp['pitch'], rp['yaw']))
 
-    # ---- 공통 후반부: 대칭→들기→회전→내려놓기→복귀 ----
+    # ---- 공통 후반부: 대칭→들기→handover→복귀 ----
     def _finish_sequence(self, grab_x_base, grp_off_L, grp_off_R,
                          grab_z, lift_z, l_rot, r_rot):
         self.speak(self.MSG_PICKED)
@@ -254,65 +235,68 @@ class GrabController:
             return
         time.sleep(0.2)
 
-        # ⑦' 허리 회전 — 놓는 방향에 따라
         if self.handover_direction == "left":
             hy = +self.handover_yaw_deg
         elif self.handover_direction == "right":
             hy = -self.handover_yaw_deg
         else:
             hy = 0.0
-        print(f"[GRAB] ⑦' 허리 yaw → {hy:.1f}도 (놓는 방향: {self.handover_direction})")
+        print(f"[GRAB] ⑦' 허리 yaw → {hy:.1f}도")
         if self.robot_available and self.arm is not None:
             # 회전 각도가 클수록 느리게 (기본 1.5초 + 30도당 1초)
             yaw_dur = 1.5 + abs(hy) / 30.0
             self.arm.move_waist_smooth(yaw=hy, roll=0.0, pitch=WAIST_BASE_PITCH, duration=yaw_dur)
             time.sleep(0.5)
 
-        # ==========================================
-        # ⑧~⑪ 테이블에 내려놓기 (1.3 — 기존 건네기/대기 로직 대체)
-        #   ⑧ 놓을 위치로 팔 뻗기 (들고 있는 높이 유지)
-        #   ⑨ place_drop 만큼 하강 → 테이블에 안착
-        #   ⑩ 양손 벌림 → 박스 놓음
-        #   ⑪ 벌린 채로 박스 위로 상승 (손이 박스를 긁거나 쓰러뜨리지 않게)
-        # ==========================================
         hl = [HANDOVER_X, +grp_off_L + LEFT_HAND_Y_OFFSET, lift_z]
         hr = [HANDOVER_X, -grp_off_R, lift_z]
-        if not self._move(hl, hr, 1.5, "⑧ 놓을 위치로 이동", l_rot, r_rot):
+        if not self._move(hl, hr, 1.5, "⑧ 건네기", l_rot, r_rot):
             return
         time.sleep(0.3)
-        self.speak(self.MSG_PLACE)
+        self.speak(self.MSG_HANDOVER)
 
-        place_z = grab_z - self.place_drop
-        print(f"[PLACE] grab_z={grab_z:.3f} → place_z={place_z:.3f} "
-              f"(drop {self.place_drop*100:.0f}cm)")
+        # 받음 처리 — 종류별로 다름
+        received = False
+        if self._last_kind == "marker" and self.redetect is not None:
+            # 마커: 박스 윗면에 마커가 붙어있어 받으면 가려짐 → 가림 감지 (최대 8초)
+            start = time.time()
+            while time.time() - start < 8.0:
+                d = self.redetect("marker")
+                if d is None:
+                    received = True
+                    print(f"[HANDOVER] 마커 가림 → 받음 ({time.time()-start:.1f}s)")
+                    break
+                time.sleep(0.2)
+            if not received:
+                print("[HANDOVER] 타임아웃 → 그냥 놓음")
+        else:
+            # 박스: 받아도 계속 보이므로 고정 3초 대기 후 놓기
+            print("[HANDOVER] 박스 — 3초 대기 후 놓기")
+            time.sleep(3.0)
+            received = True
 
-        pl = [HANDOVER_X, +grp_off_L + LEFT_HAND_Y_OFFSET, place_z]
-        pr = [HANDOVER_X, -grp_off_R, place_z]
-        if not self._move(pl, pr, 1.5, "⑨ 내려놓기", l_rot, r_rot):
-            return
+        self.speak(self.MSG_RECEIVED if received else self.MSG_TIMEOUT)
+
+        if received:
+            # 받음 — 그 높이에서 손 벌려 놓기
+            open_L = [HANDOVER_X, +grp_off_L + 0.10 + LEFT_HAND_Y_OFFSET, lift_z]
+            open_R = [HANDOVER_X, -grp_off_R - 0.10, lift_z]
+            self._move(open_L, open_R, 1.0, "⑩ 손 벌림 (놓기)", l_rot, r_rot)
+        else:
+            # 못 받음 — 약간 내려서 살포시 놓고 손 벌림
+            down_z = lift_z - 0.12
+            dl = [HANDOVER_X, +grp_off_L + LEFT_HAND_Y_OFFSET, down_z]
+            dr = [HANDOVER_X, -grp_off_R, down_z]
+            self._move(dl, dr, 1.2, "⑩ 내려놓기", l_rot, r_rot)
+            time.sleep(0.2)
+            open_L = [HANDOVER_X, +grp_off_L + 0.10 + LEFT_HAND_Y_OFFSET, down_z]
+            open_R = [HANDOVER_X, -grp_off_R - 0.10, down_z]
+            self._move(open_L, open_R, 1.0, "⑩' 손 벌림 (놓기)", l_rot, r_rot)
         time.sleep(0.3)
 
-        om = self.place_open_margin
-        open_L = [HANDOVER_X, +grp_off_L + om + LEFT_HAND_Y_OFFSET, place_z]
-        open_R = [HANDOVER_X, -grp_off_R - om, place_z]
-        if not self._move(open_L, open_R, 1.0, "⑩ 손 벌림 (놓음)", l_rot, r_rot):
-            return
-        time.sleep(0.2)
-
-        up_L = [HANDOVER_X, +grp_off_L + om + LEFT_HAND_Y_OFFSET, lift_z]
-        up_R = [HANDOVER_X, -grp_off_R - om, lift_z]
-        if not self._move(up_L, up_R, 1.0, "⑪ 박스 위로 상승", l_rot, r_rot):
-            return
-        time.sleep(0.2)
-        self.speak(self.MSG_PLACED)
-
-        # ==========================================
-        # 마무리: 허리 중앙 복귀 → 홈
-        # ==========================================
-        print("[PLACE] ⑫ 허리 중앙 복귀")
+        print("[HANDOVER] ⑪ 복귀")
         self._reset_waist()
-        print("[PLACE] ⑫ 홈 자세 복귀")
-        self._move(self.HOME_LEFT, self.HOME_RIGHT, 2.0, "⑫ Home")
+        self._move(self.HOME_LEFT, self.HOME_RIGHT, 2.0, "⑪ Home")
         self.speak(self.MSG_HOME)
 
     # ---- 대기 자세 (모드 선택 시) ----
@@ -494,6 +478,7 @@ loco: Optional[LocoClientWrapper]    = None
 hand: Optional[object]               = None
 tts:  Optional[object]               = None
 grab: Optional[GrabController]       = None
+arm_gate: Optional[ArmSdkGate]       = None   # arm_sdk 제어권 수동 토글
 
 is_running = False
 STOP_FLAG  = False
@@ -502,6 +487,59 @@ STOP_FLAG  = False
 ACTIVE_MODE = "none"          # "none" | "marker" | "box"
 grab_busy   = False
 grab_lock   = threading.Lock()
+
+
+def _arm_held() -> bool:
+    """arm_sdk 제어권을 잡고 있는 상태인가 (상체 모션 가능 여부)."""
+    return arm_gate is None or arm_gate.state == "hold"
+
+
+def _require_arm_hold():
+    """release 상태에서 상체 모션이 나가면 follow 스레드와 충돌한다."""
+    if not _arm_held():
+        raise HTTPException(409, "arm released — /arm_hold 먼저")
+
+
+# ---- HOME 자세 (팔 내림) ----
+# calm_down.json 마지막 프레임과 동일. IK 미사용 — 관절각 직접 지령.
+# 순서: L Shoulder P/R/Y, Elbow, Wrist R/P/Y  →  R 동일 (내부 인덱스 0~13)
+PARK_ARM_DEG = [10.0,  15.0, 0.0, 50.0, 0.0, 0.05, 0.05,
+                10.0, -15.0, 0.0, 50.0, 0.0, 0.05, 0.05]
+PARK_WAIST_DEG = [0.0, 0.0, 0.0]   # yaw, roll, pitch
+
+
+def _park_arm(duration=2.0):
+    """팔 내림 자세 (calm_down 종료 자세). IK 미사용."""
+    if not arm:
+        return False
+    arm.move_waist_smooth(yaw=PARK_WAIST_DEG[0], roll=PARK_WAIST_DEG[1],
+                          pitch=PARK_WAIST_DEG[2], duration=duration)
+    arm.move_joints_smooth(PARK_ARM_DEG, duration)
+    return True
+
+
+def _freeze_arm():
+    """팔·허리를 현재 실측 자세로 고정한다. (0도로 보내지 않음 — 그건 /home)"""
+    if not arm:
+        return
+    try:
+        arm.stop_motion()          # 진행 중 보간 중단
+    except Exception:
+        pass
+    if arm_gate is not None and arm_gate.state == "release":
+        return                     # follow 스레드가 이미 실측각을 물고 있다
+    try:
+        if arm_gate is not None:
+            arm_gate.sync_targets()
+        elif arm.arm_ctrl:
+            ctrl = arm.arm_ctrl
+            all_q = np.asarray(ctrl.get_current_motor_q(), dtype=float)
+            with ctrl.ctrl_lock:
+                ctrl.q_target = np.asarray(ctrl.get_current_dual_arm_q(), dtype=float)
+                ctrl.tauff_target = np.zeros(14)
+                ctrl.waist_q_target = all_q[12:15].copy()
+    except Exception as e:
+        print(f"[STOP] freeze 실패: {e}")
 
 
 # ==========================================
@@ -582,7 +620,7 @@ def execute_hand_motion_sync(h: str, motion: str):
 # ==========================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global arm, loco, hand, tts, grab, ACTIVE_MODE
+    global arm, loco, hand, tts, grab, ACTIVE_MODE, arm_gate
 
     print("[robot_server] 시작")
     ChannelFactoryInitialize(0)
@@ -596,10 +634,12 @@ async def lifespan(app: FastAPI):
     try:
         arm = ArmControllerWrapper(motion_mode=True, simulation_mode=False)
         arm.start()
-        print("✅ Arm 초기화")
+        arm_gate = ArmSdkGate(arm)
+        print("✅ Arm 초기화 (arm_sdk: hold)")
     except Exception as e:
         print(f"⚠️ Arm 실패: {e}")
         arm = None
+        arm_gate = None
 
     if HAND_AVAILABLE:
         try:
@@ -661,7 +701,11 @@ async def lifespan(app: FastAPI):
         try:
             # 팔 자세는 건드리지 않음 (현재 위치 그대로 멈춤)
             # 제어권만 천천히 반납 (weight 1→0, 1초) — 팔이 확 안 떨어지게
-            if arm.arm_ctrl and arm.arm_ctrl.motion_mode:
+            if arm_gate is not None and arm_gate.state == "release":
+                # 이미 반납 상태: follow 스레드만 정리 (다시 1로 올렸다 내리면 안 됨)
+                arm_gate.shutdown()
+                print("[shutdown] 이미 release 상태 — 반납 생략")
+            elif arm.arm_ctrl and arm.arm_ctrl.motion_mode:
                 from ctrl.robot_arm import G1_29_JointIndex
                 print("[shutdown] 제어권 반납 (weight 1->0, 1초)")
                 for weight in np.linspace(1.0, 0.0, num=50):
@@ -821,6 +865,9 @@ async def grab_at(req: GrabRequest):
         return JSONResponse({"ok": False, "reason": f"mode={ACTIVE_MODE}"})
     if req.type == "cardboard" and ACTIVE_MODE != "box":
         return JSONResponse({"ok": False, "reason": f"mode={ACTIVE_MODE}"})
+    # arm_sdk 제어권 게이트
+    if not _arm_held():
+        return JSONResponse({"ok": False, "reason": "arm released — Hold 먼저"})
     # 중복 방지
     with grab_lock:
         if grab_busy or is_running:
@@ -845,7 +892,7 @@ async def set_mode(mode: str):
     print(f"[MODE] {prev} → {mode}")
 
     # 모드 전환 시 대기 자세 (잡기 중이 아닐 때만)
-    if not grab_busy and not is_running and grab is not None:
+    if not grab_busy and not is_running and grab is not None and _arm_held():
         def _pose():
             if mode in ("marker", "box"):
                 grab.ready()      # 팔 들어 대기
@@ -858,7 +905,8 @@ async def set_mode(mode: str):
 
 @app.get("/grab_status")
 async def grab_status():
-    return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running}
+    return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running,
+            "arm_mode": (arm_gate.state if arm_gate else "n/a")}
 
 
 @app.get("/set_wrist")
@@ -870,24 +918,6 @@ async def set_wrist(l_roll: float=0, l_pitch: float=0, l_yaw: float=0,
     }
     print(f"[WRIST] {grab.wrist_params}")
     return {"success": True, "wrist_params": grab.wrist_params}
-
-
-@app.get("/set_place", summary="내려놓기 파라미터 (drop=하강 m, open_margin=벌림 m)")
-async def set_place(drop: float=None, open_margin: float=None):
-    """drop        = 잡았던 높이(grab_z)에서 얼마나 더 내려서 놓을지 (m)
-    open_margin = 놓은 뒤 양손을 좌우로 벌리는 거리 (m, 한쪽당)"""
-    if drop is not None:
-        grab.place_drop = float(drop)
-    if open_margin is not None:
-        grab.place_open_margin = float(open_margin)
-    print(f"[PLACE] drop={grab.place_drop:.3f}m, open_margin={grab.place_open_margin:.3f}m")
-    return {"success": True, "drop": grab.place_drop,
-            "open_margin": grab.place_open_margin}
-
-
-@app.get("/place_params")
-async def get_place_params():
-    return {"drop": grab.place_drop, "open_margin": grab.place_open_margin}
 
 
 @app.get("/set_box_size")
@@ -907,13 +937,12 @@ async def get_box_size():
 
 @app.get("/set_handover_direction")
 async def set_handover_direction(direction: str="center", yaw_deg: float=None):
-    """놓는 방향 (center/left/right) — 들기 후 허리 yaw 회전 각도."""
     if direction not in ("center", "left", "right"):
         return JSONResponse({"success": False, "error": f"invalid: {direction}"})
     grab.handover_direction = direction
     if yaw_deg is not None:
         grab.handover_yaw_deg = float(yaw_deg)
-    print(f"[PLACE] 방향={direction}, yaw={grab.handover_yaw_deg}")
+    print(f"[HANDOVER] {direction}, yaw={grab.handover_yaw_deg}")
     return {"success": True, "direction": direction, "yaw_deg": grab.handover_yaw_deg}
 
 
@@ -923,6 +952,8 @@ async def grab_manual():
     import urllib.request
     if ACTIVE_MODE == "none":
         return JSONResponse({"ok": False, "reason": "mode is none"})
+    if not _arm_held():
+        return JSONResponse({"ok": False, "reason": "arm released — Hold 먼저"})
     url = ("http://localhost:50011/pose" if ACTIVE_MODE == "marker"
            else "http://localhost:50010/pose")
     try:
@@ -946,7 +977,8 @@ async def status():
     return {"is_running": is_running, "arm_ready": arm is not None,
             "loco_ready": loco is not None, "hand_ready": hand is not None,
             "tts_ready": tts is not None, "active_mode": ACTIVE_MODE,
-            "grab_busy": grab_busy}
+            "grab_busy": grab_busy,
+            "arm_mode": (arm_gate.state if arm_gate else "n/a")}
 
 @app.get("/motions")
 async def list_motions():
@@ -955,6 +987,7 @@ async def list_motions():
 
 @app.post("/motions/run/{filename}")
 async def run_motion_by_name(filename: str):
+    _require_arm_hold()
     if is_running or grab_busy:
         raise HTTPException(409, "동작 중")
     filepath = MOTIONS_DIR / filename
@@ -974,6 +1007,7 @@ async def run_motion_by_name(filename: str):
 
 @app.post("/send_gift")
 async def send_gift():
+    _require_arm_hold()
     if is_running or grab_busy:
         raise HTTPException(409, "동작 중")
     if not (MOTIONS_DIR / "right_send.json").exists():
@@ -983,6 +1017,7 @@ async def send_gift():
 
 @app.post("/run")
 async def run_motion(frames: List[MotionFrame]):
+    _require_arm_hold()
     if is_running or grab_busy: raise HTTPException(409, "동작 중")
     if not frames: raise HTTPException(400, "빈 모션")
     asyncio.create_task(_execute_frames(frames))
@@ -990,34 +1025,92 @@ async def run_motion(frames: List[MotionFrame]):
 
 @app.post("/run_ik")
 async def run_ik_motion(frames: List[IKMotionFrame]):
+    _require_arm_hold()
     if is_running or grab_busy: raise HTTPException(409, "동작 중")
     if not frames: raise HTTPException(400, "빈 모션")
     asyncio.create_task(_execute_ik_frames(frames))
     return {"status": "started", "frames": len(frames)}
 
-@app.post("/stop")
+@app.post("/stop", summary="정지 — 다리 정지 + 모션 중단 + 팔 현재 자세 동결")
 async def stop_motion():
+    """팔을 0도(앞으로 나란히)로 보내지 않는다. 자세 복귀는 /home."""
     global STOP_FLAG
     STOP_FLAG = True
-    if loco: loco.stop()
-    if arm:
-        loop = asyncio.get_running_loop()
-        await asyncio.gather(
-            loop.run_in_executor(None, arm.move_joints_smooth, [0]*14, 1.0),
-            loop.run_in_executor(None, arm.move_waist_smooth, 0.0, 0.0, WAIST_BASE_PITCH, 1.0))
-    return {"status": "stopped"}
+    if loco:
+        loco.stop()
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _freeze_arm)
+    return {"status": "stopped", "arm": "frozen"}
 
-@app.post("/home")
-async def go_home():
+@app.post("/home", summary="자세 복귀 — 기본은 팔 내림. pose=zero면 관절 0도")
+async def go_home(pose: str = "park"):
     global STOP_FLAG
     STOP_FLAG = True
     await asyncio.sleep(0.1)
-    if arm:
-        loop = asyncio.get_running_loop()
+    if not (arm and _arm_held()):
+        return {"status": "skipped", "reason": "arm released 또는 미초기화"}
+    loop = asyncio.get_running_loop()
+    if pose == "zero":
+        # 구 동작: 관절 전부 0도 = 앞으로 나란히
         await asyncio.gather(
             loop.run_in_executor(None, arm.move_joints_smooth, [0]*14, 2.0),
             loop.run_in_executor(None, arm.move_waist_smooth, 0.0, 0.0, WAIST_BASE_PITCH, 2.0))
-    return {"status": "home"}
+    else:
+        await loop.run_in_executor(None, _park_arm, 2.0)
+    return {"status": "home", "pose": pose}
+
+# ==========================================
+# API: arm_sdk 제어권 수동 토글
+#   release = 걷기 모드 / hold = 잡기 모드
+#   ※ 자동 전환 없음. 잡기 시퀀스 중 release가 걸리면 데모가 깨진다.
+# ==========================================
+@app.post("/arm_release", summary="걷기 모드 — arm_sdk 제어권 반납 (weight 1→0)")
+async def arm_release(ramp: float = 1.0):
+    if not arm_gate:
+        raise HTTPException(503, "Arm 미초기화")
+    if grab_busy or is_running:
+        raise HTTPException(409, "동작 중 — 먼저 /stop")
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, arm_gate.release, ramp)
+
+
+@app.post("/arm_hold", summary="잡기 모드 — 실측각 동기화 후 제어권 확보 (weight 0→1)")
+async def arm_hold(ramp: float = 1.0):
+    if not arm_gate:
+        raise HTTPException(503, "Arm 미초기화")
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, arm_gate.hold, ramp)
+
+
+@app.post("/arm_weight", summary="arm_sdk weight 직접 지정 (0~1, 박스 들고 걷기용)")
+async def arm_weight(w: float, ramp: float = 1.0):
+    if not arm_gate:
+        raise HTTPException(503, "Arm 미초기화")
+    if grab_busy or is_running:
+        raise HTTPException(409, "동작 중 — 먼저 /stop")
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, arm_gate.set_weight, w, ramp)
+
+
+@app.get("/arm_mode", summary="arm_sdk 제어권 상태")
+async def arm_mode():
+    if not arm_gate:
+        return {"ok": False, "state": "n/a", "weight": 0.0, "available": False}
+    return arm_gate.status()
+
+
+# ==========================================
+# API: 현재 관절각 조회 / PARK 자세 캡처
+# ==========================================
+@app.get("/joints", summary="현재 팔 14축 + 허리 3축 각도 (deg)")
+async def get_joints():
+    if not arm or not arm.arm_ctrl:
+        raise HTTPException(503, "Arm 미초기화")
+    ctrl = arm.arm_ctrl
+    all_q = np.asarray(ctrl.get_current_motor_q(), dtype=float)
+    return {"arm_deg":   [round(v, 2) for v in np.degrees(ctrl.get_current_dual_arm_q())],
+            "waist_deg": [round(v, 2) for v in np.degrees(all_q[12:15])]}
+
 
 @app.post("/loco/move")
 async def loco_move(req: LocoMoveRequest):
