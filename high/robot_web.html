@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <!-- Version: 1.0
+  1.8 - Arm SDK Release/weight UI 제거 (원인은 허리 yaw 잔류였음)
+  1.7 - Home / Stop / Grab OFF 를 모두 동일한 기본 자세로 통일
+  1.6 - 보행 전 허리 yaw 자동 0 복귀 (핸드오버 ±80도 잔류 방지)
   1.5 - Home 자세 = calm_down 종료 자세 고정 (IK 미사용)
   1.4 - Home 기본을 팔 내림(park)으로 변경
   1.3 - Stop 일원화 (패드 ■ = 우측 ⏹ = /stop, 팔은 동결). Home만 0도 복귀
@@ -237,20 +240,6 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
     </div>
 
     <div class="card">
-      <div class="card-h">Arm SDK <span class="tag" id="armsdk-tag">HOLD</span></div>
-      <div class="card-b">
-        <div class="row">
-          <button class="btn on" id="btn-hold" onclick="armHold()">✋ Hold · grab</button>
-          <button class="btn" id="btn-release" onclick="armRelease()">🚶 Release · walk</button>
-        </div>
-        <div class="spd" style="margin-top:10px"><span>weight</span>
-          <input type="range" id="armw" min="0" max="1" step="0.05" value="1">
-          <span id="armwv" style="color:var(--accent)">1.00</span></div>
-        <div class="hint" id="armsdk-hint">HOLD: arm_sdk가 팔·허리 점유 — 걷기 전 Release</div>
-      </div>
-    </div>
-
-    <div class="card">
       <div class="card-h">Locomotion</div>
       <div class="card-b">
         <div class="spd"><span>Speed</span>
@@ -286,7 +275,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
         <div class="mlist" id="mlist" style="margin-top:9px"><div class="hint" style="text-align:center">Loading...</div></div>
         <div class="row" style="margin-top:9px">
           <button class="btn warn" onclick="stopAll()">⏹ Stop</button>
-          <button class="btn" onclick="goHome()">⌂ Home · 팔내림</button>
+          <button class="btn" onclick="goHome()">⌂ Home · 기본자세</button>
         </div>
 
       </div>
@@ -378,74 +367,33 @@ async function refreshMotions(){const el=document.getElementById('mlist');
   }catch(e){el.innerHTML='<div class="hint" style="text-align:center;color:var(--warn)">Connection failed</div>';}}
 async function runMotion(n){try{const r=await fetch(`/motions/run/${encodeURIComponent(n)}`,{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.detail);toast('▶ '+n);}catch(e){toast('Error: '+e.message);}}
 async function sendGift(){try{const r=await fetch('/send_gift',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.detail);toast('🎁 Gift');}catch(e){toast('Error: '+e.message);}}
-// 정지 일원화: 다리 정지 + 모션 중단 + 팔 현재 자세 동결 (0도 복귀는 Home)
+// 정지 일원화: 다리 정지 + 모션 중단 + 기본 자세 복귀 (Home 과 동일 자세)
 async function stopAll(){
   stopLoco();
-  try{await fetch('/stop',{method:'POST'});toast('⏹ Stopped');}
+  try{await fetch('/stop',{method:'POST'});toast('⏹ Stopped — 기본 자세');}
   catch(e){toast('Error: '+e.message);}
 }
 async function goHome(){
   try{const r=await fetch('/home?pose=park',{method:'POST'});const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'failed');
-    toast('⌂ Home (팔 내림)');
+    toast('⌂ Home — 기본 자세');
   }catch(e){toast('Error: '+e.message);}
 }
-// ---- arm_sdk 제어권 (walk / grab) ----
-let armMode='hold';
-function applyArmMode(s,w){
-  if(!s)return;
-  armMode=s;
-  const tag=document.getElementById('armsdk-tag');
-  tag.textContent=s.toUpperCase();
-  tag.style.color=(s==='hold')?'var(--accent)':'var(--amber)';
-  document.getElementById('btn-release').classList.toggle('on',s==='release');
-  document.getElementById('btn-hold').classList.toggle('on',s==='hold');
-  document.getElementById('armsdk-hint').textContent={
-    release:'RELEASE: 상체 제어권 반납 — 보행 OK. 잡기 전 Hold',
-    partial:'PARTIAL: 팔 일부만 유지 — 박스 들고 이동용. 잡기 전 Hold',
-    hold:'HOLD: arm_sdk가 팔·허리 점유 — 걷기 전 Release'}[s]||s;
-  if(typeof w==='number'&&!dragW){
-    document.getElementById('armw').value=w;
-    document.getElementById('armwv').textContent=w.toFixed(2);
-  }
-}
-// weight 슬라이더 — 놓을 때만 전송
-let dragW=false;
-const armw=document.getElementById('armw');
-armw.addEventListener('input',()=>{dragW=true;
-  document.getElementById('armwv').textContent=(+armw.value).toFixed(2);});
-armw.addEventListener('change',async()=>{
-  try{const r=await fetch(`/arm_weight?w=${armw.value}&ramp=1.0`,{method:'POST'});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.detail||'failed');
-    dragW=false;applyArmMode(d.state,d.weight);
-    toast('weight '+(+armw.value).toFixed(2));
-  }catch(e){dragW=false;toast('Error: '+e.message);}
-});
-async function armRelease(){
-  try{const r=await fetch('/arm_release',{method:'POST'});const d=await r.json();
-    if(!r.ok)throw new Error(d.detail||'failed');
-    applyArmMode(d.state,d.weight);toast('🚶 Released — walk mode');
-  }catch(e){toast('Error: '+e.message);}
-}
-async function armHold(){
-  try{const r=await fetch('/arm_hold',{method:'POST'});const d=await r.json();
-    if(!r.ok)throw new Error(d.detail||'failed');
-    applyArmMode(d.state,d.weight);toast('✋ Hold — grab mode');
-  }catch(e){toast('Error: '+e.message);}
-}
-
 // ---- loco ----
 const speed=document.getElementById('speed'),spdv=document.getElementById('spdv');
 speed.oninput=()=>spdv.textContent=(+speed.value).toFixed(2);
 const cmap={forward:()=>({vx:+speed.value,vy:0,vyaw:0}),backward:()=>({vx:-speed.value,vy:0,vyaw:0}),
   left:()=>({vx:0,vy:+speed.value,vyaw:0}),right:()=>({vx:0,vy:-speed.value,vyaw:0}),
   turn_left:()=>({vx:0,vy:0,vyaw:+speed.value}),turn_right:()=>({vx:0,vy:0,vyaw:-speed.value})};
-let lt=null,ab=null;
+let lt=null,ab=null,realignToast=false;
 function startLoco(c,b){if(lt)return;ab=b;if(b)b.classList.add('active');
-  const s=()=>fetch('/loco/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cmap[c]())}).catch(()=>{});
+  const s=()=>fetch('/loco/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cmap[c]())})
+    .then(r=>r.json()).then(d=>{
+      // 핸드오버로 허리가 돌아가 있으면 서버가 먼저 0으로 되돌린다. 그동안은 안 걷는다.
+      if(d&&d.waist_realigning&&!realignToast){realignToast=true;toast('허리 정렬 중 — 잠시 후 보행');}
+    }).catch(()=>{});
   s();lt=setInterval(s,50);}
-function stopLoco(){if(lt){clearInterval(lt);lt=null;}if(ab){ab.classList.remove('active');ab=null;}fetch('/loco/stop',{method:'POST'}).catch(()=>{});}
+function stopLoco(){realignToast=false;if(lt){clearInterval(lt);lt=null;}if(ab){ab.classList.remove('active');ab=null;}fetch('/loco/stop',{method:'POST'}).catch(()=>{});}
 document.querySelectorAll('.pad button[data-cmd]').forEach(b=>{const c=b.dataset.cmd;
   b.addEventListener('mousedown',e=>{e.preventDefault();startLoco(c,b);});
   b.addEventListener('mouseup',e=>{e.preventDefault();stopLoco();});
@@ -466,7 +414,6 @@ let pollFail=0;
 function pollStatus(){
   fetch('/grab_status').then(r=>r.json()).then(d=>{
     pollFail=0;
-    if(d.arm_mode&&d.arm_mode!==armMode)applyArmMode(d.arm_mode);
     const sl=document.getElementById('statusline'),bi=document.getElementById('busy-ind');
     if(d.busy){sl.classList.add('busy');document.getElementById('grab-msg').textContent='Grabbing...';bi.textContent='busy';bi.style.color='var(--amber)';}
     else{sl.classList.remove('busy');bi.textContent='idle';bi.style.color='var(--dim)';}
@@ -492,7 +439,7 @@ setInterval(pollCoord, 400);
 
 // ---- init ----
 fetch('/active_mode').then(r=>r.json()).then(d=>applyMode(d.mode||'none')).catch(()=>{});
-fetch('/arm_mode').then(r=>r.json()).then(d=>applyArmMode(d.state,d.weight)).catch(()=>{});
 refreshMotions();
 </script>
 </body></html>
+

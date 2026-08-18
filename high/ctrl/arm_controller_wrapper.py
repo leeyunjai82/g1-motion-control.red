@@ -447,3 +447,4 @@ def parse_motor_index(input_str):
         if 0 <= idx <= 2: return GLOBAL_TO_INTERNAL[idx]
         return None
     except: return None
+

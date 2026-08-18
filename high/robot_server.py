@@ -64,7 +64,6 @@ VENDOR_DIR  = os.path.join(current_dir, 'assets', 'vendor')
 
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from ctrl.arm_controller_wrapper import ArmControllerWrapper, LocoClientWrapper, GLOBAL_TO_INTERNAL
-from ctrl.arm_sdk_gate import ArmSdkGate
 
 
 
@@ -308,9 +307,20 @@ class GrabController:
         self._move(self.HOME_LEFT, self.HOME_RIGHT, 2.0, "READY 대기자세", l_rot, r_rot)
 
     def park(self):
-        """대기 해제 — 팔을 거의 차렷 자세로 내림."""
-        print("[PARK] 팔 내림")
+        """대기 해제 — 팔을 기동 시점 자세로 되돌린다.
+
+        기동 자세를 캡처해두고 그 각도로 복귀하므로, 부팅 직후와 OFF 후의
+        팔 위치가 같아진다. 캡처 실패 시에만 기존 IK 차렷 자세로 간다.
+        """
         self._reset_waist()
+        if BOOT_ARM_DEG is not None and self.robot_available and self.arm is not None:
+            print("[PARK] 팔 내림 — 기동 자세로 복귀")
+            try:
+                self.arm.move_joints_smooth(BOOT_ARM_DEG, 2.0)
+                return
+            except Exception as e:
+                print(f"[PARK] 기동 자세 복귀 실패: {e} — IK 폴백")
+        print("[PARK] 팔 내림 (IK)")
         self._move([0.0, 0.28, -0.38], [0.0, -0.28, -0.38], 2.0, "PARK 팔내림")
 
     # ---- marker 잡기 ----
@@ -478,7 +488,6 @@ loco: Optional[LocoClientWrapper]    = None
 hand: Optional[object]               = None
 tts:  Optional[object]               = None
 grab: Optional[GrabController]       = None
-arm_gate: Optional[ArmSdkGate]       = None   # arm_sdk 제어권 수동 토글
 
 is_running = False
 STOP_FLAG  = False
@@ -489,32 +498,72 @@ grab_busy   = False
 grab_lock   = threading.Lock()
 
 
-def _arm_held() -> bool:
-    """arm_sdk 제어권을 잡고 있는 상태인가 (상체 모션 가능 여부)."""
-    return arm_gate is None or arm_gate.state == "hold"
-
-
-def _require_arm_hold():
-    """release 상태에서 상체 모션이 나가면 follow 스레드와 충돌한다."""
-    if not _arm_held():
-        raise HTTPException(409, "arm released — /arm_hold 먼저")
-
-
-# ---- HOME 자세 (팔 내림) ----
-# calm_down.json 마지막 프레임과 동일. IK 미사용 — 관절각 직접 지령.
-# 순서: L Shoulder P/R/Y, Elbow, Wrist R/P/Y  →  R 동일 (내부 인덱스 0~13)
-PARK_ARM_DEG = [10.0,  15.0, 0.0, 50.0, 0.0, 0.05, 0.05,
-                10.0, -15.0, 0.0, 50.0, 0.0, 0.05, 0.05]
+# ---- 기본 자세 (Home / Stop / Grab Mode OFF 공통) ----
+# 팔 각도는 아래 DEFAULT_ARM_DEG. 허리는 중립.
 PARK_WAIST_DEG = [0.0, 0.0, 0.0]   # yaw, roll, pitch
 
 
 def _park_arm(duration=2.0):
-    """팔 내림 자세 (calm_down 종료 자세). IK 미사용."""
+    """기본 자세로 복귀 — 허리 중립 + 팔 BOOT_ARM_DEG. IK 미사용.
+
+    Home / Stop / Grab Mode OFF 가 모두 이 자세를 쓴다.
+    """
     if not arm:
         return False
     arm.move_waist_smooth(yaw=PARK_WAIST_DEG[0], roll=PARK_WAIST_DEG[1],
                           pitch=PARK_WAIST_DEG[2], duration=duration)
-    arm.move_joints_smooth(PARK_ARM_DEG, duration)
+    arm.move_joints_smooth(BOOT_ARM_DEG, duration)
+    return True
+
+
+# 보행 전 허리 yaw 허용 오차. 핸드오버로 ±80도까지 돌아간 상태에서 걸으면
+# 상체가 비틀린 채 kp=150 으로 잠겨 균형이 무너진다.
+WALK_YAW_TOL_DEG = 3.0
+
+# ---- 기본 자세 팔 각도 (Home / Stop / Grab OFF 공통) ----
+# loco 기본 자세 실측값. dashboard 에서 읽은 각도를 그대로 박아둔다.
+# 순서: shoulder P/R/Y, elbow, wrist R/P/Y  → 좌 7 + 우 7
+DEFAULT_ARM_DEG = [16.6,  11.7, -0.1, 56.2,  4.3, -0.9, 1.5,
+                   16.3, -12.0,  1.6, 56.4, -7.6,  1.6, 0.7]
+
+# True  : 기동 시점 실측각을 캡처해 그 자세로 복귀 (재기동 자세에 따라 달라짐)
+# False : 위 DEFAULT_ARM_DEG 고정 (항상 같은 자세 — 권장)
+USE_BOOT_CAPTURE = False
+
+BOOT_ARM_DEG = list(DEFAULT_ARM_DEG)
+
+# 웹에서 /loco/move 를 50ms 마다 쏘므로, 복귀가 중복 실행되지 않게 막는다.
+_waist_realigning = False
+
+
+def _waist_yaw_deg():
+    """현재 허리 yaw (deg). 조회 실패 시 0.0."""
+    if not arm or not getattr(arm, "arm_ctrl", None):
+        return 0.0
+    try:
+        return float(np.degrees(arm.arm_ctrl.get_waist_q()[0]))
+    except Exception:
+        return 0.0
+
+
+def _ensure_waist_neutral_for_walk():
+    """허리 yaw 가 중립에서 벗어나 있으면 0 으로 되돌린다.
+
+    이미 0 근처면 아무것도 하지 않으므로 방향키 연타에 지연이 붙지 않는다.
+    roll/pitch 는 건드리지 않는다 (WAIST_BASE_PITCH 유지).
+    """
+    global _waist_realigning
+    yaw_deg = _waist_yaw_deg()
+    print(f"[WALK] 허리 yaw {yaw_deg:.1f}도 → 0 복귀 후 보행")
+    try:
+        # 회전 각도가 클수록 느리게 (잡기 시퀀스와 동일 규칙)
+        arm.move_waist_smooth(yaw=0.0, roll=0.0, pitch=WAIST_BASE_PITCH,
+                              duration=1.5 + abs(yaw_deg) / 30.0)
+        time.sleep(0.3)
+    except Exception as e:
+        print(f"[WALK] 허리 복귀 실패: {e}")
+    finally:
+        _waist_realigning = False
     return True
 
 
@@ -526,12 +575,8 @@ def _freeze_arm():
         arm.stop_motion()          # 진행 중 보간 중단
     except Exception:
         pass
-    if arm_gate is not None and arm_gate.state == "release":
-        return                     # follow 스레드가 이미 실측각을 물고 있다
     try:
-        if arm_gate is not None:
-            arm_gate.sync_targets()
-        elif arm.arm_ctrl:
+        if arm.arm_ctrl:
             ctrl = arm.arm_ctrl
             all_q = np.asarray(ctrl.get_current_motor_q(), dtype=float)
             with ctrl.ctrl_lock:
@@ -615,12 +660,27 @@ def execute_hand_motion_sync(h: str, motion: str):
 
 
 
+def _stop_and_park(duration=1.5):
+    """진행 중 보간을 끊고 기본 자세로 복귀한다."""
+    if not arm:
+        return
+    try:
+        arm.stop_motion()          # 진행 중 보간 중단
+        time.sleep(0.05)
+    except Exception:
+        pass
+    try:
+        _park_arm(duration)
+    except Exception as e:
+        print(f"[STOP] 자세 복귀 실패: {e}")
+
+
 # ==========================================
 # Lifespan
 # ==========================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global arm, loco, hand, tts, grab, ACTIVE_MODE, arm_gate
+    global arm, loco, hand, tts, grab, ACTIVE_MODE, BOOT_ARM_DEG
 
     print("[robot_server] 시작")
     ChannelFactoryInitialize(0)
@@ -634,12 +694,27 @@ async def lifespan(app: FastAPI):
     try:
         arm = ArmControllerWrapper(motion_mode=True, simulation_mode=False)
         arm.start()
-        arm_gate = ArmSdkGate(arm)
+        # park() 복귀 자세 결정
+        if USE_BOOT_CAPTURE:
+            try:
+                BOOT_ARM_DEG = [round(float(v), 3)
+                                for v in np.degrees(arm.arm_ctrl.get_current_dual_arm_q())]
+                print(f"✅ park 자세: 기동 실측 캡처 {BOOT_ARM_DEG}")
+            except Exception as e:
+                BOOT_ARM_DEG = list(DEFAULT_ARM_DEG)
+                print(f"⚠️ 캡처 실패({e}) — 기본 자세 사용")
+        else:
+            print(f"✅ park 자세: 고정값 사용")
+            try:
+                cur = np.degrees(arm.arm_ctrl.get_current_dual_arm_q())
+                diff = float(np.max(np.abs(cur - np.array(BOOT_ARM_DEG))))
+                print(f"   현재 팔과의 최대 편차 {diff:.1f}도")
+            except Exception:
+                pass
         print("✅ Arm 초기화 (arm_sdk: hold)")
     except Exception as e:
         print(f"⚠️ Arm 실패: {e}")
         arm = None
-        arm_gate = None
 
     if HAND_AVAILABLE:
         try:
@@ -701,11 +776,7 @@ async def lifespan(app: FastAPI):
         try:
             # 팔 자세는 건드리지 않음 (현재 위치 그대로 멈춤)
             # 제어권만 천천히 반납 (weight 1→0, 1초) — 팔이 확 안 떨어지게
-            if arm_gate is not None and arm_gate.state == "release":
-                # 이미 반납 상태: follow 스레드만 정리 (다시 1로 올렸다 내리면 안 됨)
-                arm_gate.shutdown()
-                print("[shutdown] 이미 release 상태 — 반납 생략")
-            elif arm.arm_ctrl and arm.arm_ctrl.motion_mode:
+            if arm.arm_ctrl and arm.arm_ctrl.motion_mode:
                 from ctrl.robot_arm import G1_29_JointIndex
                 print("[shutdown] 제어권 반납 (weight 1->0, 1초)")
                 for weight in np.linspace(1.0, 0.0, num=50):
@@ -865,9 +936,6 @@ async def grab_at(req: GrabRequest):
         return JSONResponse({"ok": False, "reason": f"mode={ACTIVE_MODE}"})
     if req.type == "cardboard" and ACTIVE_MODE != "box":
         return JSONResponse({"ok": False, "reason": f"mode={ACTIVE_MODE}"})
-    # arm_sdk 제어권 게이트
-    if not _arm_held():
-        return JSONResponse({"ok": False, "reason": "arm released — Hold 먼저"})
     # 중복 방지
     with grab_lock:
         if grab_busy or is_running:
@@ -892,7 +960,7 @@ async def set_mode(mode: str):
     print(f"[MODE] {prev} → {mode}")
 
     # 모드 전환 시 대기 자세 (잡기 중이 아닐 때만)
-    if not grab_busy and not is_running and grab is not None and _arm_held():
+    if not grab_busy and not is_running and grab is not None:
         def _pose():
             if mode in ("marker", "box"):
                 grab.ready()      # 팔 들어 대기
@@ -905,8 +973,7 @@ async def set_mode(mode: str):
 
 @app.get("/grab_status")
 async def grab_status():
-    return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running,
-            "arm_mode": (arm_gate.state if arm_gate else "n/a")}
+    return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running}
 
 
 @app.get("/set_wrist")
@@ -952,8 +1019,6 @@ async def grab_manual():
     import urllib.request
     if ACTIVE_MODE == "none":
         return JSONResponse({"ok": False, "reason": "mode is none"})
-    if not _arm_held():
-        return JSONResponse({"ok": False, "reason": "arm released — Hold 먼저"})
     url = ("http://localhost:50011/pose" if ACTIVE_MODE == "marker"
            else "http://localhost:50010/pose")
     try:
@@ -977,8 +1042,7 @@ async def status():
     return {"is_running": is_running, "arm_ready": arm is not None,
             "loco_ready": loco is not None, "hand_ready": hand is not None,
             "tts_ready": tts is not None, "active_mode": ACTIVE_MODE,
-            "grab_busy": grab_busy,
-            "arm_mode": (arm_gate.state if arm_gate else "n/a")}
+            "grab_busy": grab_busy}
 
 @app.get("/motions")
 async def list_motions():
@@ -987,7 +1051,6 @@ async def list_motions():
 
 @app.post("/motions/run/{filename}")
 async def run_motion_by_name(filename: str):
-    _require_arm_hold()
     if is_running or grab_busy:
         raise HTTPException(409, "동작 중")
     filepath = MOTIONS_DIR / filename
@@ -1007,7 +1070,6 @@ async def run_motion_by_name(filename: str):
 
 @app.post("/send_gift")
 async def send_gift():
-    _require_arm_hold()
     if is_running or grab_busy:
         raise HTTPException(409, "동작 중")
     if not (MOTIONS_DIR / "right_send.json").exists():
@@ -1017,7 +1079,6 @@ async def send_gift():
 
 @app.post("/run")
 async def run_motion(frames: List[MotionFrame]):
-    _require_arm_hold()
     if is_running or grab_busy: raise HTTPException(409, "동작 중")
     if not frames: raise HTTPException(400, "빈 모션")
     asyncio.create_task(_execute_frames(frames))
@@ -1025,7 +1086,6 @@ async def run_motion(frames: List[MotionFrame]):
 
 @app.post("/run_ik")
 async def run_ik_motion(frames: List[IKMotionFrame]):
-    _require_arm_hold()
     if is_running or grab_busy: raise HTTPException(409, "동작 중")
     if not frames: raise HTTPException(400, "빈 모션")
     asyncio.create_task(_execute_ik_frames(frames))
@@ -1033,22 +1093,25 @@ async def run_ik_motion(frames: List[IKMotionFrame]):
 
 @app.post("/stop", summary="정지 — 다리 정지 + 모션 중단 + 팔 현재 자세 동결")
 async def stop_motion():
-    """팔을 0도(앞으로 나란히)로 보내지 않는다. 자세 복귀는 /home."""
+    """다리 정지 + 모션 중단 + 기본 자세 복귀 (허리 중립 + 팔 BOOT_ARM_DEG).
+
+    다리를 먼저 세운 뒤 팔을 움직인다. 순서를 바꾸면 보행 중 상체가 흔들린다.
+    """
     global STOP_FLAG
     STOP_FLAG = True
     if loco:
         loco.stop()
     loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, _freeze_arm)
-    return {"status": "stopped", "arm": "frozen"}
+    await loop.run_in_executor(None, _stop_and_park)
+    return {"status": "stopped", "arm": "home"}
 
 @app.post("/home", summary="자세 복귀 — 기본은 팔 내림. pose=zero면 관절 0도")
 async def go_home(pose: str = "park"):
     global STOP_FLAG
     STOP_FLAG = True
     await asyncio.sleep(0.1)
-    if not (arm and _arm_held()):
-        return {"status": "skipped", "reason": "arm released 또는 미초기화"}
+    if not arm:
+        return {"status": "skipped", "reason": "arm 미초기화"}
     loop = asyncio.get_running_loop()
     if pose == "zero":
         # 구 동작: 관절 전부 0도 = 앞으로 나란히
@@ -1059,62 +1122,42 @@ async def go_home(pose: str = "park"):
         await loop.run_in_executor(None, _park_arm, 2.0)
     return {"status": "home", "pose": pose}
 
-# ==========================================
-# API: arm_sdk 제어권 수동 토글
-#   release = 걷기 모드 / hold = 잡기 모드
-#   ※ 자동 전환 없음. 잡기 시퀀스 중 release가 걸리면 데모가 깨진다.
-# ==========================================
-@app.post("/arm_release", summary="걷기 모드 — arm_sdk 제어권 반납 (weight 1→0)")
-async def arm_release(ramp: float = 1.0):
-    if not arm_gate:
+@app.get("/boot_pose", summary="기동 시점 팔 자세 (park 복귀 목표)")
+async def get_boot_pose():
+    return {"ok": True, "arm_deg": BOOT_ARM_DEG,
+            "source": "capture" if USE_BOOT_CAPTURE else "fixed"}
+
+
+@app.post("/boot_pose/recapture", summary="현재 팔 자세를 park 복귀 목표로 재설정")
+async def recapture_boot_pose():
+    global BOOT_ARM_DEG
+    if not arm or not getattr(arm, "arm_ctrl", None):
         raise HTTPException(503, "Arm 미초기화")
     if grab_busy or is_running:
-        raise HTTPException(409, "동작 중 — 먼저 /stop")
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, arm_gate.release, ramp)
-
-
-@app.post("/arm_hold", summary="잡기 모드 — 실측각 동기화 후 제어권 확보 (weight 0→1)")
-async def arm_hold(ramp: float = 1.0):
-    if not arm_gate:
-        raise HTTPException(503, "Arm 미초기화")
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, arm_gate.hold, ramp)
-
-
-@app.post("/arm_weight", summary="arm_sdk weight 직접 지정 (0~1, 박스 들고 걷기용)")
-async def arm_weight(w: float, ramp: float = 1.0):
-    if not arm_gate:
-        raise HTTPException(503, "Arm 미초기화")
-    if grab_busy or is_running:
-        raise HTTPException(409, "동작 중 — 먼저 /stop")
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, arm_gate.set_weight, w, ramp)
-
-
-@app.get("/arm_mode", summary="arm_sdk 제어권 상태")
-async def arm_mode():
-    if not arm_gate:
-        return {"ok": False, "state": "n/a", "weight": 0.0, "available": False}
-    return arm_gate.status()
-
-
-# ==========================================
-# API: 현재 관절각 조회 / PARK 자세 캡처
-# ==========================================
-@app.get("/joints", summary="현재 팔 14축 + 허리 3축 각도 (deg)")
-async def get_joints():
-    if not arm or not arm.arm_ctrl:
-        raise HTTPException(503, "Arm 미초기화")
-    ctrl = arm.arm_ctrl
-    all_q = np.asarray(ctrl.get_current_motor_q(), dtype=float)
-    return {"arm_deg":   [round(v, 2) for v in np.degrees(ctrl.get_current_dual_arm_q())],
-            "waist_deg": [round(v, 2) for v in np.degrees(all_q[12:15])]}
+        raise HTTPException(409, "동작 중")
+    BOOT_ARM_DEG = [round(float(v), 3)
+                    for v in np.degrees(arm.arm_ctrl.get_current_dual_arm_q())]
+    print(f"[BOOT_POSE] 재설정: {BOOT_ARM_DEG}")
+    return {"ok": True, "arm_deg": BOOT_ARM_DEG}
 
 
 @app.post("/loco/move")
 async def loco_move(req: LocoMoveRequest):
     if not loco: raise HTTPException(503, "Loco 미초기화")
+
+    global _waist_realigning
+
+    moving = any(abs(v) > 1e-6 for v in (req.vx, req.vy, req.vyaw))
+    if moving and not grab_busy and not is_running:
+        # 복귀 중이면 걷지 않는다. 비틀린 채 걸으면 균형이 무너진다.
+        if _waist_realigning:
+            return {"ok": True, "waist_realigning": True}
+        if abs(_waist_yaw_deg()) > WALK_YAW_TOL_DEG:
+            _waist_realigning = True
+            asyncio.get_running_loop().run_in_executor(
+                None, _ensure_waist_neutral_for_walk)
+            return {"ok": True, "waist_realigning": True}
+
     loco.move(req.vx, req.vy, req.vyaw)
     return {"ok": True}
 
@@ -1136,3 +1179,4 @@ async def index():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=50000, timeout_graceful_shutdown=2)
+

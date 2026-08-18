@@ -347,3 +347,4 @@ class G1_29_JointIndex(IntEnum):
     kRightWristPitch    = 27
     kRightWristYaw      = 28
     kNotUsedJoint0      = 29
+
