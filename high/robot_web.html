@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<!-- Version: 1.0
+<!-- Version: 2.1
+  2.1 - 전환 중 라벨은 목표 모드 + (전환중...) 표시
+  2.0 - Hold/Release 라벨을 전환 완료까지 폴링 (단발 4.5초 재조회의 중간값 표시 버그 수정)
+  1.9 - Box Size 카드 제거 (마커 잡기 제거로 사용처 없음 — box 모드는 측정값 사용)
   1.8 - Arm SDK Release/weight UI 제거 (원인은 허리 yaw 잔류였음)
   1.7 - Home / Stop / Grab OFF 를 모두 동일한 기본 자세로 통일
   1.6 - 보행 전 허리 yaw 자동 0 복귀 (핸드오버 ±80도 잔류 방지)
@@ -195,19 +198,6 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
     </div>
 
     <div class="card">
-      <div class="card-h">Box Size <span style="color:var(--dim)">cm · marker</span></div>
-      <div class="card-b">
-        <div class="fld three">
-          <div><span class="mini">W</span><input class="in" id="bx-w" type="number" value="28"></div>
-          <div><span class="mini">D</span><input class="in" id="bx-d" type="number" value="9"></div>
-          <div><span class="mini">H</span><input class="in" id="bx-h" type="number" value="9"></div>
-        </div>
-        <button class="btn full" style="margin-top:9px" onclick="applyBoxSize()">Apply Size</button>
-        <div class="hint">Box mode uses measured size (ignores this)</div>
-      </div>
-    </div>
-
-    <div class="card">
       <div class="card-h">Handover <span class="tag" id="ho-tag">Center</span></div>
       <div class="card-b">
         <div class="seg">
@@ -362,8 +352,6 @@ function toggleAuto(){
 function applyWrist(){const g=id=>document.getElementById(id).value||0;
   const q=`l_roll=${g('l-roll')}&l_pitch=${g('l-pitch')}&l_yaw=${g('l-yaw')}&r_roll=${g('r-roll')}&r_pitch=${g('r-pitch')}&r_yaw=${g('r-yaw')}`;
   fetch('/set_wrist?'+q).then(()=>toast('Wrist applied'));}
-function applyBoxSize(){const w=document.getElementById('bx-w').value/100,d=document.getElementById('bx-d').value/100,h=document.getElementById('bx-h').value/100;
-  fetch(`/set_box_size?width=${w}&depth=${d}&height=${h}`).then(()=>toast('Box size applied'));}
 function setHandover(dir){const yaw=document.getElementById('ho-yaw').value||30;
   fetch(`/set_handover_direction?direction=${dir}&yaw_deg=${yaw}`).then(r=>r.json()).then(d=>{
     const lbl={left:'Left',center:'Center',right:'Right'}[d.direction];
@@ -391,16 +379,25 @@ async function goHome(){
   }catch(e){toast('Error: '+e.message);}
 }
 // ---- arm_sdk 제어권 (hold/release) ----
-function updateArmMode(m){
-  document.getElementById('arm-mode-lbl').textContent=m||'-';
+function updateArmMode(m,switching){
+  document.getElementById('arm-mode-lbl').textContent=(m||'-')+(switching?' (전환중...)':'');
   document.getElementById('arm-hold').classList.toggle('on',m==='hold');
   document.getElementById('arm-release').classList.toggle('on',m==='release');}
 async function armMode(m){
   try{const r=await fetch('/arm_'+m,{method:'POST'});const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'failed');
-    updateArmMode(d.mode);
-    toast(m==='hold'?'✋ Hold — 팔/허리 점유 (전환 2~4초)':'🚶 Release — 걷기 모드 (전환 2~4초)');
-    setTimeout(()=>fetch('/arm_mode').then(r=>r.json()).then(d=>updateArmMode(d.mode)).catch(()=>{}),4500);
+    // 전환 중엔 목표 모드를 표시 (arm_server 는 완료 전까지 이전 모드를 답함)
+    updateArmMode(m,true);
+    toast(m==='hold'?'✋ Hold — 팔/허리 점유 (전환 중...)':'🚶 Release — 걷기 모드 (전환 중...)');
+    let n=0;
+    const t=setInterval(async()=>{
+      try{const s=await(await fetch('/arm_mode')).json();
+        if(s.switching){updateArmMode(m,true);}
+        else{updateArmMode(s.mode,false);clearInterval(t);
+          toast(s.mode==='hold'?'✋ Hold 완료':'🚶 Release 완료');}
+        if(++n>20)clearInterval(t);
+      }catch(e){if(++n>20)clearInterval(t);}
+    },1000);
   }catch(e){toast('Error: '+e.message);}}
 fetch('/arm_mode').then(r=>r.json()).then(d=>updateArmMode(d.mode)).catch(()=>{});
 // ---- 마커 추종 ----
@@ -480,5 +477,6 @@ fetch('/active_mode').then(r=>r.json()).then(d=>applyMode(d.mode||'none')).catch
 refreshMotions();
 </script>
 </body></html>
+
 
 

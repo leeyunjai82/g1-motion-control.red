@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 1.3
+# Version: 1.4
 # Changes:
+#   1.4 - arm 제어를 arm_server(50022) HTTP로 분리, Box Size 엔드포인트 제거(사용처 없음) (arm_sdk 단독 점유는 arm_server)
 #   1.3 - 마커 추종 정면(법선) 경유점 접근 — 옆에서 와도 마커 정면으로 돌아 들어감
 #   1.2 - grab_box가 L/R 실제좌표 직접 사용(기울어진 박스 양손 정확)
 #   1.1 - handover 허리 yaw 회전 각도비례 감속(90도시 느리게), reset 1.5초
@@ -64,7 +65,8 @@ MESH_DIR    = os.path.join(ASSETS_DIR, 'meshes')
 VENDOR_DIR  = os.path.join(current_dir, 'assets', 'vendor')
 
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
-from ctrl.arm_controller_wrapper import ArmControllerWrapper, LocoClientWrapper, GLOBAL_TO_INTERNAL
+from ctrl.arm_controller_wrapper import LocoClientWrapper, GLOBAL_TO_INTERNAL
+from ctrl.arm_http import ArmHttpClient
 
 
 
@@ -484,7 +486,7 @@ except ImportError:
 # ==========================================
 # 전역 상태
 # ==========================================
-arm:  Optional[ArmControllerWrapper] = None
+arm:  Optional[ArmHttpClient]        = None   # arm_server(50022) 클라이언트
 loco: Optional[LocoClientWrapper]    = None
 hand: Optional[object]               = None
 tts:  Optional[object]               = None
@@ -748,21 +750,11 @@ def _ensure_waist_neutral_for_walk():
 
 
 def _freeze_arm():
-    """팔·허리를 현재 실측 자세로 고정한다. (0도로 보내지 않음 — 그건 /home)"""
+    """팔·허리를 현재 실측 자세로 고정한다. (arm_server /freeze)"""
     if not arm:
         return
     try:
-        arm.stop_motion()          # 진행 중 보간 중단
-    except Exception:
-        pass
-    try:
-        if arm.arm_ctrl:
-            ctrl = arm.arm_ctrl
-            all_q = np.asarray(ctrl.get_current_motor_q(), dtype=float)
-            with ctrl.ctrl_lock:
-                ctrl.q_target = np.asarray(ctrl.get_current_dual_arm_q(), dtype=float)
-                ctrl.tauff_target = np.zeros(14)
-                ctrl.waist_q_target = all_q[12:15].copy()
+        arm.freeze()
     except Exception as e:
         print(f"[STOP] freeze 실패: {e}")
 
@@ -872,8 +864,7 @@ async def lifespan(app: FastAPI):
         print(f"⚠️ Loco 실패: {e}")
 
     try:
-        arm = ArmControllerWrapper(motion_mode=True, simulation_mode=False)
-        arm.start()
+        arm = ArmHttpClient()   # arm_server(50022) 가 먼저 떠 있어야 함
         # park() 복귀 자세 결정
         if USE_BOOT_CAPTURE:
             try:
@@ -952,18 +943,7 @@ async def lifespan(app: FastAPI):
     if grab_busy:
         print("[shutdown] grab 진행 중이지만 시간 초과 — 강제 진행")
 
-    if arm:
-        try:
-            # 팔 자세는 건드리지 않음 (현재 위치 그대로 멈춤)
-            # 제어권만 천천히 반납 (weight 1→0, 1초) — 팔이 확 안 떨어지게
-            if arm.arm_ctrl and arm.arm_ctrl.motion_mode:
-                w = arm.arm_ctrl.get_weight()
-                if w > 0.0:
-                    print(f"[shutdown] 제어권 반납 (weight {w:.2f}->0, 1초)")
-                    arm.arm_ctrl.ramp_weight(0.0, 1.0)
-                print("[shutdown] 제어권 반납 완료")
-        except Exception as e:
-            print(f"[shutdown] 종료 시퀀스 실패: {e}")
+    # weight 반납은 arm_server 책임 — robot_server 는 팔을 건드리지 않는다
 
     time.sleep(0.3)
     print(f"[robot_server] 종료 (총 {time.time()-t_shutdown:.2f}초)")
@@ -1004,6 +984,7 @@ async def _execute_frames(frames: List[MotionFrame]):
                 hand_future = loop.run_in_executor(None, execute_hand_motion_sync,
                                                     frame.hand_motion.hand, frame.hand_motion.motion)
             if frame.pose and frame.pose.targets and arm:
+                # HTTP 스냅샷 (ctrl_lock 은 호환용 더미)
                 with arm.arm_ctrl.ctrl_lock:
                     arm_targets = np.degrees(arm.arm_ctrl.q_target.copy())
                 try:
@@ -1167,21 +1148,6 @@ async def set_wrist(l_roll: float=0, l_pitch: float=0, l_yaw: float=0,
     return {"success": True, "wrist_params": grab.wrist_params}
 
 
-@app.get("/set_box_size")
-async def set_box_size(width: float=None, depth: float=None, height: float=None):
-    """marker 모드용 박스 크기 (box 모드는 측정값 사용)."""
-    if width  is not None: grab.box_size["width"]  = float(width)
-    if depth  is not None: grab.box_size["depth"]  = float(depth)
-    if height is not None: grab.box_size["height"] = float(height)
-    print(f"[BOX_SIZE] {grab.box_size}")
-    return {"success": True, "box_size": grab.box_size}
-
-
-@app.get("/box_size")
-async def get_box_size():
-    return {"box_size": grab.box_size}
-
-
 @app.get("/set_handover_direction")
 async def set_handover_direction(direction: str="center", yaw_deg: float=None):
     if direction not in ("center", "left", "right"):
@@ -1325,32 +1291,47 @@ async def recapture_boot_pose():
 # arm_sdk 제어권 토글 (hold / release)
 # ==========================================
 def _do_arm_release():
-    """팔을 loco 기본자세(BOOT_ARM_DEG)로 보간 후 weight 1->0.
-    같은 자세로 인계하므로 release 순간 튐 최소화."""
+    """arm_server /release — 기본자세 보간 후 weight 1->0."""
     global ARM_MODE, _arm_switching
     try:
-        _park_arm(2.0)                      # 허리 중립 + 팔 기본자세
-        arm.arm_ctrl.ramp_weight(0.0, 2.0)
+        arm.release(2.0, BOOT_ARM_DEG)
         ARM_MODE = "release"
         print("[ARM] release 완료 - loco 가 팔/허리 회수")
+    except Exception as e:
+        print(f"[ARM] release 실패: {e}")
+        _sync_arm_mode()
     finally:
         _arm_switching = False
 
 def _do_arm_hold():
-    """실측각 동기화 후 weight 0->1. loco 가 움직여둔 팔을 그 자리에서 인수."""
+    """arm_server /hold — 실측각 동기화 후 weight 0->1."""
     global ARM_MODE, _arm_switching
     try:
-        arm.arm_ctrl.sync_targets_to_current()
-        arm.arm_ctrl.ramp_weight(1.0, 2.0)
+        arm.hold(2.0)
         ARM_MODE = "hold"
         print("[ARM] hold 완료 - arm_sdk 가 팔/허리 점유")
+    except Exception as e:
+        print(f"[ARM] hold 실패: {e}")
+        _sync_arm_mode()
     finally:
         _arm_switching = False
 
-@app.get("/arm_mode", summary="arm_sdk 제어권 상태")
+def _sync_arm_mode():
+    """arm_server 실제 상태로 ARM_MODE 동기화 (단일 진실원 = arm_server)."""
+    global ARM_MODE
+    try:
+        st = arm.status()
+        ARM_MODE = st.get("mode", ARM_MODE)
+        return st
+    except Exception:
+        return {}
+
+
+@app.get("/arm_mode", summary="arm_sdk 제어권 상태 (arm_server 기준)")
 async def arm_mode():
-    w = arm.arm_ctrl.get_weight() if (arm and arm.arm_ctrl) else None
-    return {"mode": ARM_MODE, "weight": w, "switching": _arm_switching}
+    st = _sync_arm_mode() if arm else {}
+    return {"mode": ARM_MODE, "weight": st.get("weight"),
+            "switching": _arm_switching or st.get("switching", False)}
 
 @app.post("/arm_release", summary="제어권 반납 - 팔 스윙 있는 정상 보행 모드")
 async def arm_release():
@@ -1464,3 +1445,4 @@ async def index():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=50000, timeout_graceful_shutdown=2)
+
