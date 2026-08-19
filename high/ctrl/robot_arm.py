@@ -65,6 +65,10 @@ class G1_29_ArmController:
         self.arm_velocity_limit = 20.0
         self.control_dt = 1.0 / 250.0 # 250Hz
 
+        # arm_sdk 가중치 (0.0=loco 소유 / 1.0=arm_sdk 소유). motion_mode 에서만 의미.
+        # FSM 501(Regular)에서는 weight=1 유지 상태로도 보행 가능(실기 검증).
+        self.arm_weight = 1.0 if motion_mode else 0.0
+
         self._speed_gradual_max = False
         self._gradual_start_time = None
 
@@ -174,11 +178,13 @@ class G1_29_ArmController:
         return cliped_arm_q_target
 
     def _ctrl_motor_state(self):
-        if self.motion_mode:
-            self.msg.motor_cmd[G1_29_JointIndex.kNotUsedJoint0].q = 1.0
-
+        err_streak = 0
         while True:
             start_time = time.time()
+
+            # weight 매 주기 반영 (hold/release 램프가 이 값을 바꾼다)
+            if self.motion_mode:
+                self.msg.motor_cmd[G1_29_JointIndex.kNotUsedJoint0].q = self.arm_weight
 
             with self.ctrl_lock:
                 arm_q_target     = self.q_target
@@ -202,9 +208,17 @@ class G1_29_ArmController:
                 self.msg.motor_cmd[joint_idx].dq  = 0
                 self.msg.motor_cmd[joint_idx].tau = 0
 
-            # 3. CRC 계산 및 전송
-            self.msg.crc = self.crc.Crc(self.msg)
-            self.lowcmd_publisher.Write(self.msg)
+            # 3. CRC 계산 및 전송 (예외 시에도 루프 유지 - 송신 중단은 낙상 위험)
+            try:
+                self.msg.crc = self.crc.Crc(self.msg)
+                self.lowcmd_publisher.Write(self.msg)
+                err_streak = 0
+            except Exception as e:
+                err_streak += 1
+                logger_mp.error(f"arm_sdk 송신 실패({err_streak}): {e}")
+                if self.motion_mode and err_streak >= 250:  # 약 1초 연속 실패
+                    logger_mp.error("송신 연속 실패 - weight 비상 반납 시도")
+                    self.arm_weight = max(0.0, self.arm_weight - 0.02)
 
             # 속도 점진적 증가 처리
             if self._speed_gradual_max:
@@ -228,6 +242,30 @@ class G1_29_ArmController:
             return
         with self.ctrl_lock:
             self.waist_q_target = np.array(q_target)
+
+    # ==================== arm_sdk 제어권 (hold/release) ====================
+
+    def get_weight(self):
+        return float(self.arm_weight)
+
+    def sync_targets_to_current(self):
+        """팔/허리 타겟을 현재 실측각으로 1회 동기화 (hold 진입 시 튐 방지).
+        주의: 매 주기 추종은 금지 - 복원토크가 사라져 굽는다. 1회만."""
+        all_q = self.get_current_motor_q()
+        with self.ctrl_lock:
+            self.q_target = self.get_current_dual_arm_q()
+            self.tauff_target = np.zeros(14)
+            self.waist_q_target = all_q[12:15].copy()
+
+    def ramp_weight(self, dst, duration=2.0):
+        """weight 를 현재값에서 dst 까지 duration 초 동안 선형 램프 (블로킹)."""
+        dst = float(np.clip(dst, 0.0, 1.0))
+        src_w = float(self.arm_weight)
+        n = max(1, int(duration / 0.02))
+        for i in range(1, n + 1):
+            self.arm_weight = src_w + (dst - src_w) * i / n
+            time.sleep(0.02)
+        self.arm_weight = dst
 
     # ==================== 상태 조회 메서드 ====================
 
@@ -282,9 +320,7 @@ class G1_29_ArmController:
         time.sleep(2.0)
 
         if self.motion_mode:
-            for weight in np.linspace(1, 0, num=50):
-                self.msg.motor_cmd[G1_29_JointIndex.kNotUsedJoint0].q = weight
-                time.sleep(0.02)
+            self.ramp_weight(0.0, 1.0)
         logger_mp.info("홈 이동 완료 및 제어권 반납.")
 
     def speed_gradual_max(self, t=5.0):
@@ -347,4 +383,5 @@ class G1_29_JointIndex(IntEnum):
     kRightWristPitch    = 27
     kRightWristYaw      = 28
     kNotUsedJoint0      = 29
+
 

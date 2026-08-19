@@ -124,7 +124,7 @@ GRAB_Z_OFFSET  = 0.08
 GRAB_X_OFFSET  = -0.15
 HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
-WAIST_BASE_PITCH = 0.0   # 기본 상체 각도 (0=중립)
+WAIST_BASE_PITCH = -3.0   # 기본 상체 각도 (0=중립)
 
 
 # ==========================================
@@ -143,8 +143,8 @@ class GrabController:
 
         # 손목 RPY
         self.wrist_params = {
-            'left':  {'roll': -10.0, 'pitch': -10.0, 'yaw': -15.0},
-            'right': {'roll':  10.0, 'pitch': -10.0, 'yaw':  15.0},
+            'left':  {'roll': 0.0, 'pitch': 0.0, 'yaw':  0.0},
+            'right': {'roll': 0.0, 'pitch': 0.0, 'yaw':  0.0},
         }
         # handover 방향
         self.handover_direction = "center"   # center|left|right
@@ -497,6 +497,134 @@ ACTIVE_MODE = "none"          # "none" | "marker" | "box"
 grab_busy   = False
 grab_lock   = threading.Lock()
 
+# arm_sdk 제어권 상태 (기동 시 motion_mode=True 로 weight=1 이므로 hold)
+#   hold    : arm_sdk 가 허리+팔 점유. 잡기/IK 가능. FSM 501 검증에 따라 이 상태로도 보행 가능(박스 운반).
+#   release : loco 가 허리+팔 회수. 팔 스윙 있는 정상 보행. 팔/허리 지령은 무효(weight=0).
+ARM_MODE = "hold"             # "hold" | "release"
+_arm_switching = False
+
+# ---- 마커 추종 보행 (detect_marker 50011 /pose 폐루프) ----
+MARKER_POSE_URL = "http://localhost:50011/pose"
+
+FOLLOW_P = {
+    "vx_max": 0.25, "vx_min": 0.10,     # 전진 속도 (m/s)
+    "kp_yaw": 0.8, "vyaw_max": 0.4,     # 원거리 회전 조향
+    "kp_vy": 0.6, "vy_max": 0.10,       # 근거리 횡이동 조향
+    "yaw_sign": 1,                      # 조향 부호 (반대로 틀면 -1)
+    "stop_dist": 0.25,                  # 정지 거리 (m)
+    "slow_dist": 1.0,                   # 감속·횡이동 시작 거리 (m)
+    "y_tol": 0.04,                      # 정지 허용 좌우 오프셋 (m)
+    "ema_alpha": 0.35,                  # 측정 저역필터
+    "lost_stop": 1.5,                   # 마커 미검출 정지 (s)
+    "timeout": 60.0,
+}
+FOLLOW_S = {"state": "idle", "found": False, "mx": 0.0, "my": 0.0,
+            "vx": 0.0, "vyaw": 0.0, "t_run": 0.0}
+_follow_run = threading.Event()
+
+
+def _follow_get_pose():
+    import urllib.request as _u
+    try:
+        d = json.loads(_u.urlopen(MARKER_POSE_URL, timeout=0.3).read())
+        if not d.get("found"):
+            return False, 0.0, 0.0
+        cm = d["torso_cm"]
+        return True, cm[0] / 100.0, cm[1] / 100.0
+    except Exception:
+        return False, 0.0, 0.0
+
+
+def _follow_loop():
+    import math as _m
+    P, S = FOLLOW_P, FOLLOW_S
+    dt = 0.1
+    t_start = time.time()
+    lost_since = None
+    arrive_cnt = 0
+    f_mx = f_my = None
+    S["state"] = "following"
+    try:
+        while _follow_run.is_set():
+            t0 = time.time()
+            S["t_run"] = round(t0 - t_start, 1)
+            if S["t_run"] > P["timeout"]:
+                S["state"] = "timeout"; break
+
+            found, mx, my = _follow_get_pose()
+            if not found:
+                if lost_since is None:
+                    lost_since = t0
+                elif t0 - lost_since > P["lost_stop"]:
+                    S["state"] = "lost"; break
+                loco.move(0, 0, 0)
+                S["found"], S["vx"], S["vyaw"] = False, 0.0, 0.0
+                time.sleep(dt)
+                continue
+            lost_since = None
+
+            a = P["ema_alpha"]
+            if f_mx is None:
+                f_mx, f_my = mx, my
+            else:
+                f_mx += a * (mx - f_mx)
+                f_my += a * (my - f_my)
+            S["found"], S["mx"], S["my"] = True, round(f_mx, 2), round(f_my, 2)
+
+            vy_center = max(-P["vy_max"], min(P["vy_max"],
+                            P["yaw_sign"] * P["kp_vy"] * f_my))
+
+            # 도착 판정: 거리 + 좌우 오프셋 모두 만족해야 함
+            if f_mx <= P["stop_dist"]:
+                if abs(f_my) > P["y_tol"]:
+                    # 거리는 됐고 좌우만 남음 -> 제자리 게걸음으로 센터링
+                    arrive_cnt = 0
+                    loco.move(0.0, vy_center, 0.0)
+                    S["vx"], S["vyaw"] = 0.0, round(vy_center, 2)
+                    time.sleep(dt)
+                    continue
+                arrive_cnt += 1
+                if arrive_cnt >= 3:
+                    S["state"] = "arrived"; break
+                loco.move(0, 0, 0)
+                time.sleep(dt)
+                continue
+            arrive_cnt = 0
+
+            bearing = _m.atan2(f_my, f_mx)
+            vyaw = max(-P["vyaw_max"], min(P["vyaw_max"],
+                       P["yaw_sign"] * P["kp_yaw"] * bearing))
+            vy = 0.0
+            if f_mx < P["slow_dist"]:
+                # 근거리: 회전 반감 + 횡이동으로 좌우 제거
+                vyaw *= 0.5
+                vy = vy_center
+                span = max(0.01, P["slow_dist"] - P["stop_dist"])
+                vx = P["vx_min"] + (P["vx_max"] - P["vx_min"]) * \
+                     (f_mx - P["stop_dist"]) / span
+            else:
+                vx = P["vx_max"]
+            vx = max(P["vx_min"], min(P["vx_max"], vx))
+
+            loco.move(vx, vy, vyaw)
+            S["vx"], S["vyaw"] = round(vx, 2), round(vyaw, 2)
+            time.sleep(max(0, dt - (time.time() - t0)))
+        else:
+            S["state"] = "stopped"
+    finally:
+        _follow_run.clear()
+        try:
+            loco.stop()
+        except Exception:
+            pass
+        S["vx"], S["vyaw"] = 0.0, 0.0
+
+
+def _follow_stop():
+    if _follow_run.is_set():
+        _follow_run.clear()
+        FOLLOW_S["state"] = "stopped"
+
 
 # ---- 기본 자세 (Home / Stop / Grab Mode OFF 공통) ----
 # 팔 각도는 아래 DEFAULT_ARM_DEG. 허리는 중립.
@@ -777,11 +905,10 @@ async def lifespan(app: FastAPI):
             # 팔 자세는 건드리지 않음 (현재 위치 그대로 멈춤)
             # 제어권만 천천히 반납 (weight 1→0, 1초) — 팔이 확 안 떨어지게
             if arm.arm_ctrl and arm.arm_ctrl.motion_mode:
-                from ctrl.robot_arm import G1_29_JointIndex
-                print("[shutdown] 제어권 반납 (weight 1->0, 1초)")
-                for weight in np.linspace(1.0, 0.0, num=50):
-                    arm.arm_ctrl.msg.motor_cmd[G1_29_JointIndex.kNotUsedJoint0].q = weight
-                    time.sleep(0.02)
+                w = arm.arm_ctrl.get_weight()
+                if w > 0.0:
+                    print(f"[shutdown] 제어권 반납 (weight {w:.2f}->0, 1초)")
+                    arm.arm_ctrl.ramp_weight(0.0, 1.0)
                 print("[shutdown] 제어권 반납 완료")
         except Exception as e:
             print(f"[shutdown] 종료 시퀀스 실패: {e}")
@@ -932,14 +1059,15 @@ async def grab_at(req: GrabRequest):
     # 모드 게이트
     if ACTIVE_MODE == "none":
         return JSONResponse({"ok": False, "reason": "mode is none"})
-    if req.type == "marker" and ACTIVE_MODE != "marker":
-        return JSONResponse({"ok": False, "reason": f"mode={ACTIVE_MODE}"})
+    if req.type == "marker":
+        return JSONResponse({"ok": False, "reason": "marker 잡기는 제거됨 (마커는 추종 전용)"})
     if req.type == "cardboard" and ACTIVE_MODE != "box":
         return JSONResponse({"ok": False, "reason": f"mode={ACTIVE_MODE}"})
     # 중복 방지
     with grab_lock:
         if grab_busy or is_running:
             return JSONResponse({"ok": False, "reason": "busy"})
+        _follow_stop()               # 잡기 시작 전 추종 중단
         grab_busy = True
     threading.Thread(target=_run_grab, args=(req,), daemon=True).start()
     return JSONResponse({"ok": True, "type": req.type})
@@ -950,11 +1078,11 @@ async def get_active_mode():
     return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running}
 
 
-@app.post("/set_mode", summary="잡기 모드 전환 (none/marker/box)")
+@app.post("/set_mode", summary="잡기 모드 전환 (none/box) - marker 잡기는 제거됨(추종 전용)")
 async def set_mode(mode: str):
     global ACTIVE_MODE
-    if mode not in ("none", "marker", "box"):
-        return JSONResponse({"ok": False, "error": f"invalid: {mode}"})
+    if mode not in ("none", "box"):
+        return JSONResponse({"ok": False, "error": f"invalid: {mode} (marker 잡기는 제거됨)"})
     prev = ACTIVE_MODE
     ACTIVE_MODE = mode
     print(f"[MODE] {prev} → {mode}")
@@ -962,7 +1090,7 @@ async def set_mode(mode: str):
     # 모드 전환 시 대기 자세 (잡기 중이 아닐 때만)
     if not grab_busy and not is_running and grab is not None:
         def _pose():
-            if mode in ("marker", "box"):
+            if mode == "box":
                 grab.ready()      # 팔 들어 대기
             else:
                 grab.park()       # 팔 내림
@@ -1019,8 +1147,7 @@ async def grab_manual():
     import urllib.request
     if ACTIVE_MODE == "none":
         return JSONResponse({"ok": False, "reason": "mode is none"})
-    url = ("http://localhost:50011/pose" if ACTIVE_MODE == "marker"
-           else "http://localhost:50010/pose")
+    url = "http://localhost:50010/pose"   # box 전용 (marker 잡기 제거)
     try:
         raw = urllib.request.urlopen(url, timeout=1.0).read()
         d = json.loads(raw)
@@ -1099,6 +1226,7 @@ async def stop_motion():
     """
     global STOP_FLAG
     STOP_FLAG = True
+    _follow_stop()
     if loco:
         loco.stop()
     loop = asyncio.get_running_loop()
@@ -1141,6 +1269,107 @@ async def recapture_boot_pose():
     return {"ok": True, "arm_deg": BOOT_ARM_DEG}
 
 
+# ==========================================
+# arm_sdk 제어권 토글 (hold / release)
+# ==========================================
+def _do_arm_release():
+    """팔을 loco 기본자세(BOOT_ARM_DEG)로 보간 후 weight 1->0.
+    같은 자세로 인계하므로 release 순간 튐 최소화."""
+    global ARM_MODE, _arm_switching
+    try:
+        _park_arm(2.0)                      # 허리 중립 + 팔 기본자세
+        arm.arm_ctrl.ramp_weight(0.0, 2.0)
+        ARM_MODE = "release"
+        print("[ARM] release 완료 - loco 가 팔/허리 회수")
+    finally:
+        _arm_switching = False
+
+def _do_arm_hold():
+    """실측각 동기화 후 weight 0->1. loco 가 움직여둔 팔을 그 자리에서 인수."""
+    global ARM_MODE, _arm_switching
+    try:
+        arm.arm_ctrl.sync_targets_to_current()
+        arm.arm_ctrl.ramp_weight(1.0, 2.0)
+        ARM_MODE = "hold"
+        print("[ARM] hold 완료 - arm_sdk 가 팔/허리 점유")
+    finally:
+        _arm_switching = False
+
+@app.get("/arm_mode", summary="arm_sdk 제어권 상태")
+async def arm_mode():
+    w = arm.arm_ctrl.get_weight() if (arm and arm.arm_ctrl) else None
+    return {"mode": ARM_MODE, "weight": w, "switching": _arm_switching}
+
+@app.post("/arm_release", summary="제어권 반납 - 팔 스윙 있는 정상 보행 모드")
+async def arm_release():
+    global _arm_switching
+    if not arm or not arm.arm_ctrl:
+        raise HTTPException(503, "Arm 미초기화")
+    if grab_busy or is_running:
+        raise HTTPException(409, "동작 중 - 정지 후 전환")
+    if _arm_switching:
+        raise HTTPException(409, "전환 중")
+    if ARM_MODE == "release":
+        return {"ok": True, "mode": ARM_MODE}
+    _arm_switching = True
+    asyncio.get_running_loop().run_in_executor(None, _do_arm_release)
+    return {"ok": True, "mode": "release", "switching": True}
+
+@app.post("/arm_hold", summary="제어권 점유 - 잡기/IK/박스 운반 모드")
+async def arm_hold():
+    global _arm_switching
+    if not arm or not arm.arm_ctrl:
+        raise HTTPException(503, "Arm 미초기화")
+    if grab_busy or is_running:
+        raise HTTPException(409, "동작 중 - 정지 후 전환")
+    if _arm_switching:
+        raise HTTPException(409, "전환 중")
+    if ARM_MODE == "hold":
+        return {"ok": True, "mode": ARM_MODE}
+    _arm_switching = True
+    asyncio.get_running_loop().run_in_executor(None, _do_arm_hold)
+    return {"ok": True, "mode": "hold", "switching": True}
+
+
+# ==========================================
+# 마커 추종 보행
+# ==========================================
+@app.get("/follow/status")
+async def follow_status():
+    return {**FOLLOW_S, "params": FOLLOW_P, "running": _follow_run.is_set()}
+
+@app.post("/follow/start")
+async def follow_start():
+    if not loco:
+        raise HTTPException(503, "Loco 미초기화")
+    if grab_busy or is_running:
+        raise HTTPException(409, "잡기/모션 동작 중")
+    if _arm_switching:
+        raise HTTPException(409, "arm 전환 중")
+    if _follow_run.is_set():
+        return {"ok": False, "reason": "이미 추종 중"}
+    found, mx, my = _follow_get_pose()
+    if not found:
+        return {"ok": False, "reason": "마커 미검출 - 50011/마커 위치 확인"}
+    _follow_run.set()
+    threading.Thread(target=_follow_loop, daemon=True).start()
+    return {"ok": True, "mx": round(mx, 2), "my": round(my, 2)}
+
+@app.post("/follow/stop")
+async def follow_stop_ep():
+    _follow_stop()
+    if loco:
+        loco.stop()
+    return {"ok": True}
+
+@app.post("/follow/params")
+async def follow_params(body: dict):
+    for k, v in body.items():
+        if k in FOLLOW_P:
+            FOLLOW_P[k] = type(FOLLOW_P[k])(v)
+    return {"ok": True, "params": FOLLOW_P}
+
+
 @app.post("/loco/move")
 async def loco_move(req: LocoMoveRequest):
     if not loco: raise HTTPException(503, "Loco 미초기화")
@@ -1148,7 +1377,10 @@ async def loco_move(req: LocoMoveRequest):
     global _waist_realigning
 
     moving = any(abs(v) > 1e-6 for v in (req.vx, req.vy, req.vyaw))
-    if moving and not grab_busy and not is_running:
+    if moving and _follow_run.is_set():
+        _follow_stop()               # 수동 조작이 추종보다 우선
+    # release 상태면 허리는 loco 소유 - 정렬 가드 불필요(오히려 충돌)
+    if moving and ARM_MODE == "hold" and not grab_busy and not is_running:
         # 복귀 중이면 걷지 않는다. 비틀린 채 걸으면 균형이 무너진다.
         if _waist_realigning:
             return {"ok": True, "waist_realigning": True}
@@ -1163,6 +1395,7 @@ async def loco_move(req: LocoMoveRequest):
 
 @app.post("/loco/stop")
 async def loco_stop_endpoint():
+    _follow_stop()
     if loco: loco.stop()
     return {"ok": True}
 
@@ -1179,4 +1412,5 @@ async def index():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=50000, timeout_graceful_shutdown=2)
+
 

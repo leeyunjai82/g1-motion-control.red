@@ -46,12 +46,12 @@ HOME = {
 # 앞으로 들어올리려면 음수. 아래는 수정안 — P2 에서 자세 확인 후 미세조정.
 CARRY = {
     WAIST_YAW: 0.0, WAIST_ROLL: 0.0, WAIST_PITCH: 0.0,
-    15: -40 * D, 16:  10 * D, 17: 0.0, 18: 30 * D, 19: 0, 20: 0, 21: 0,
-    22: -40 * D, 23: -10 * D, 24: 0.0, 25: 30 * D, 26: 0, 27: 0, 28: 0,
+    15: -20 * D, 16:  10 * D, 17: 0.0, 18: 50 * D, 19: 0, 20: 0, 21: 0,
+    22: -20 * D, 23: -10 * D, 24: 0.0, 25: 50 * D, 26: 0, 27: 0, 28: 0,
 }
 
 VX = 0.2          # 저속 직진 (m/s)
-WALK_S = 2.0      # 보행 지속 시간
+WALK_S = 5.0      # 보행 지속 시간
 
 
 def gate_step(msg: str) -> bool:
@@ -61,11 +61,12 @@ def gate_step(msg: str) -> bool:
 
 
 def walk(loco, vx, vy, vyaw, dur):
-    loco.Move(vx, vy, vyaw)
-    time.sleep(dur)
+    t_end = time.time() + dur
+    while time.time() < t_end:
+        loco.Move(vx, vy, vyaw)   # 20Hz 재전송
+        time.sleep(0.05)
     loco.StopMove()
     time.sleep(1.5)
-
 
 def main():
     iface = sys.argv[1] if len(sys.argv) > 1 else "eth0"

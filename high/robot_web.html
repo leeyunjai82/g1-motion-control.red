@@ -159,7 +159,6 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
       <div class="card-b">
         <div class="seg">
           <button class="btn" id="mode-none" onclick="setMode('none')">OFF</button>
-          <button class="btn" id="mode-marker" onclick="setMode('marker')">Marker</button>
           <button class="btn" id="mode-box" onclick="setMode('box')">Box</button>
         </div>
         <button class="btn primary full" style="margin-top:9px" onclick="grabManual()">✋ Grab Now</button>
@@ -180,15 +179,15 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
         <div class="fld">
           <div>
             <span class="col-lbl" style="color:var(--accent)">LEFT</span>
-            <span class="mini">roll</span><input class="in" id="l-roll" type="number" value="-10" step="5">
-            <span class="mini">pitch</span><input class="in" id="l-pitch" type="number" value="-10" step="5">
-            <span class="mini">yaw</span><input class="in" id="l-yaw" type="number" value="-15" step="5">
+            <span class="mini">roll</span><input class="in" id="l-roll" type="number" value="0" step="5">
+            <span class="mini">pitch</span><input class="in" id="l-pitch" type="number" value="0" step="5">
+            <span class="mini">yaw</span><input class="in" id="l-yaw" type="number" value="0" step="5">
           </div>
           <div>
             <span class="col-lbl" style="color:var(--amber)">RIGHT</span>
-            <span class="mini">roll</span><input class="in" id="r-roll" type="number" value="10" step="5">
-            <span class="mini">pitch</span><input class="in" id="r-pitch" type="number" value="-10" step="5">
-            <span class="mini">yaw</span><input class="in" id="r-yaw" type="number" value="15" step="5">
+            <span class="mini">roll</span><input class="in" id="r-roll" type="number" value="0" step="5">
+            <span class="mini">pitch</span><input class="in" id="r-pitch" type="number" value="0" step="5">
+            <span class="mini">yaw</span><input class="in" id="r-yaw" type="number" value="0" step="5">
           </div>
         </div>
         <button class="btn full" style="margin-top:9px" onclick="applyWrist()">Apply</button>
@@ -277,6 +276,18 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
           <button class="btn warn" onclick="stopAll()">⏹ Stop</button>
           <button class="btn" onclick="goHome()">⌂ Home · 기본자세</button>
         </div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn" id="arm-hold" onclick="armMode('hold')">✋ Hold · 잡기/운반</button>
+          <button class="btn" id="arm-release" onclick="armMode('release')">🚶 Release · 걷기</button>
+        </div>
+        <div class="hint" style="text-align:center;margin-top:6px">arm_sdk: <span id="arm-mode-lbl">-</span></div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn" style="border-color:#2b6;color:#7fd" onclick="followStart()">🎯 마커 추종 시작</button>
+          <button class="btn warn" onclick="followStop()">⏹ 추종 정지</button>
+        </div>
+        <div class="hint" style="text-align:center;margin-top:6px">
+          follow: <span id="fw-state">-</span> · d=<span id="fw-mx">-</span>m · y=<span id="fw-my">-</span>m
+        </div>
 
       </div>
     </div>
@@ -313,7 +324,7 @@ function applyMode(m){
     document.getElementById('auto-lbl').style.color='var(--dim)';}
   curMode=m;
   document.getElementById('mode-tag').textContent=m.toUpperCase();
-  ['none','marker','box'].forEach(k=>document.getElementById('mode-'+k).classList.toggle('on',k===m));
+  ['none','box'].forEach(k=>document.getElementById('mode-'+k).classList.toggle('on',k===m));
   updateFeed(m);
 }
 function updateFeed(m){
@@ -379,6 +390,33 @@ async function goHome(){
     toast('⌂ Home — 기본 자세');
   }catch(e){toast('Error: '+e.message);}
 }
+// ---- arm_sdk 제어권 (hold/release) ----
+function updateArmMode(m){
+  document.getElementById('arm-mode-lbl').textContent=m||'-';
+  document.getElementById('arm-hold').classList.toggle('on',m==='hold');
+  document.getElementById('arm-release').classList.toggle('on',m==='release');}
+async function armMode(m){
+  try{const r=await fetch('/arm_'+m,{method:'POST'});const d=await r.json();
+    if(!r.ok)throw new Error(d.detail||'failed');
+    updateArmMode(d.mode);
+    toast(m==='hold'?'✋ Hold — 팔/허리 점유 (전환 2~4초)':'🚶 Release — 걷기 모드 (전환 2~4초)');
+    setTimeout(()=>fetch('/arm_mode').then(r=>r.json()).then(d=>updateArmMode(d.mode)).catch(()=>{}),4500);
+  }catch(e){toast('Error: '+e.message);}}
+fetch('/arm_mode').then(r=>r.json()).then(d=>updateArmMode(d.mode)).catch(()=>{});
+// ---- 마커 추종 ----
+async function followStart(){
+  try{const r=await fetch('/follow/start',{method:'POST'});const d=await r.json();
+    if(!d.ok){toast('추종 불가: '+(d.reason||''));return;}
+    toast('🎯 마커 추종 시작');
+  }catch(e){toast('Error: '+e.message);}}
+async function followStop(){
+  try{await fetch('/follow/stop',{method:'POST'});toast('⏹ 추종 정지');}
+  catch(e){toast('Error: '+e.message);}}
+setInterval(async()=>{try{const d=await(await fetch('/follow/status')).json();
+  document.getElementById('fw-state').textContent=d.state+(d.running?'●':'');
+  document.getElementById('fw-mx').textContent=d.found?d.mx:'-';
+  document.getElementById('fw-my').textContent=d.found?d.my:'-';
+}catch(e){}},500);
 // ---- loco ----
 const speed=document.getElementById('speed'),spdv=document.getElementById('spdv');
 speed.oninput=()=>spdv.textContent=(+speed.value).toFixed(2);
@@ -442,4 +480,5 @@ fetch('/active_mode').then(r=>r.json()).then(d=>applyMode(d.mode||'none')).catch
 refreshMotions();
 </script>
 </body></html>
+
 
