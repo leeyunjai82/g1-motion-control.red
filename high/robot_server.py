@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-# Version: 1.2
+# Version: 1.3
 # Changes:
+#   1.3 - 마커 추종 정면(법선) 경유점 접근 — 옆에서 와도 마커 정면으로 돌아 들어감
 #   1.2 - grab_box가 L/R 실제좌표 직접 사용(기울어진 박스 양손 정확)
 #   1.1 - handover 허리 yaw 회전 각도비례 감속(90도시 느리게), reset 1.5초
 #   1.0 - box 놓기 5초→3초, 미수령 시 약간 내려놓기(타임아웃)
 #   0.9 - TTS 멘트 선물 컨셉 제거, 잡기 위주로 변경
 #   0.8 - handover 받음 처리 분리 (marker=가림감지 / box=고정5초)
 #   0.7 - park 자세 [0.0,±0.28,-0.38] 차렷에 가깝게
-#   0.6 - WAIST_BASE_PITCH 상수 (현재 0.0)
+#   0.6 - WAIST_BASE_PITCH 상수 (현재 -3.0)
 #   0.5 - set_mode 시 ready/park 자세, marker_x_axis reshape 방어
 #   0.4 - align 후 재감지(redetect) 추가, _run_grab 트레이스백
 #   0.3 - 종료 시 팔 자세 유지(제어권만 반납), 포트 50000
@@ -517,22 +518,50 @@ FOLLOW_P = {
     "ema_alpha": 0.35,                  # 측정 저역필터
     "lost_stop": 1.5,                   # 마커 미검출 정지 (s)
     "timeout": 60.0,
+    # 정면 접근: 마커 법선 위 경유점을 먼저 찍고 정면에서 진입
+    "pre_dist": 0.7,                    # 경유점 거리 (마커 정면, m)
+    "wp_reach": 0.2,                    # 경유점 도달 판정 (m)
+    "axis_from_x": 0,                   # 접근축: 0=마커 Y축, 1=X축 (배치에 맞게)
 }
-FOLLOW_S = {"state": "idle", "found": False, "mx": 0.0, "my": 0.0,
-            "vx": 0.0, "vyaw": 0.0, "t_run": 0.0}
+FOLLOW_S = {"state": "idle", "phase": "-", "found": False,
+            "mx": 0.0, "my": 0.0, "vx": 0.0, "vyaw": 0.0, "t_run": 0.0}
 _follow_run = threading.Event()
 
 
 def _follow_get_pose():
+    """마커 위치+접근축. (found, mx, my, axis)
+
+    mx,my  : torso 기준 마커 위치 (m)
+    axis   : 마커 법선(접근축) 단위벡터 — 항상 로봇 쪽을 향하도록 부호 정리.
+             rvec 없거나 해석 실패 시 None (기존처럼 직행 접근).
+    """
     import urllib.request as _u
     try:
         d = json.loads(_u.urlopen(MARKER_POSE_URL, timeout=0.3).read())
         if not d.get("found"):
-            return False, 0.0, 0.0
+            return False, 0.0, 0.0, None
         cm = d["torso_cm"]
-        return True, cm[0] / 100.0, cm[1] / 100.0
+        mx, my = cm[0] / 100.0, cm[1] / 100.0
+        axis = None
+        rvec = d.get("rvec")
+        if rvec:
+            try:
+                import cv2 as _cv2
+                rv = np.asarray(rvec, dtype=np.float64).reshape(3, 1)
+                R, _ = _cv2.Rodrigues(rv)
+                col = 1 if not FOLLOW_P["axis_from_x"] else 0
+                ax, ay, _az = camera_dir_to_torso(R[0, col], R[1, col], R[2, col])
+                n = (ax * ax + ay * ay) ** 0.5
+                if n > 1e-6:
+                    ax, ay = ax / n, ay / n
+                    if ax * (-mx) + ay * (-my) < 0:   # 로봇(원점) 쪽으로
+                        ax, ay = -ax, -ay
+                    axis = (ax, ay)
+            except Exception:
+                axis = None
+        return True, mx, my, axis
     except Exception:
-        return False, 0.0, 0.0
+        return False, 0.0, 0.0, None
 
 
 def _follow_loop():
@@ -543,6 +572,8 @@ def _follow_loop():
     lost_since = None
     arrive_cnt = 0
     f_mx = f_my = None
+    f_ax = f_ay = None
+    phase = "waypoint"        # waypoint: 마커 정면 경유점으로 / final: 마커로 직행
     S["state"] = "following"
     try:
         while _follow_run.is_set():
@@ -551,7 +582,7 @@ def _follow_loop():
             if S["t_run"] > P["timeout"]:
                 S["state"] = "timeout"; break
 
-            found, mx, my = _follow_get_pose()
+            found, mx, my, axis = _follow_get_pose()
             if not found:
                 if lost_since is None:
                     lost_since = t0
@@ -569,15 +600,36 @@ def _follow_loop():
             else:
                 f_mx += a * (mx - f_mx)
                 f_my += a * (my - f_my)
+            if axis is not None:
+                if f_ax is None:
+                    f_ax, f_ay = axis
+                else:
+                    f_ax += a * (axis[0] - f_ax)
+                    f_ay += a * (axis[1] - f_ay)
+                    n = (f_ax * f_ax + f_ay * f_ay) ** 0.5
+                    if n > 1e-6:
+                        f_ax, f_ay = f_ax / n, f_ay / n
             S["found"], S["mx"], S["my"] = True, round(f_mx, 2), round(f_my, 2)
 
-            vy_center = max(-P["vy_max"], min(P["vy_max"],
-                            P["yaw_sign"] * P["kp_vy"] * f_my))
+            # 목표점: 경유점(마커 정면 pre_dist) → 도달하면 마커
+            if phase == "waypoint" and f_ax is not None:
+                tx = f_mx + f_ax * P["pre_dist"]
+                ty = f_my + f_ay * P["pre_dist"]
+                if _m.hypot(tx, ty) <= P["wp_reach"]:
+                    phase = "final"
+                    tx, ty = f_mx, f_my
+            else:
+                phase = "final"           # 접근축 없으면 기존 동작(직행)
+                tx, ty = f_mx, f_my
+            S["phase"] = phase
 
-            # 도착 판정: 거리 + 좌우 오프셋 모두 만족해야 함
-            if f_mx <= P["stop_dist"]:
-                if abs(f_my) > P["y_tol"]:
-                    # 거리는 됐고 좌우만 남음 -> 제자리 게걸음으로 센터링
+            d_t = _m.hypot(tx, ty)
+            vy_center = max(-P["vy_max"], min(P["vy_max"],
+                            P["yaw_sign"] * P["kp_vy"] * ty))
+
+            # 도착 판정: final 단계에서만 (경유점 단계에선 절대 정지하지 않음)
+            if phase == "final" and d_t <= P["stop_dist"]:
+                if abs(ty) > P["y_tol"]:
                     arrive_cnt = 0
                     loco.move(0.0, vy_center, 0.0)
                     S["vx"], S["vyaw"] = 0.0, round(vy_center, 2)
@@ -591,17 +643,16 @@ def _follow_loop():
                 continue
             arrive_cnt = 0
 
-            bearing = _m.atan2(f_my, f_mx)
+            bearing = _m.atan2(ty, tx)
             vyaw = max(-P["vyaw_max"], min(P["vyaw_max"],
                        P["yaw_sign"] * P["kp_yaw"] * bearing))
             vy = 0.0
-            if f_mx < P["slow_dist"]:
-                # 근거리: 회전 반감 + 횡이동으로 좌우 제거
+            if d_t < P["slow_dist"]:
                 vyaw *= 0.5
                 vy = vy_center
                 span = max(0.01, P["slow_dist"] - P["stop_dist"])
                 vx = P["vx_min"] + (P["vx_max"] - P["vx_min"]) * \
-                     (f_mx - P["stop_dist"]) / span
+                     (d_t - P["stop_dist"]) / span
             else:
                 vx = P["vx_max"]
             vx = max(P["vx_min"], min(P["vx_max"], vx))
@@ -624,6 +675,7 @@ def _follow_stop():
     if _follow_run.is_set():
         _follow_run.clear()
         FOLLOW_S["state"] = "stopped"
+
 
 
 # ---- 기본 자세 (Home / Stop / Grab Mode OFF 공통) ----
@@ -1348,7 +1400,7 @@ async def follow_start():
         raise HTTPException(409, "arm 전환 중")
     if _follow_run.is_set():
         return {"ok": False, "reason": "이미 추종 중"}
-    found, mx, my = _follow_get_pose()
+    found, mx, my, _axis = _follow_get_pose()
     if not found:
         return {"ok": False, "reason": "마커 미검출 - 50011/마커 위치 확인"}
     _follow_run.set()
@@ -1412,5 +1464,3 @@ async def index():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=50000, timeout_graceful_shutdown=2)
-
-
