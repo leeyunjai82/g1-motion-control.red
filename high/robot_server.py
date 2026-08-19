@@ -1236,6 +1236,35 @@ async def run_ik_motion(frames: List[IKMotionFrame]):
     asyncio.create_task(_execute_ik_frames(frames))
     return {"status": "started", "frames": len(frames)}
 
+@app.post("/run_file", summary="관절값 모션 파일 업로드 후 실행")
+async def run_motion_file(file: UploadFile = File(...)):
+    if is_running or grab_busy:
+        raise HTTPException(409, "동작 중")
+    try:
+        data   = json.loads(await file.read())
+        frames = [MotionFrame(**f) for f in data]
+    except Exception as e:
+        raise HTTPException(400, f"파일 파싱 오류: {e}")
+    if not frames:
+        raise HTTPException(400, "빈 모션")
+    asyncio.create_task(_execute_frames(frames))
+    return {"status": "started", "frames": len(frames), "filename": file.filename}
+
+
+@app.post("/run_ik_file", summary="IK 모션 파일 업로드 후 실행")
+async def run_ik_motion_file(file: UploadFile = File(...)):
+    if is_running or grab_busy:
+        raise HTTPException(409, "동작 중")
+    try:
+        data   = json.loads(await file.read())
+        frames = [IKMotionFrame(**f) for f in data]
+    except Exception as e:
+        raise HTTPException(400, f"파일 파싱 오류: {e}")
+    if not frames:
+        raise HTTPException(400, "빈 모션")
+    asyncio.create_task(_execute_ik_frames(frames))
+    return {"status": "started", "frames": len(frames), "filename": file.filename}
+
 @app.post("/stop", summary="정지 — 다리 정지 + 모션 중단 + 팔 현재 자세 동결")
 async def stop_motion():
     """다리 정지 + 모션 중단 + 기본 자세 복귀 (허리 중립 + 팔 BOOT_ARM_DEG).
