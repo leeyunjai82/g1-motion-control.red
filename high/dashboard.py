@@ -15,7 +15,9 @@ Routes:
 import os
 import sys
 import json
+import time
 import asyncio
+import threading
 import numpy as np
 import httpx
 import uvicorn
@@ -38,13 +40,58 @@ VIDEO_FEED = "http://localhost:50001/video_feed"
 DEPTH_FEED = "http://localhost:50001/depth_feed"
 
 # ==========================================
-# Robot connection
+# Robot connection — rt/lowstate 구독 전용 (뷰어는 절대 지령을 보내지 않는다)
+#   예전엔 G1_29_ArmController(motion_mode=False) 를 썼는데, 그 생성자가
+#   rt/lowcmd 송신 스레드(250Hz, 다리 포함 전 관절 고정 지령)를 띄워 버린다.
 # ==========================================
+NUM_MOTORS = 35
+
+
+class LowStateReader:
+    """rt/lowstate 만 읽는다. Publisher 없음."""
+
+    def __init__(self):
+        from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+        from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_ as hg_LowState
+        ChannelFactoryInitialize(0)
+        self._q = np.zeros(NUM_MOTORS)
+        self._rpy = np.zeros(3)
+        self._lock = threading.Lock()
+        self.connected = False
+        self._sub = ChannelSubscriber("rt/lowstate", hg_LowState)
+        self._sub.Init()
+        threading.Thread(target=self._loop, daemon=True).start()
+        # 첫 수신 대기 (최대 3초) — 페이지 첫 로드 시 연결 표시가 맞도록
+        t0 = time.time()
+        while not self.connected and time.time() - t0 < 3.0:
+            time.sleep(0.1)
+        if not self.connected:
+            print("[Warning] rt/lowstate 아직 수신 없음 — 수신되면 자동 반영")
+
+    def _loop(self):
+        while True:
+            msg = self._sub.Read()
+            if msg is not None:
+                q = np.array([msg.motor_state[i].q for i in range(NUM_MOTORS)])
+                rpy = np.array(msg.imu_state.rpy)
+                with self._lock:
+                    self._q, self._rpy = q, rpy
+                self.connected = True
+            time.sleep(0.002)
+
+    def get_current_motor_q(self):
+        with self._lock:
+            return self._q.copy()
+
+    def get_imu_rpy(self):
+        with self._lock:
+            return self._rpy.copy()
+
+
 try:
-    from ctrl.robot_arm import G1_29_ArmController
-    ctrl = G1_29_ArmController(motion_mode=False, simulation_mode=False)
+    ctrl = LowStateReader()
     ROBOT_AVAILABLE = True
-    print("[System] Robot connected")
+    print("[System] rt/lowstate 구독 시작 (read-only)")
 except Exception as e:
     ROBOT_AVAILABLE = False
     ctrl = None
@@ -128,15 +175,16 @@ def get_mesh(filename: str):
 async def joint_states():
     async def gen():
         while True:
-            if ROBOT_AVAILABLE and ctrl:
+            live = bool(ROBOT_AVAILABLE and ctrl and ctrl.connected)
+            if live:
                 q   = ctrl.get_current_motor_q()
                 imu = ctrl.get_imu_rpy().tolist()
             else:
-                q   = np.zeros(35)
+                q   = np.zeros(NUM_MOTORS)
                 imu = [0.0, 0.0, 0.0]
             data = {j: float(q[i]) for j, i in JOINT_TO_MOTOR.items()}
             data['_imu']       = imu
-            data['_connected'] = ROBOT_AVAILABLE
+            data['_connected'] = live
             yield f"data: {json.dumps(data)}\n\n"
             await asyncio.sleep(0.05)
     return StreamingResponse(
@@ -147,7 +195,7 @@ async def joint_states():
 
 @app.get('/api/status')
 def status():
-    return {'connected': ROBOT_AVAILABLE}
+    return {'connected': bool(ROBOT_AVAILABLE and ctrl and ctrl.connected)}
 
 # ==========================================
 # Local vendor (Three.js 등)

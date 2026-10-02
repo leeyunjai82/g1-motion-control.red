@@ -113,7 +113,10 @@ class ArmControllerWrapper:
         self._started = False
         self._current_q = np.zeros(14)
         self._current_dq = np.zeros(14)
-        self._stop_interpolation = False
+        # 보간 세대 번호 — 팔/허리 그룹별로 분리.
+        # 새 동작은 자기 그룹 세대만 올려 이전 루프를 끊는다. stop_motion 은 둘 다 올린다.
+        # (예전엔 플래그 하나를 공유해서, 허리 지령이 진행 중인 팔 보간을 끊어버렸다)
+        self._gen = {"arm": 0, "waist": 0}
         self._interpolation_lock = threading.Lock()
 
     def start(self):
@@ -126,12 +129,14 @@ class ArmControllerWrapper:
             self._current_q = self.arm_ctrl.get_current_dual_arm_q()
             self._current_dq = self.arm_ctrl.get_current_dual_arm_dq()
 
-    def _reset_interpolation(self):
+    def _begin(self, group):
+        """group("arm"|"waist") 의 새 보간 시작 — 같은 그룹 이전 루프를 끊고 세대 반환."""
         with self._interpolation_lock:
-            self._stop_interpolation = True
-        time.sleep(0.02)
-        with self._interpolation_lock:
-            self._stop_interpolation = False
+            self._gen[group] += 1
+            return self._gen[group]
+
+    def _cancelled(self, group, gen):
+        return self._gen[group] != gen
 
     # -------------------- 원본 상태 조회 메서드들 --------------------
 
@@ -159,7 +164,7 @@ class ArmControllerWrapper:
         """허리 3축을 부드럽게 동시 제어"""
         if not self.arm_ctrl: return
         if not self._started: self.start()
-        self._reset_interpolation()
+        gen = self._begin("waist")
 
         with self.arm_ctrl.ctrl_lock:
             start_waist_rad = getattr(self.arm_ctrl, 'waist_q_target', np.zeros(3)).copy()
@@ -169,7 +174,7 @@ class ArmControllerWrapper:
         dt = 1.0 / frequency
 
         for i in range(steps + 1):
-            if self._stop_interpolation: return
+            if self._cancelled("waist", gen): return
             start_time = time.time()
             t_smooth = (i/steps)**2 * (3 - 2*(i/steps))
             interp_waist = start_waist_rad + t_smooth * (target_waist_rad - start_waist_rad)
@@ -198,7 +203,7 @@ class ArmControllerWrapper:
     def move_hands(self, left_pos, right_pos, left_rot=None, right_rot=None, duration=3.0, frequency=100):
         if not self.arm_ctrl: raise RuntimeError("Motor control is disabled")
         if not self._started: self.start()
-        self._reset_interpolation()
+        gen = self._begin("arm")
 
         if left_rot is None: left_rot = pin.Quaternion(1, 0, 0, 0)
         if right_rot is None: right_rot = pin.Quaternion(1, 0, 0, 0)
@@ -217,7 +222,7 @@ class ArmControllerWrapper:
         dt = 1.0 / frequency
 
         for i in range(steps + 1):
-            if self._stop_interpolation: return
+            if self._cancelled("arm", gen): return
             start_time = time.time()
             t_smooth = (i/steps)**2 * (3 - 2*(i/steps))
             
@@ -260,7 +265,8 @@ class ArmControllerWrapper:
             internal_idx = motor_index
         else: raise ValueError(f"Invalid motor index: {motor_index}")
 
-        self._reset_interpolation()
+        group = "waist" if is_waist else "arm"
+        gen = self._begin(group)
 
         with self.arm_ctrl.ctrl_lock:
             base_q = getattr(self.arm_ctrl, 'waist_q_target' if is_waist else 'q_target', np.zeros(14 if not is_waist else 3)).copy()
@@ -270,7 +276,7 @@ class ArmControllerWrapper:
         steps, dt = int(duration * frequency), 1.0 / frequency
 
         for i in range(steps + 1):
-            if self._stop_interpolation: return
+            if self._cancelled(group, gen): return
             start_time = time.time()
             t_smooth = (i/steps)**2 * (3 - 2*(i/steps))
             target_q = base_q.copy()
@@ -286,7 +292,7 @@ class ArmControllerWrapper:
         if not self._started: self.start()
         if len(target_degrees) != 14: raise ValueError("target_degrees must have 14 elements")
 
-        self._reset_interpolation()
+        gen = self._begin("arm")
 
         with self.arm_ctrl.ctrl_lock:
             start_rad = self.arm_ctrl.q_target.copy()
@@ -295,7 +301,7 @@ class ArmControllerWrapper:
         steps, dt = int(duration * frequency), 1.0 / frequency
 
         for i in range(steps + 1):
-            if self._stop_interpolation: return
+            if self._cancelled("arm", gen): return
             start_time = time.time()
             t_smooth = (i/steps)**2 * (3 - 2*(i/steps))
             interp_rad = start_rad + t_smooth * (target_rad - start_rad)
@@ -311,7 +317,10 @@ class ArmControllerWrapper:
             if hasattr(self.arm_ctrl, 'ctrl_waist'): self.arm_ctrl.ctrl_waist(np.zeros(3))
 
     def stop_motion(self):
-        with self._interpolation_lock: self._stop_interpolation = True
+        """팔/허리 진행 중 보간 모두 중단."""
+        with self._interpolation_lock:
+            self._gen["arm"] += 1
+            self._gen["waist"] += 1
 
     def get_joint_name(self, motor_index):
         if 15 <= motor_index <= 28: idx = GLOBAL_TO_INTERNAL[motor_index]
