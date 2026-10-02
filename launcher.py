@@ -2,20 +2,23 @@
 """
 launcher.py — start_fsm.sh / start_robot.sh 를 버튼으로 실행하는 웹 (포트 50080)
 
-  python launcher.py        (activate_tv.sh 로 tv 환경 활성화 후)
+  ./launcher.sh             (start_fsm.sh 와 같이 sudo 로 tv 환경 python 실행)
   → http://<robot-ip>:50080/
 
 버튼
   · Stand / Sit / Damp : ./start_fsm.sh <cmd>   (한 번에 하나만 실행)
   · Robot 시작 / 정지   : ./start_robot.sh 실행 / SIGTERM(= Ctrl+C 와 같은 종료 시퀀스)
 
+권한
+  · launcher 는 root 로 돈다 (launcher.sh 의 sudo) → start_fsm.sh 안의 sudo 가 비밀번호 없이 통과.
+  · start_robot.sh 는 sudo 를 실행한 원래 사용자(SUDO_USER)로 내려서 실행한다.
+    root 로 띄우면 logs/ 등 파일 소유자가 root 가 되어 수동 실행 시 쓰기 실패.
 주의
-  · start_fsm.sh 는 내부에서 sudo 를 쓴다. 웹에서는 비밀번호를 입력할 수 없으므로
-    sudoers 에 NOPASSWD 등록이 필요하다 (README 의 launcher 항목 참고).
   · 웹 버튼은 비상정지가 아니다. 물리 E-STOP / 리모컨을 항상 손에 둘 것.
 """
 
 import os
+import pwd
 import signal
 import subprocess
 import threading
@@ -23,13 +26,45 @@ import time
 from collections import deque
 
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
 PORT = 50080
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(ROOT, "logs")
+
+# sudo 로 실행됐으면 원래 사용자 정보 (start_robot.sh 를 이 사용자로 실행)
+SUDO_USER = os.environ.get("SUDO_USER") if os.geteuid() == 0 else None
+USER_PW = pwd.getpwnam(SUDO_USER) if SUDO_USER else None
+
+
+def _own(path):
+    """root 로 만든 파일/폴더를 원래 사용자 소유로."""
+    if USER_PW:
+        try:
+            os.chown(path, USER_PW.pw_uid, USER_PW.pw_gid)
+        except OSError:
+            pass
+
+
 os.makedirs(LOG_DIR, exist_ok=True)
+_own(LOG_DIR)
+
+
+def _as_user():
+    """자식 프로세스를 원래 사용자 권한으로 (그룹 포함 — video/plugdev 등 장치 접근)."""
+    os.initgroups(USER_PW.pw_name, USER_PW.pw_gid)
+    os.setgid(USER_PW.pw_gid)
+    os.setuid(USER_PW.pw_uid)
+
+
+def _user_env():
+    env = dict(os.environ)
+    env.update(HOME=USER_PW.pw_dir, USER=USER_PW.pw_name, LOGNAME=USER_PW.pw_name)
+    for k in ("SUDO_USER", "SUDO_UID", "SUDO_GID", "SUDO_COMMAND"):
+        env.pop(k, None)
+    return env
 
 FSM_CMDS = ("stand", "sit", "damp")
 ROBOT_STOP_WAIT = 20.0      # start_robot.sh 종료 시퀀스(최대 8초 + sweep) 여유
@@ -51,7 +86,7 @@ class Job:
     def running(self):
         return self.proc is not None and self.proc.poll() is None
 
-    def start(self, args, label):
+    def start(self, args, label, as_user=False):
         with self.lock:
             if self.running():
                 raise HTTPException(409, f"{self.name} 실행 중: {self.label}")
@@ -59,13 +94,17 @@ class Job:
             self.label, self.rc = label, None
             self.started, self.ended = time.time(), 0.0
             day = time.strftime("%Y%m%d")
-            logf = open(os.path.join(LOG_DIR, f"launcher_{self.name}_{day}.log"), "a",
-                        encoding="utf-8")
+            logpath = os.path.join(LOG_DIR, f"launcher_{self.name}_{day}.log")
+            logf = open(logpath, "a", encoding="utf-8")
+            _own(logpath)
+            drop = as_user and USER_PW is not None
             logf.write(f"\n===== {time.strftime('%Y-%m-%d %H:%M:%S')} {label} =====\n")
             self.proc = subprocess.Popen(
                 args, cwd=ROOT, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                start_new_session=True, text=True, bufsize=1)
+                start_new_session=True, text=True, bufsize=1,
+                preexec_fn=_as_user if drop else None,
+                env=_user_env() if drop else None)
             threading.Thread(target=self._pump, args=(self.proc, logf), daemon=True).start()
 
     def _pump(self, proc, logf):
@@ -79,8 +118,8 @@ class Job:
         self.lines.append(f"[{time.strftime('%H:%M:%S')}] --- 종료 (rc={self.rc}) ---")
         if self.rc != 0 and any(("password" in l or "terminal is required" in l)
                                 for l in self.lines):
-            self.lines.append("[launcher] sudo 비밀번호 요구로 실패 — sudoers NOPASSWD 등록 필요 "
-                              "(launcher.py 상단 주석 / README 참고)")
+            self.lines.append("[launcher] sudo 비밀번호 요구로 실패 — launcher 를 ./launcher.sh 로 "
+                              "(sudo) 실행했는지 확인")
         logf.close()
 
     def state(self):
@@ -93,7 +132,19 @@ class Job:
 
 fsm = Job("fsm")
 robot = Job("robot")
-app = FastAPI(title="G1 Launcher")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    # launcher 종료(Ctrl+C) 시 로봇 서버도 정상 종료 시퀀스로 정지.
+    # 남겨두면 다음 start_robot.sh 의 sweep 이 SIGKILL 로 죽여 arm 제어권 반납이 생략된다.
+    if robot.running():
+        print("[launcher] 종료 — start_robot.sh 정지 중...")
+        _stop_robot()
+
+
+app = FastAPI(title="G1 Launcher", lifespan=lifespan)
 
 
 @app.post("/fsm/{cmd}")
@@ -106,7 +157,7 @@ async def run_fsm(cmd: str):
 
 @app.post("/robot/start")
 async def robot_start():
-    robot.start(["bash", os.path.join(ROOT, "start_robot.sh")], "start_robot.sh")
+    robot.start(["bash", os.path.join(ROOT, "start_robot.sh")], "start_robot.sh", as_user=True)
     return {"ok": True}
 
 
@@ -246,4 +297,7 @@ poll();setInterval(poll,1000);
 
 
 if __name__ == "__main__":
+    if os.geteuid() != 0:
+        print("[launcher] ⚠️ root 가 아님 — Stand/Sit/Damp 가 sudo 비밀번호에서 실패할 수 있음. ./launcher.sh 로 실행 권장")
+    print(f"[launcher] http://0.0.0.0:{PORT}/  (start_robot.sh 실행 사용자: {SUDO_USER or os.environ.get('USER')})")
     uvicorn.run(app, host="0.0.0.0", port=PORT)
