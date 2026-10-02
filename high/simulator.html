@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitree G1 | Motion Editor</title>
-<!-- Version: 7.0 — simulator.html(관절 v5.2) + simulator_ik.html(IK v6.3) 통합
+<!-- Version: 7.1 — 이동 패드 재배치(회전 2개를 전진 양옆 같은 줄에, 한글 라벨+단축키), 좁은 폭 슬라이더 잘림 수정
+     Version: 7.0 — simulator.html(관절 v5.2) + simulator_ik.html(IK v6.3) 통합
   - 좌측 패널 Joint/IK 모드 토글, 이동·손·타임라인 공용
   - 타임라인에 관절/IK 프레임 혼재 가능 (백엔드 /set_motion 이 프레임별 판별)
   - EMERGENCY STOP = 동결(freeze), 홈 복귀는 별도 버튼(/go_home) -->
@@ -55,9 +56,9 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 .panel-title{margin:0 0 1rem;font-size:1rem;font-weight:500}
 
 /* ---- Joint 모드 ---- */
-#arm-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem 2rem}
+#arm-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.8rem 2rem}
 #waist-section{margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--border-primary)}
-#WAIST_CONTROLS{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
+#WAIST_CONTROLS{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem}
 .joint-group-title{font-size:.95rem;font-weight:500;margin:0 0 .6rem;color:var(--accent-primary)}
 .joint-group-title.waist-title{color:var(--accent-waist)}
 .control-item{margin-bottom:.45rem}
@@ -65,7 +66,7 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 .label-name{color:var(--text-primary)}
 .motor-id{color:var(--text-secondary);font-family:var(--font-mono);font-size:.7rem}
 .input-wrapper{display:flex;gap:.5rem;align-items:center}
-.input-wrapper input[type=range]{flex:1;accent-color:var(--accent-primary)}
+.input-wrapper input[type=range]{flex:1;min-width:0;accent-color:var(--accent-primary)}
 .input-wrapper input[type=number]{width:4.2rem;background:var(--bg-primary);border:1px solid var(--border-primary);
   color:var(--text-primary);border-radius:.3rem;padding:.2rem .3rem;font-family:var(--font-mono);font-size:.75rem}
 #WAIST_CONTROLS .input-wrapper input[type=range]{accent-color:var(--accent-waist)}
@@ -79,7 +80,7 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 .label-row .rot{color:var(--accent-rot)}
 .label-value{font-family:var(--font-mono);color:var(--text-secondary);font-size:.72rem}
 .input-row{display:flex;gap:.5rem;align-items:center}
-.input-row input[type=range]{flex:1;accent-color:var(--accent-ik)}
+.input-row input[type=range]{flex:1;min-width:0;accent-color:var(--accent-ik)}
 .input-row input[type=range].rot-slider{accent-color:var(--accent-rot)}
 .input-row input[type=number]{width:4.2rem;background:var(--bg-secondary);border:1px solid var(--border-primary);
   color:var(--text-primary);border-radius:.3rem;padding:.2rem .3rem;font-family:var(--font-mono);font-size:.72rem}
@@ -88,14 +89,25 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 
 /* ---- 이동/손 ---- */
 .section-title{font-size:.95rem;font-weight:500;margin:0 0 .6rem;text-align:center}
-#locomotion-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin-bottom:1rem}
-.loco-btn{aspect-ratio:1.6;background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-primary);
-  border-radius:.4rem;font-size:1.1rem;cursor:pointer}
+.loco-section{margin-bottom:.9rem}
+#locomotion-controls{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,4rem);gap:.4rem}
+.loco-btn{background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-primary);
+  border-radius:.5rem;cursor:pointer;font:inherit;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:.15rem;padding:.3rem;position:relative}
+.loco-btn .ic{font-size:1.5rem;line-height:1}
+.loco-btn .nm{font-size:.78rem}
+.loco-btn .key{position:absolute;top:.3rem;right:.4rem;font-family:var(--font-mono);font-size:.62rem;
+  color:var(--text-secondary);border:1px solid var(--border-primary);border-radius:.25rem;padding:0 .25rem}
 .loco-btn:hover{border-color:var(--accent-primary)}
-#loco-forward{grid-column:2}
-#loco-stop{color:var(--accent-danger)}
-#loco-backward{grid-column:2}
-.hand-controls-container{margin-top:.5rem;padding-top:.8rem;border-top:1px solid var(--border-primary)}
+.loco-btn:active,.loco-btn.pressed{background:var(--accent-primary);color:var(--bg-primary)}
+.loco-btn.turn{color:var(--accent-rot);border-color:#4a3a63}
+.loco-btn.turn .ic{font-size:1.9rem;font-weight:700}
+.loco-btn.turn:hover{border-color:var(--accent-rot)}
+#loco-turn_left{grid-area:1/1}#loco-forward{grid-area:1/2}#loco-turn_right{grid-area:1/3}
+#loco-left{grid-area:2/1}#loco-stop{grid-area:2/2;color:var(--accent-danger);border-color:#5a2b2b}#loco-right{grid-area:2/3}
+#loco-backward{grid-area:3/2}
+.loco-hint{font-size:.7rem;color:var(--text-secondary);text-align:center;margin-top:.4rem}
+.hand-controls-container{padding-top:.8rem;border-top:1px solid var(--border-primary)}
 .hand-selector{display:flex;gap:.4rem;margin-bottom:.6rem}
 .hand-selector button{flex:1;padding:.4rem;background:var(--bg-tertiary);border:1px solid var(--border-primary);
   color:var(--text-secondary);border-radius:.4rem;cursor:pointer;font-size:.8rem}
@@ -137,7 +149,7 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 <body>
 <div class="app-container">
   <header class="app-header">
-    <h1 class="app-title">G1 Motion Editor <span>v7.0</span></h1>
+    <h1 class="app-title">G1 Motion Editor <span>v7.1</span></h1>
     <div class="mode-toggle">
       <button id="mode-joint" class="active">Joint · 관절</button>
       <button id="mode-ik">IK · 좌표</button>
@@ -207,15 +219,18 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 
   <!-- 중앙: 이동 + 손 (공용) -->
   <div id="controls-panel" class="panel">
+    <div class="loco-section">
     <h4 class="section-title" style="color:var(--accent-primary)">이동</h4>
     <div id="locomotion-controls">
-      <button id="loco-forward" class="loco-btn">↑</button>
-      <button id="loco-turn_left" class="loco-btn">↶</button>
-      <button id="loco-left" class="loco-btn">←</button>
-      <button id="loco-stop" class="loco-btn">■</button>
-      <button id="loco-right" class="loco-btn">→</button>
-      <button id="loco-turn_right" class="loco-btn">↷</button>
-      <button id="loco-backward" class="loco-btn">↓</button>
+      <button id="loco-turn_left" class="loco-btn turn"><span class="key">A ←</span><span class="ic">↺</span><span class="nm">좌회전</span></button>
+      <button id="loco-forward" class="loco-btn"><span class="key">W ↑</span><span class="ic">▲</span><span class="nm">전진</span></button>
+      <button id="loco-turn_right" class="loco-btn turn"><span class="key">D →</span><span class="ic">↻</span><span class="nm">우회전</span></button>
+      <button id="loco-left" class="loco-btn"><span class="key">Q</span><span class="ic">◀</span><span class="nm">좌측 이동</span></button>
+      <button id="loco-stop" class="loco-btn"><span class="ic">■</span><span class="nm">정지</span></button>
+      <button id="loco-right" class="loco-btn"><span class="key">E</span><span class="ic">▶</span><span class="nm">우측 이동</span></button>
+      <button id="loco-backward" class="loco-btn"><span class="key">S ↓</span><span class="ic">▼</span><span class="nm">후진</span></button>
+    </div>
+    <div class="loco-hint">키보드: 누르는 동안 이동 · 떼면 정지</div>
     </div>
     <div class="hand-controls-container">
       <h4 class="section-title" style="color:var(--accent-hand)">손 제어</h4>
