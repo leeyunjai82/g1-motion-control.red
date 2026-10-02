@@ -19,7 +19,7 @@
 robot_server.py — G1 통합 로봇 제어 서버 (arm 제어 유일 프로세스)
 
 run_motion.py 기능:
-  · 관절/IK 모션 실행 (/run, /run_ik, /motions/run, /send_gift)
+  · 관절/IK 모션 실행 (/run, /run_ik, /motions/run)
   · Loco 방향키 (/loco/move, /loco/stop)
   · 컨트롤 웹 UI (viewer는 dashboard.py)
 
@@ -1065,30 +1065,6 @@ async def _execute_ik_frames(frames: List[IKMotionFrame]):
         is_running = False
         if loco: loco.stop()
 
-async def _execute_send_gift():
-    loop = asyncio.get_running_loop()
-    filepath = MOTIONS_DIR / "right_send.json"
-    if not filepath.exists():
-        print("[Send] right_send.json 없음"); return
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"[Send] 파싱 오류: {e}"); return
-    if not data: return
-    if tts:
-        tts.speak("Here you go.")
-        await loop.run_in_executor(None, tts.wait_until_done)
-    first = data[0]
-    is_ik = "left_xyz" in first or "right_xyz" in first
-    if is_ik:
-        await _execute_ik_frames([IKMotionFrame(**f) for f in data])
-    else:
-        await _execute_frames([MotionFrame(**f) for f in data])
-    if tts:
-        tts.speak("All done. Thank you.")
-
-
 # ==========================================
 # 잡기 — 모드 게이트 + grab_at
 # ==========================================
@@ -1239,15 +1215,6 @@ async def run_motion_by_name(filename: str):
     else:
         asyncio.create_task(_execute_frames([MotionFrame(**f) for f in data]))
     return {"status": "started", "frames": len(data), "format": "ik" if is_ik else "joint"}
-
-@app.post("/send_gift")
-async def send_gift():
-    if is_running or grab_busy:
-        raise HTTPException(409, "동작 중")
-    if not (MOTIONS_DIR / "right_send.json").exists():
-        raise HTTPException(404, "right_send.json 없음")
-    asyncio.create_task(_execute_send_gift())
-    return {"status": "started"}
 
 @app.post("/run")
 async def run_motion(frames: List[MotionFrame]):

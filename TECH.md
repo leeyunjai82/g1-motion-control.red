@@ -64,7 +64,7 @@ The PC runs three layers:
 | `high/ctrl/robot_arm.py` | `G1_29_ArmController` — DDS publisher/subscriber, motor command builder, CRC |
 | `high/ctrl/robot_arm_ik.py` | `G1_29_ArmIK` — Pinocchio-CasADi dual-arm inverse kinematics |
 | `high/ctrl/mandro3.py` | `HandController` — Mandro Mark-7 hand serial protocol |
-| `high/ctrl/text_to_speech.py` | TTS used by the gift / grasping sequence |
+| `high/ctrl/text_to_speech.py` | TTS used by the grasping sequence |
 | `high/assets/g1/g1_29dof_rev_1_0.urdf` + `meshes/` | URDF + STL meshes (consumed by IK + 3D viewer) |
 | `high/motions/*.json` | Motion library (see §5) |
 | `low/` | Direct low-level motor / DDS tests (`g1_motor_low.py`, `g1_motor_control.py`) |
@@ -362,7 +362,6 @@ The web stream from `ik_box.py` itself (`:50000`) is throttled to **5 fps / 320�
 | POST | `/run_file` | Upload + play a joint-format file |
 | POST | `/run_ik` | Play inline IK frames |
 | POST | `/run_ik_file` | Upload + play an IK file |
-| POST | `/send_gift` | TTS + `right_send.json` sequence |
 | POST | `/stop` | Stop, return to home |
 | POST | `/home` | Go to home pose |
 | POST | `/loco/move` | One-shot velocity command (`vx, vy, vyaw`) |
@@ -751,7 +750,6 @@ B10 : 방향 (0=Idle, 1=Forward, 2=Reverse, 3=Reset)
 | POST | `/motions/run/{filename}` | 저장된 파일 실행 (포맷 자동 감지) |
 | POST | `/run`, `/run_file` | 관절 포맷 실행 |
 | POST | `/run_ik`, `/run_ik_file` | IK 포맷 실행 |
-| POST | `/send_gift` | TTS + `right_send.json` 시퀀스 |
 | POST | `/stop`, `/home` | 정지 / 홈 복귀 |
 | POST | `/loco/move`, `/loco/stop` | 보행 리모컨 |
 | GET | `/api/joint_states` | 실시간 관절 SSE 스트림 |

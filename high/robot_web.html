@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- Version: 2.1
+<!-- Version: 2.2
+  2.2 - Grab Mode 버튼 2분할(OFF/Box), Send Gift 버튼 제거
   2.1 - 전환 중 라벨은 목표 모드 + (전환중...) 표시
   2.0 - Hold/Release 라벨을 전환 완료까지 폴링 (단발 4.5초 재조회의 중간값 표시 버그 수정)
   1.9 - Box Size 카드 제거 (마커 잡기 제거로 사용처 없음 — box 모드는 측정값 사용)
@@ -74,6 +75,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
 
 /* buttons */
 .seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.seg.two{grid-template-columns:1fr 1fr}
 .btn{font-family:inherit;font-size:12px;background:var(--panel2);border:1px solid var(--line);
   color:var(--ink);padding:9px;border-radius:7px;cursor:pointer;transition:.12s}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -160,7 +162,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
     <div class="card">
       <div class="card-h">Grab Mode <span class="tag" id="mode-tag">OFF</span></div>
       <div class="card-b">
-        <div class="seg">
+        <div class="seg two">
           <button class="btn" id="mode-none" onclick="setMode('none')">OFF</button>
           <button class="btn" id="mode-box" onclick="setMode('box')">Box</button>
         </div>
@@ -258,10 +260,9 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
     </div>
 
     <div class="card">
-      <div class="card-h">Gift / Motions <span style="cursor:pointer" onclick="refreshMotions()">⟳</span></div>
+      <div class="card-h">Motions <span style="cursor:pointer" onclick="refreshMotions()">⟳</span></div>
       <div class="card-b">
-        <button class="btn primary full" onclick="sendGift()">🎁 Send Gift</button>
-        <div class="mlist" id="mlist" style="margin-top:9px"><div class="hint" style="text-align:center">Loading...</div></div>
+        <div class="mlist" id="mlist"><div class="hint" style="text-align:center">Loading...</div></div>
         <div class="row" style="margin-top:9px">
           <button class="btn warn" onclick="stopAll()">⏹ Stop</button>
           <button class="btn" onclick="goHome()">⌂ Home · 기본자세</button>
@@ -365,7 +366,6 @@ async function refreshMotions(){const el=document.getElementById('mlist');
     el.innerHTML=d.motions.map(m=>`<div class="mitem"><span class="nm">${m}</span><button class="play" onclick="runMotion('${m.replace(/'/g,"\\'")}')">▶</button></div>`).join('');
   }catch(e){el.innerHTML='<div class="hint" style="text-align:center;color:var(--warn)">Connection failed</div>';}}
 async function runMotion(n){try{const r=await fetch(`/motions/run/${encodeURIComponent(n)}`,{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.detail);toast('▶ '+n);}catch(e){toast('Error: '+e.message);}}
-async function sendGift(){try{const r=await fetch('/send_gift',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.detail);toast('🎁 Gift');}catch(e){toast('Error: '+e.message);}}
 // 정지 일원화: 다리 정지 + 모션 중단 + 기본 자세 복귀 (Home 과 동일 자세)
 async function stopAll(){
   stopLoco();
