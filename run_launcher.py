@@ -13,7 +13,6 @@ run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50
   · 501 Walk (3DoF waist)    : FSM 4 에서
   · 3   Sit Down             : FSM 4·501 에서, Robot 정지 상태만 (경고창)
   · FSM 조회 불가 시 순서 제한 없음 (Robot 실행 중 4/3 차단만 유지) — 순서는 사람이 지킨다
-  (706 Balance Squat 은 실기에서 반응이 없어 버튼에서 뺐다. 이름표에는 남겨 둠)
   · Robot 시작은 FSM 501 에서만
 
   ./start_fsm.sh / utils/init_fsm.py 는 수정하지 않았다 — 터미널에서 따로 쓸 수 있다.
@@ -95,8 +94,8 @@ def _logfile(name):
 # Unitree G1 FSM ID (ai_sport)
 FSM_NAME = {0: "Zero Torque", 1: "Damping", 2: "Squat (위치제어)", 3: "Sit Down (위치제어)",
             4: "Lock Standing", 500: "Walk", 501: "Walk (3DoF waist)",
-            702: "Lie Down ↔ Stand Up", 706: "Balance Squat ↔ Stand", 801: "Run"}
-FSM_BAL = {500: True, 501: True, 702: True, 706: True, 801: True}   # 밸런스 제어 여부 (나머지 없음)
+            702: "Lie Down ↔ Stand Up", 801: "Run"}
+FSM_BAL = {500: True, 501: True, 702: True, 801: True}   # 밸런스 제어 여부 (나머지 없음)
 STANDING = {4, 500, 501}
 POLL_SEC = 1.0
 API_GET_FSM_ID = 7001             # ROBOT_API_ID_LOCO_GET_FSM_ID (g1_loco_api.py)
@@ -494,7 +493,7 @@ document.getElementById('links').innerHTML=
 let CUR=null;
 // Damp / Sit 만 경고 후 실행, 4 / 501 은 바로 실행
 async function confirmFsm(t){
-  const standing=[4,500,501,706].includes(CUR);
+  const standing=[4,500,501].includes(CUR);
   if(t===1)return warn('Damp (FSM 1)',
     standing?'지금 서 있습니다 — 힘이 빠져 넘어집니다!':
     CUR===null?'현재 상태 확인 불가 — 서 있다면 힘이 빠져 넘어집니다!':'모터 힘이 빠집니다',
@@ -520,7 +519,7 @@ async function poll(){try{const d=await(await fetch('/status')).json();
   if(f.cur===null){nw.className='fsmnow unk';document.getElementById('fsm-v').textContent='확인 불가';
     document.getElementById('fsm-n').textContent=(f.cur_err||'')+' — 순서 제한 없음'+
       (f.last_sent!==null?` · 마지막 전송 ${f.last_sent}`:'');}
-  else{nw.className='fsmnow '+([500,501].includes(f.cur)?'bal':[4,706].includes(f.cur)?'std':'low');
+  else{nw.className='fsmnow '+([500,501].includes(f.cur)?'bal':f.cur===4?'std':'low');
     document.getElementById('fsm-v').textContent=f.cur;
     document.getElementById('fsm-n').textContent=f.cur_name;}
   const fb=document.getElementById('fsm-b');
