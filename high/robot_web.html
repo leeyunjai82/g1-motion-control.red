@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!-- Version: 2.2
-  2.2 - Grab Mode 버튼 2분할(OFF/Box), Send Gift 버튼 제거
+  2.2 - Grab Mode 버튼 2분할(OFF/Box), Send Gift 버튼 제거,
+        Stop/Home·Hold/Release·마커 추종을 좌측 하단 Control 카드로 이동
   2.1 - 전환 중 라벨은 목표 모드 + (전환중...) 표시
   2.0 - Hold/Release 라벨을 전환 완료까지 폴링 (단발 4.5초 재조회의 중간값 표시 버그 수정)
   1.9 - Box Size 카드 제거 (마커 잡기 제거로 사용처 없음 — box 모드는 측정값 사용)
@@ -76,6 +77,8 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
 /* buttons */
 .seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 .seg.two{grid-template-columns:1fr 1fr}
+.ctl .btn{padding:8px 4px;line-height:1.35;white-space:nowrap}
+.ctl .btn .sub{display:block;font-size:10px;opacity:.75}
 .btn{font-family:inherit;font-size:12px;background:var(--panel2);border:1px solid var(--line);
   color:var(--ink);padding:9px;border-radius:7px;cursor:pointer;transition:.12s}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -211,6 +214,28 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
           <input class="in" id="ho-yaw" type="number" value="30" step="5" style="width:70px;flex:none"><span>deg</span></div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-h">Control</div>
+      <div class="card-b ctl">
+        <div class="row">
+          <button class="btn warn" onclick="stopAll()">⏹ Stop</button>
+          <button class="btn" onclick="goHome()">⌂ Home<span class="sub">기본자세</span></button>
+        </div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn" id="arm-hold" onclick="armMode('hold')">✋ Hold<span class="sub">잡기/운반</span></button>
+          <button class="btn" id="arm-release" onclick="armMode('release')">🚶 Release<span class="sub">걷기</span></button>
+        </div>
+        <div class="hint" style="text-align:center;margin-top:6px">arm_sdk: <span id="arm-mode-lbl">-</span></div>
+        <div class="row" style="margin-top:9px">
+          <button class="btn" style="border-color:#2b6;color:#7fd" onclick="followStart()">🎯 마커 추종 시작</button>
+          <button class="btn warn" onclick="followStop()">⏹ 추종 정지</button>
+        </div>
+        <div class="hint" style="text-align:center;margin-top:6px">
+          follow: <span id="fw-state">-</span> · d=<span id="fw-mx">-</span>m · y=<span id="fw-my">-</span>m
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== CENTER: camera + locomotion ===== -->
@@ -263,23 +288,6 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
       <div class="card-h">Motions <span style="cursor:pointer" onclick="refreshMotions()">⟳</span></div>
       <div class="card-b">
         <div class="mlist" id="mlist"><div class="hint" style="text-align:center">Loading...</div></div>
-        <div class="row" style="margin-top:9px">
-          <button class="btn warn" onclick="stopAll()">⏹ Stop</button>
-          <button class="btn" onclick="goHome()">⌂ Home · 기본자세</button>
-        </div>
-        <div class="row" style="margin-top:9px">
-          <button class="btn" id="arm-hold" onclick="armMode('hold')">✋ Hold · 잡기/운반</button>
-          <button class="btn" id="arm-release" onclick="armMode('release')">🚶 Release · 걷기</button>
-        </div>
-        <div class="hint" style="text-align:center;margin-top:6px">arm_sdk: <span id="arm-mode-lbl">-</span></div>
-        <div class="row" style="margin-top:9px">
-          <button class="btn" style="border-color:#2b6;color:#7fd" onclick="followStart()">🎯 마커 추종 시작</button>
-          <button class="btn warn" onclick="followStop()">⏹ 추종 정지</button>
-        </div>
-        <div class="hint" style="text-align:center;margin-top:6px">
-          follow: <span id="fw-state">-</span> · d=<span id="fw-mx">-</span>m · y=<span id="fw-my">-</span>m
-        </div>
-
       </div>
     </div>
   </div>
