@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- Version: 2.2
+<!-- Version: 2.3
+  2.3 - 잡기 진행 단계 표시줄 (허리 정렬 → … → 복귀, /status 의 stage)
   2.2 - Grab Mode 버튼 2분할(OFF/Box), Send Gift 버튼 제거,
         Stop/Home·Hold/Release·마커 추종을 좌측 하단 Control 카드로 이동,
         세 열 하단 높이 맞춤(카메라·로봇뷰·Control 이 남는 높이 채움) + 반응형 재구성,
@@ -130,6 +131,13 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
 .statusline{margin-top:10px;flex:none;display:flex;gap:8px;align-items:center;font-size:12px;
   padding:9px 13px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
 .statusline .lbl{color:var(--dim)}
+/* 잡기 진행 단계 */
+.stages{display:flex;gap:3px;margin-top:8px;flex:none}
+.stages .sg{flex:1;min-width:0;text-align:center;font-size:10px;padding:5px 1px;letter-spacing:-.3px;border-radius:5px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stages .sg.done{color:var(--accent);border-color:#1f5a43;background:#12261d}
+.stages .sg.cur{color:#05221a;background:var(--amber);border-color:var(--amber);font-weight:700;animation:sgb 1s infinite}
+@keyframes sgb{50%{opacity:.6}}
 .statusline.busy{border-color:var(--amber);color:var(--amber)}
 
 /* buttons */
@@ -366,6 +374,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
           <span class="lbl">Status</span><span id="grab-msg">Idle (OFF)</span>
           <span id="coord" style="margin-left:auto;color:var(--accent);font-size:11px"></span>
         </div>
+        <div class="stages" id="stages"></div>
       </div>
     </div>
 
@@ -599,6 +608,13 @@ window.addEventListener('beforeunload',stopLoco);
 
 // ---- status poll ----
 let pollFail=0;
+// 잡기 진행 단계: 지난 단계 초록, 현재 단계 주황 깜빡임
+function renderStages(names,cur){
+  const el=document.getElementById('stages');
+  if(el.childElementCount!==names.length)
+    el.innerHTML=names.map((n,i)=>`<span class="sg" title="${i+1}. ${n}">${n.replace(/ /g,'')}</span>`).join('');
+  [...el.children].forEach((c,i)=>{c.className='sg'+(cur<0?'':i<cur?' done':i===cur?' cur':'');});
+}
 function pollStatus(){
   fetch('/status').then(r=>r.json()).then(d=>{
     pollFail=0;
@@ -607,7 +623,9 @@ function pollStatus(){
     document.getElementById('livedot').className='dot live';
     setChip('chip-conn','연결','OK','ok');
     const sl=document.getElementById('statusline');
-    if(d.busy){sl.classList.add('busy');document.getElementById('grab-msg').textContent='Grabbing...';
+    renderStages(d.stages||[],d.busy?d.stage_idx:-1);
+    if(d.busy){sl.classList.add('busy');
+      document.getElementById('grab-msg').textContent=d.stage?`Grabbing — ${d.stage_idx+1}/${d.stages.length} ${d.stage}`:'Grabbing...';
       setChip('chip-task','작업','잡는 중','busy');}
     else if(d.is_running){sl.classList.remove('busy');setChip('chip-task','작업','모션 실행','busy');}
     else{sl.classList.remove('busy');setChip('chip-task','작업','대기','');}
@@ -615,7 +633,7 @@ function pollStatus(){
     if(pollFail>=2){document.getElementById('livedot').className='dot err';
       setChip('chip-conn','연결','끊김','err');setChip('chip-task','작업','-','');}});
 }
-setInterval(pollStatus, 1000);
+setInterval(pollStatus, 500);
 pollStatus();
 
 // 현재 모드의 detect 서버에서 마커/박스 좌표(cm) 폴링

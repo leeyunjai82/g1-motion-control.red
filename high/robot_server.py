@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 1.5
+# Version: 1.6
 # Changes:
+#   1.6 - 잡기 진행 단계(stage) 노출(/status, /grab_status), 3D 시각화용 GET /viz (박스·손 목표)
 #   1.5 - 잡은 뒤 건네기까지 단계 사이 대기 축소(1.3s→0.5s), box 받음 대기 3초→2초 (HANDOVER_HOLD_SEC)
 #   1.4 - arm 제어를 arm_server(50022) HTTP로 분리, Box Size 엔드포인트 제거(사용처 없음) (arm_sdk 단독 점유는 arm_server)
 #   1.3 - 마커 추종 정면(법선) 경유점 접근 — 옆에서 와도 마커 정면으로 돌아 들어감
@@ -137,6 +138,23 @@ HANDOVER_HOLD_SEC = 2.0   # box: 건넨 뒤 손 벌리기까지 대기 (구 3.0)
 
 
 # ==========================================
+# 잡기 진행 단계 (웹 진행 표시 / 3D 시각화용)
+# ==========================================
+GRAB_STAGES = ["허리 정렬", "재검출", "위쪽 접근", "측면 하강", "잡기",
+               "들기", "건네기", "받기 대기", "놓기", "복귀"]
+
+# IK 목표 좌표계 = pelvis 기준(허리 0 가정 축소모델). 카메라 좌표는 torso_link 기준.
+# torso_link 원점은 pelvis 에서 (-0.0039635, 0, 0.044) (URDF waist_roll_joint, 허리 0일 때).
+# /viz 는 모두 torso_link 기준으로 내보낸다 (dashboard 가 torso_link 에 붙여 그림).
+PELVIS_TO_TORSO = (-0.0039635, 0.0, 0.044)
+
+
+def ik_to_torso(p):
+    return [float(p[0] - PELVIS_TO_TORSO[0]), float(p[1] - PELVIS_TO_TORSO[1]),
+            float(p[2] - PELVIS_TO_TORSO[2])]
+
+
+# ==========================================
 # GrabController
 # ==========================================
 class GrabController:
@@ -174,7 +192,14 @@ class GrabController:
 
         # 허리 정렬 후 재감지 콜백 (robot_server가 주입) — None이면 재감지 안 함
         self.redetect = None
+        # 진행 표시 / 시각화
+        self.stage = None                  # GRAB_STAGES 중 하나 (None=대기)
+        self.targets = None                # 마지막 IK 목표 {"L":[xyz],"R":[xyz]} (IK=pelvis 기준)
         self._last_kind = "marker"   # 마지막 잡기 종류 (handover 가림 판정용)
+
+    def _stage(self, name):
+        self.stage = name
+        print(f"[STAGE] {GRAB_STAGES.index(name)+1}/{len(GRAB_STAGES)} {name}")
 
     # ---- 로봇 저수준 래퍼 ----
     def _rpy_to_quat(self, roll_deg, pitch_deg, yaw_deg):
@@ -192,6 +217,7 @@ class GrabController:
               left_rot=None, right_rot=None):
         print(f"[IK] {msg}  L:{[f'{v:.3f}' for v in left_xyz]}  "
               f"R:{[f'{v:.3f}' for v in right_xyz]}")
+        self.targets = {"L": [float(v) for v in left_xyz], "R": [float(v) for v in right_xyz]}
         if not self.robot_available or self.arm is None:
             time.sleep(duration)
             return True
@@ -233,6 +259,7 @@ class GrabController:
 
         sym_L = [grab_x_base, +grp_off_L + LEFT_HAND_Y_OFFSET, grab_z]
         sym_R = [grab_x_base, -grp_off_R, grab_z]
+        self._stage("들기")
         if not self._move(sym_L, sym_R, 1.5, "⑥' 대칭 정렬", l_rot, r_rot):
             return
         time.sleep(STEP_PAUSE)
@@ -249,6 +276,7 @@ class GrabController:
             hy = -self.handover_yaw_deg
         else:
             hy = 0.0
+        self._stage("건네기")
         print(f"[GRAB] ⑦' 허리 yaw → {hy:.1f}도")
         if self.robot_available and self.arm is not None:
             # 회전 각도가 클수록 느리게 (기본 1.5초 + 30도당 1초)
@@ -261,6 +289,7 @@ class GrabController:
         if not self._move(hl, hr, 1.5, "⑧ 건네기", l_rot, r_rot):
             return
         time.sleep(STEP_PAUSE)
+        self._stage("받기 대기")
         self.speak(self.MSG_HANDOVER)
 
         # 받음 처리 — 종류별로 다름
@@ -284,6 +313,7 @@ class GrabController:
             received = True
 
         self.speak(self.MSG_RECEIVED if received else self.MSG_TIMEOUT)
+        self._stage("놓기")
 
         if received:
             # 받음 — 그 높이에서 손 벌려 놓기
@@ -302,6 +332,7 @@ class GrabController:
             self._move(open_L, open_R, 1.0, "⑩' 손 벌림 (놓기)", l_rot, r_rot)
         time.sleep(0.3)
 
+        self._stage("복귀")
         print("[HANDOVER] ⑪ 복귀")
         self._reset_waist()
         self._move(self.HOME_LEFT, self.HOME_RIGHT, 2.0, "⑪ Home")
@@ -397,6 +428,7 @@ class GrabController:
         """
         print("[GRAB-BOX] 시작")
         self._last_kind = "box"
+        self._stage("허리 정렬")
         self._reset_waist()
 
         Lx, Ly, Lz = camera_to_torso(L_cam[0], L_cam[1], L_cam[2])
@@ -412,6 +444,7 @@ class GrabController:
         self._align_waist_yaw(cx, cy)
 
         # 허리 돌린 후 재감지 (카메라 좌표계 보정)
+        self._stage("재검출")
         if self.redetect is not None:
             time.sleep(0.6)
             d = self.redetect("box")
@@ -452,17 +485,20 @@ class GrabController:
         # 접근점 (L/R에서 바깥 +APPROACH_EXTRA, X는 안 당김)
         appL = [Lx + oLx*APPROACH_EXTRA, Ly + oLy*APPROACH_EXTRA + LEFT_HAND_Y_OFFSET, above_z]
         appR = [Rx + oRx*APPROACH_EXTRA, Ry + oRy*APPROACH_EXTRA, above_z]
+        self._stage("위쪽 접근")
         if not self._move(appL, appR, 1.5, "④ 위쪽 접근", l_rot, r_rot): return
         time.sleep(0.2)
 
         # 하강 (같은 XY, grab_z로)
         appL[2] = grab_z; appR[2] = grab_z
+        self._stage("측면 하강")
         if not self._move(appL, appR, 1.0, "⑤ 측면 하강", l_rot, r_rot): return
         time.sleep(0.2)
 
         # 잡기 — 실제 L/R 점 + X는 몸쪽으로 당김(GRAB_X_OFFSET)
         gripL = [Lx + GRAB_X_OFFSET, Ly + LEFT_HAND_Y_OFFSET, grab_z]
         gripR = [Rx + GRAB_X_OFFSET, Ry, grab_z]
+        self._stage("잡기")
         if not self._move(gripL, gripR, 2.5, "⑥ 잡기", l_rot, r_rot): return
         time.sleep(1.0)
 
@@ -1092,6 +1128,7 @@ def _run_grab(req: GrabRequest):
     finally:
         with grab_lock:
             grab_busy = False
+        grab.stage = None
         print("[GRAB] 완료")
 
 
@@ -1141,9 +1178,36 @@ async def set_mode(mode: str):
     return {"ok": True, "mode": ACTIVE_MODE}
 
 
+def _stage_info():
+    st = grab.stage if grab else None
+    return {"stage": st, "stage_idx": GRAB_STAGES.index(st) if st in GRAB_STAGES else -1,
+            "stages": GRAB_STAGES}
+
+
 @app.get("/grab_status")
 async def grab_status():
-    return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running}
+    return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running, **_stage_info()}
+
+
+@app.get("/viz", summary="3D 시각화용 — 인식 박스 + 손 목표 (torso_link 기준, m)")
+def viz():
+    """dashboard 3D 뷰어가 폴링. 박스는 detect_box /pose(카메라 좌표)를 torso 로 변환,
+    손 목표는 마지막 IK 목표(pelvis 기준)를 torso 기준으로 변환."""
+    import urllib.request as _u
+    box = None
+    if ACTIVE_MODE == "box":
+        try:
+            d = json.loads(_u.urlopen("http://localhost:50010/pose", timeout=0.3).read())
+            if d.get("found") and d.get("L") and d.get("R"):
+                box = {"L": list(camera_to_torso(*d["L"])), "R": list(camera_to_torso(*d["R"])),
+                       "top": list(camera_to_torso(*d["top_center"])) if d.get("top_center") else None,
+                       "h": d.get("box_h")}
+        except Exception:
+            box = None
+    tg = None
+    if grab and grab.targets and grab_busy:
+        tg = {"L": ik_to_torso(grab.targets["L"]), "R": ik_to_torso(grab.targets["R"])}
+    return {"mode": ACTIVE_MODE, "box": box, "targets": tg, **_stage_info()}
 
 
 @app.get("/set_wrist")
@@ -1196,7 +1260,7 @@ async def status():
     return {"is_running": is_running, "arm_ready": arm is not None,
             "loco_ready": loco is not None, "hand_ready": hand is not None,
             "tts_ready": tts is not None, "active_mode": ACTIVE_MODE,
-            "grab_busy": grab_busy}
+            "grab_busy": grab_busy, **_stage_info()}
 
 @app.get("/motions")
 async def list_motions():

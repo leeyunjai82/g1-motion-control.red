@@ -292,6 +292,9 @@ header h1{font-size:14px;color:#f9c300;font-weight:600;letter-spacing:.5px}
 .viewport{flex:1;position:relative;overflow:hidden;background:#0a0a0f}
 canvas#cv{display:block;width:100%!important;height:100%!important}
 .hud{position:absolute;bottom:10px;left:10px;font-size:10px;color:#282838;pointer-events:none;line-height:1.9}
+.vizleg{position:absolute;top:10px;left:10px;font-size:11px;color:#c9d4e0;background:#0a0a0fcc;border:1px solid #2a2a3a;
+  border-radius:6px;padding:6px 10px;pointer-events:none;line-height:1.7;display:none;z-index:50}
+.vizleg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .load-overlay{position:absolute;inset:0;background:#0a0a0fdd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 .load-title{font-size:15px;color:#f9c300;font-weight:500}
 .pbar-bg{width:280px;height:5px;background:#1a1a28;border-radius:3px}
@@ -378,6 +381,7 @@ body.dashboard-mode .right { width: 240px; }
       <span style="color:#1e1e28">Left-click rotate / Right-click pan / Wheel zoom</span>
     </div>
     <div class="tooltip" id="tt"></div>
+    <div class="vizleg" id="vizLeg"></div>
   </div>
 
   <div class="right">
@@ -668,6 +672,7 @@ async function loadRobot(){
       const box=new THREE.Box3().setFromObject(robotRoot);
       robotRoot.position.y=-box.min.y;
       orbit.focusBox(new THREE.Box3().setFromObject(robotRoot));
+      vizInit();
     }
     buildJointDisplays(joints);
     const mv=Object.values(joints).filter(j=>j.type!=='fixed').length;
@@ -823,6 +828,67 @@ cv.addEventListener('click',e=>{
     tt.style.left=(e.clientX-rect.left+10)+'px';tt.style.top=(e.clientY-rect.top+8)+'px';
     setTimeout(()=>tt.style.display='none',2000);}
 });
+
+// ==========================================
+// 인식 박스 / 손 목표 표시 — robot_server(:50000) GET /viz, torso_link 기준 좌표(m)
+//   torso_link 그룹에 붙이므로 허리 회전을 그대로 따라간다.
+//   주황: 박스 파지점 L/R + 옆면(L–R × 높이), 파랑: 윗면 중심, 초록: 현재 손(IK) 목표
+// ==========================================
+const VIZ_URL=`http://${location.hostname}:50000/viz`;
+let vizGrp=null,vizTimer=null;const vz={};
+function vizInit(){
+  const torso=robotRoot&&robotRoot.getObjectByName('link:torso_link');
+  if(!torso)return;
+  if(vizGrp&&vizGrp.parent)vizGrp.parent.remove(vizGrp);
+  vizGrp=new THREE.Group();vizGrp.name='viz';torso.add(vizGrp);
+  const mat=(c,o)=>new THREE.MeshBasicMaterial({color:c,depthTest:false,transparent:o!==undefined,opacity:o??1,side:THREE.DoubleSide});
+  const sph=(c,r)=>new THREE.Mesh(new THREE.SphereGeometry(r,16,12),mat(c));
+  vz.top=sph(0x4aa8ff,.014);vz.L=sph(0xffb454,.018);vz.R=sph(0xffb454,.018);
+  vz.tL=sph(0x3ddc97,.024);vz.tR=sph(0x3ddc97,.024);
+  vz.face=new THREE.Mesh(new THREE.BufferGeometry(),mat(0xffb454,.18));
+  vz.edge=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffb454,depthTest:false}));
+  vz.tline=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x3ddc97,depthTest:false}));
+  Object.values(vz).forEach(o=>{o.renderOrder=999;o.visible=false;vizGrp.add(o);});
+  if(!vizTimer)vizTimer=setInterval(vizPoll,250);
+}
+function vizSetPts(obj,pts){obj.geometry.setAttribute('position',new THREE.Float32BufferAttribute(pts.flat(),3));
+  obj.geometry.computeBoundingSphere();}
+async function vizPoll(){
+  let d=null;
+  try{d=await(await fetch(VIZ_URL)).json();}catch(e){d=null;}
+  const leg=document.getElementById('vizLeg');
+  const b=d&&d.box,t=d&&d.targets;
+  // 박스
+  ['L','R','top','face','edge'].forEach(k=>vz[k].visible=false);
+  if(b){
+    vz.L.position.set(...b.L);vz.R.position.set(...b.R);vz.L.visible=vz.R.visible=true;
+    if(b.top){vz.top.position.set(...b.top);vz.top.visible=true;}
+    if(b.h){
+      const Lb=[b.L[0],b.L[1],b.L[2]-b.h],Rb=[b.R[0],b.R[1],b.R[2]-b.h];
+      vizSetPts(vz.face,[b.L,b.R,Rb, b.L,Rb,Lb]);
+      vizSetPts(vz.edge,[b.L,b.R, b.R,Rb, Rb,Lb, Lb,b.L]);
+      vz.face.visible=vz.edge.visible=true;
+    }
+  }
+  // 손 목표
+  ['tL','tR','tline'].forEach(k=>vz[k].visible=false);
+  if(t){
+    vz.tL.position.set(...t.L);vz.tR.position.set(...t.R);
+    vizSetPts(vz.tline,[t.L,t.R]);
+    vz.tL.visible=vz.tR.visible=vz.tline.visible=true;
+  }
+  // 범례
+  if(leg){
+    if(b||t){
+      const w=b?Math.hypot(b.L[0]-b.R[0],b.L[1]-b.R[1]):0;
+      leg.innerHTML=(b?`<div><i style="background:#ffb454"></i>인식 박스 · 폭 ${(w*100).toFixed(1)}cm`+
+          (b.h?` · 높이 ${(b.h*100).toFixed(1)}cm`:'')+'</div>':'')+
+        (t?'<div><i style="background:#3ddc97"></i>손 목표 (IK)</div>':'')+
+        (d.stage?`<div style="color:#ffb454">▶ ${d.stage_idx+1}/${d.stages.length} ${d.stage}</div>`:'');
+      leg.style.display='block';
+    }else leg.style.display='none';
+  }
+}
 
 window.addEventListener('load',()=>loadRobot());
 </script>
