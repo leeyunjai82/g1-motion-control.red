@@ -5,16 +5,15 @@ launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50080)
   ./launcher.sh             (start_fsm.sh 와 같이 sudo 로 tv 환경 python 실행)
   → http://<robot-ip>:50080/
 
-자세 (LocoClient.SetFsmId 직접 호출 — utils/init_fsm.py 와 같은 순서·대기시간)
-  · Stand : 1 → 5s → 4 → 10s → 501
-  · Sit   : 3s 대기 → 3
-  · Damp  : 3s 대기 → 1
-  추가 안전장치 (init_fsm.py 에는 없음)
-  · 현재 FSM(GetFsmId) 확인 — 이미 서 있으면(4/500/501 등) Stand 거부.
-    (Stand 의 첫 단계 FSM 1 = Damp. 서 있는 상태에서 다시 Stand 하면 5초간 힘이 빠져 넘어진다)
-  · 단계마다 SetFsmId 반환 코드 확인 — 실패 시 다음 단계를 보내지 않고 중단
-  · Robot 서버 실행 중이면 Sit 거부 / FSM 501 이 아니면 Robot 시작 거부
-  · Damp 는 진행 중인 Stand/Sit 시퀀스를 끊고 실행 (항상 가능)
+자세 — FSM 단계별 버튼 (LocoClient.SetFsmId 직접 호출, 연속 시퀀스 없음)
+  사람이 로봇 상태를 보고 한 단계씩 누른다. init_fsm.py 의 stand = 1 → 4 → 501.
+  현재 FSM(GetFsmId)에서 갈 수 있는 단계만 허용:
+  · 1   Damp      : 항상 (서 있으면 넘어짐 — 확인창 경고)
+  · 4   Stand     : FSM 1 에서 / 501 에서(= no-bal, Robot 정지 상태만)
+  · 501 밸런싱    : FSM 4 에서
+  · 3   Sit       : FSM 4·501 에서, Robot 정지 상태만
+  · FSM 확인 불가 시 Damp 만 허용
+  · Robot 시작은 FSM 501 에서만
 
   ./start_fsm.sh / utils/init_fsm.py 는 수정하지 않았다 — 터미널에서 따로 쓸 수 있다.
   단, 둘을 동시에 쓰면 서로의 진행을 모른다. 한쪽만 쓸 것.
@@ -89,17 +88,34 @@ def _logfile(name):
 
 
 # ==========================================
-# FSM (자세) — LocoClient 직접 호출
+# FSM (자세) — LocoClient 직접 호출, 단계별
 # ==========================================
 FSM_NAME = {0: "Zero Torque", 1: "Damp", 3: "Sit", 4: "Stand",
             500: "Start", 501: "밸런싱 (arm_sdk)"}
-STAND_FROM = {0, 1, 3}            # Stand 를 시작해도 되는 상태 (힘 빠짐 / 앉음)
-STANDING = {4, 500, 501}          # 서 있는 상태 — Sit 허용
+STANDING = {4, 500, 501}
 POLL_SEC = 1.0
+STEPS = (1, 4, 501, 3)
 
 
-class FsmAbort(Exception):
-    pass
+def allowed(target, cur, robot_running):
+    """(허용 여부, 거부 사유). UI 버튼 활성화와 서버 검사에 같은 규칙을 쓴다."""
+    if target == 1:
+        return True, ""
+    if cur is None:
+        return False, "현재 FSM 확인 불가 — Damp 만 가능 (터미널 ./start_fsm.sh 사용)"
+    if target == 4:
+        if cur == 1:
+            return True, ""
+        if cur == 501:
+            return (False, "Robot 서버 실행 중 — 먼저 [Robot 정지]") if robot_running else (True, "")
+        return False, f"4 는 FSM 1(Damp) 또는 501 에서만 (현재 {cur})"
+    if target == 501:
+        return (True, "") if cur == 4 else (False, f"501 은 FSM 4(Stand) 에서만 (현재 {cur})")
+    if target == 3:
+        if robot_running:
+            return False, "Robot 서버 실행 중 — 먼저 [Robot 정지]"
+        return (True, "") if cur in STANDING else (False, f"Sit 은 서 있을 때만 (현재 {cur})")
+    return False, "알 수 없는 단계"
 
 
 class FsmCtl:
@@ -107,20 +123,16 @@ class FsmCtl:
         self.client = None
         self.init_err = None
         self._dds_inited = False
-        self.call_lock = threading.Lock()      # RPC 직렬화 (폴링 / 시퀀스)
+        self.call_lock = threading.Lock()      # RPC 직렬화 (폴링 / 명령)
         self.cur = None                        # 마지막으로 읽은 FSM id (None=미확인)
         self.cur_err = None
         self.get_supported = True
-        self.task = None                       # 실행 중 시퀀스 이름
-        self.task_started = 0.0
-        self.step = ""
+        self.busy = None                       # 전송 중인 FSM id
         self.result = None                     # (ok, msg)
-        self.cancel = threading.Event()
         self.lines = deque(maxlen=300)
         self.logf = _logfile("fsm")
         self.lock = threading.Lock()
 
-    # ---- 로그 ----
     def log(self, msg):
         line = f"[{time.strftime('%H:%M:%S')}] {msg}"
         self.lines.append(line)
@@ -168,116 +180,45 @@ class FsmCtl:
         self.cur, self.cur_err = int(data), None
         return self.cur
 
-    def _set(self, fsm_id):
-        if self.cancel.is_set():
-            raise FsmAbort("중단됨")
-        self.log(f"SetFsmId({fsm_id}) …")
-        with self.call_lock:
-            code = self.client.SetFsmId(fsm_id)
-        self.log(f"SetFsmId({fsm_id}) → code={code}")
-        if code != 0:
-            raise FsmAbort(f"SetFsmId({fsm_id}) 실패 (code={code}) — 다음 단계 보내지 않음")
-        now = self.read_fsm()
-        if now is not None:
-            self.log(f"현재 FSM = {now} ({FSM_NAME.get(now, '?')})")
-
-    def _wait(self, sec, why):
-        self.step = why
-        end = time.time() + sec
-        while time.time() < end:
-            if self.cancel.wait(0.1):
-                raise FsmAbort("중단됨")
-
-    # ---- 시퀀스 (init_fsm.py 와 동일 순서·대기) ----
-    def _seq_stand(self):
-        self.step = "1 Damp"
-        self._set(1)
-        self._wait(5, "1 → 4 대기 (5초)")
-        self.step = "4 Stand"
-        self._set(4)
-        self._wait(10, "4 → 501 대기 (10초)")
-        self.step = "501 밸런싱"
-        self._set(501)
-
-    def _seq_sit(self):
-        self._wait(3, "Sit 대기 (3초)")
-        self.step = "3 Sit"
-        self._set(3)
-
-    def _seq_damp(self):
-        self._wait(3, "Damp 대기 (3초)")
-        self.step = "1 Damp"
-        self._set(1)
-
-    def _run(self, name, fn):
-        self.log(f"===== {name} 시작 =====")
+    def set(self, target, robot_running):
+        if target not in STEPS:
+            raise HTTPException(400, f"FSM 은 {STEPS} 중 하나")
+        with self.lock:
+            if self.busy is not None:
+                raise HTTPException(409, f"FSM {self.busy} 전송 중")
+            self.busy = target
         try:
-            fn()
-            self.result = (True, f"{name} 완료")
-            self.log(f"===== {name} 완료 =====")
-        except FsmAbort as e:
-            self.result = (False, f"{name} 중단: {e}")
-            self.log(f"===== {name} 중단: {e} =====")
-        except Exception as e:
-            self.result = (False, f"{name} 오류: {e}")
-            self.log(f"===== {name} 오류: {e} =====")
+            if not self._ensure_client():
+                raise HTTPException(503, f"LocoClient 초기화 실패: {self.init_err}")
+            cur = self.read_fsm()
+            ok, why = allowed(target, cur, robot_running)
+            if not ok:
+                self.log(f"FSM {target} 거부 — {why}")
+                raise HTTPException(409, why)
+            self.log(f"SetFsmId({target}) … (현재 {cur})")
+            with self.call_lock:
+                code = self.client.SetFsmId(target)
+            now = self.read_fsm()
+            self.log(f"SetFsmId({target}) → code={code}, 현재 FSM = {now} ({FSM_NAME.get(now, '?')})")
+            if code != 0:
+                self.result = (False, f"FSM {target} 실패 (code={code})")
+                raise HTTPException(502, self.result[1])
+            self.result = (True, f"FSM {target} {FSM_NAME.get(target, '')} 전송 완료")
         finally:
             with self.lock:
-                self.task, self.step = None, ""
-
-    # ---- 진입점 (검사 후 스레드 실행) ----
-    def start(self, cmd, robot_running):
-        with self.lock:
-            if cmd == "damp":
-                # Damp 는 항상 허용 — 진행 중 시퀀스가 있으면 끊고 실행
-                if self.task:
-                    self.log(f"Damp 요청 — 진행 중인 {self.task} 중단")
-                    self.cancel.set()
-            elif self.task:
-                raise HTTPException(409, f"{self.task} 진행 중")
-
-        if cmd == "damp" and self.task:
-            t0 = time.time()
-            while self.task and time.time() - t0 < 12:   # RPC timeout(10s) 여유
-                time.sleep(0.05)
-            if self.task:
-                raise HTTPException(409, f"{self.task} 가 끝나지 않음 — 리모컨/E-STOP 사용")
-
-        if not self._ensure_client():
-            raise HTTPException(503, f"LocoClient 초기화 실패: {self.init_err}")
-        cur = self.read_fsm()
-
-        if cmd == "stand":
-            if cur is None:
-                raise HTTPException(409, f"현재 FSM 확인 불가({self.cur_err}) — "
-                                         "중복 Stand 위험이 있어 웹에서는 실행하지 않음. "
-                                         "터미널 ./start_fsm.sh stand 사용")
-            if cur not in STAND_FROM:
-                raise HTTPException(409, f"이미 서 있음 (FSM {cur} {FSM_NAME.get(cur, '')}) — "
-                                         "Stand 는 첫 단계가 Damp(1)라 서 있는 상태에서 실행하면 넘어진다")
-        elif cmd == "sit":
-            if robot_running:
-                raise HTTPException(409, "Robot 서버 실행 중 — 먼저 [Robot 정지] 후 Sit")
-            if cur is not None and cur not in STANDING:
-                raise HTTPException(409, f"서 있는 상태가 아님 (FSM {cur} {FSM_NAME.get(cur, '')})")
-
-        fn = {"stand": self._seq_stand, "sit": self._seq_sit, "damp": self._seq_damp}[cmd]
-        with self.lock:
-            self.cancel.clear()
-            self.task, self.task_started, self.result = cmd, time.time(), None
-        threading.Thread(target=self._run, args=(cmd, fn), daemon=True).start()
+                self.busy = None
 
     def poll_loop(self):
         while True:
-            if not self.task:                 # 시퀀스 중에는 _set 이 갱신
+            if self.busy is None:
                 self.read_fsm()
             time.sleep(POLL_SEC)
 
-    def state(self):
+    def state(self, robot_running):
         return {"cur": self.cur, "cur_name": FSM_NAME.get(self.cur, "") if self.cur is not None else "",
-                "cur_err": self.cur_err, "task": self.task, "step": self.step,
-                "elapsed": round(time.time() - self.task_started, 1) if self.task else 0,
-                "result": self.result, "log": list(self.lines)[-120:]}
+                "cur_err": self.cur_err, "busy": self.busy, "result": self.result,
+                "allowed": {str(t): allowed(t, self.cur, robot_running)[0] for t in STEPS},
+                "log": list(self.lines)[-120:]}
 
 
 # ==========================================
@@ -373,18 +314,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="G1 Launcher", lifespan=lifespan)
 
 
-@app.post("/fsm/{cmd}")
-def run_fsm(cmd: str):
-    if cmd not in ("stand", "sit", "damp"):
-        raise HTTPException(400, "cmd 는 stand / sit / damp")
-    fsm.start(cmd, robot.running())
+@app.post("/fsm/{target}")
+def run_fsm(target: int):
+    fsm.set(target, robot.running())
     return {"ok": True}
 
 
 @app.post("/robot/start")
 def robot_start():
-    if fsm.task:
-        raise HTTPException(409, f"자세 전환({fsm.task}) 진행 중")
+    if fsm.busy is not None:
+        raise HTTPException(409, f"FSM {fsm.busy} 전송 중")
     cur = fsm.read_fsm()
     if cur is not None and cur != 501:
         raise HTTPException(409, f"FSM {cur} ({FSM_NAME.get(cur, '')}) — Stand 로 501(밸런싱) 진입 후 시작")
@@ -404,7 +343,7 @@ def robot_stop():
 
 @app.get("/status")
 def status():
-    return {"fsm": fsm.state(), "robot": robot.state()}
+    return {"fsm": fsm.state(robot.running()), "robot": robot.state()}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -433,7 +372,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 ui-monospace,
 button{font:inherit;font-size:14px;font-weight:700;padding:16px 8px;border-radius:8px;cursor:pointer;
   background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
 button small{display:block;font-size:10px;font-weight:400;color:var(--dim);margin-top:3px}
-button:disabled{opacity:.35;cursor:not-allowed}
+button:disabled{opacity:.3;cursor:not-allowed}
+button .no{display:block;font-size:20px;margin-bottom:2px}
+button.next:not(:disabled){box-shadow:0 0 0 2px var(--accent) inset;animation:nx 1.6s infinite}
+@keyframes nx{50%{box-shadow:0 0 0 2px transparent inset}}
 .go{border-color:#1f5a43;color:var(--accent)} .go:hover:not(:disabled){background:#12301f}
 .st{border-color:#5a2b2b;color:var(--warn)} .st:hover:not(:disabled){background:#2e1515}
 .ok{border-color:#1f4a73;color:var(--accent2)} .ok:hover:not(:disabled){background:#10243a}
@@ -454,6 +396,14 @@ pre{margin:0;flex:1;min-height:240px;max-height:46vh;overflow:auto;background:#0
 .note{font-size:11px;color:var(--dim)}
 .links a{color:var(--accent2);margin-right:12px}
 @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:9}
+.modal.show{display:flex}
+.mbox{width:min(460px,92vw);background:var(--panel);border:2px solid var(--warn);border-radius:12px;overflow:hidden}
+.mbox .mt{background:#2e1515;color:var(--warn);font-size:16px;font-weight:700;padding:12px 16px}
+.mbox .mm{padding:16px;font-size:13.5px;line-height:1.7;white-space:pre-line}
+.mbox .mm .big{display:block;color:var(--warn);font-weight:700;font-size:15px;margin-bottom:8px}
+.mbox .mb{display:flex;gap:8px;padding:0 16px 16px}.mbox .mb button{flex:1;padding:12px}
+.mbox .run{background:#5a1f1f;border-color:var(--warn);color:#fff}
 </style></head><body>
 <div class="top"><b>G1 Launcher</b><span class="r">:50080 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span></div>
 <div class="wrap">
@@ -461,10 +411,14 @@ pre{margin:0;flex:1;min-height:240px;max-height:46vh;overflow:auto;background:#0
     <div class="h"><span>자세 (FSM)</span><span></span></div>
     <div class="b">
       <div class="fsmnow unk" id="fsmnow"><span class="k">현재 FSM</span><span class="v" id="fsm-v">확인 중</span><span class="n" id="fsm-n"></span></div>
+      <div class="note">일어서기: <b>1 → 4 → 501</b> 순서로, 로봇이 자리 잡은 걸 보고 다음 단계를 누르세요</div>
       <div class="row">
-        <button class="go" id="b-stand" onclick="fsm('stand')">Stand<small>1 → 4 → 501 (약 15초)</small></button>
-        <button class="ok" id="b-sit" onclick="fsm('sit')">Sit<small>3초 후 천천히 앉기</small></button>
-        <button class="st" id="b-damp" onclick="fsm('damp')">Damp<small>3초 후 힘 빼기 · 진행 중 시퀀스 중단</small></button>
+        <button class="st" id="b-1" onclick="fsm(1)"><span class="no">1</span>Damp<small>힘 빼기 · 항상 가능</small></button>
+        <button class="go" id="b-4" onclick="fsm(4)"><span class="no">4</span>Stand<small>1 에서 / 501 에서</small></button>
+        <button class="go" id="b-501" onclick="fsm(501)"><span class="no">501</span>밸런싱<small>4 에서 · arm_sdk</small></button>
+      </div>
+      <div class="row">
+        <button class="ok" id="b-3" onclick="fsm(3)"><span class="no">3</span>Sit<small>서 있을 때 · Robot 정지 후</small></button>
       </div>
       <div class="state" id="fsm-s">대기</div>
       <pre id="fsm-log"></pre>
@@ -483,19 +437,40 @@ pre{margin:0;flex:1;min-height:240px;max-height:46vh;overflow:auto;background:#0
     </div>
   </div>
 </div>
+<div class="modal" id="modal"><div class="mbox">
+  <div class="mt" id="m-t">⚠️ 경고</div><div class="mm" id="m-m"></div>
+  <div class="mb"><button id="m-no">취소</button><button class="run" id="m-yes">실행</button></div>
+</div></div>
 <script>
 const host=location.hostname;
+// 경고 모달 — Promise<bool>
+function warn(title,big,body){return new Promise(res=>{
+  const m=document.getElementById('modal');
+  document.getElementById('m-t').textContent='⚠️ '+title;
+  document.getElementById('m-m').innerHTML=(big?`<span class="big">${big}</span>`:'')+body;
+  const done=v=>{m.classList.remove('show');document.removeEventListener('keydown',esc);res(v);};
+  const esc=e=>{if(e.key==='Escape')done(false);};
+  document.getElementById('m-no').onclick=()=>done(false);
+  document.getElementById('m-yes').onclick=()=>done(true);
+  document.addEventListener('keydown',esc);
+  m.classList.add('show');document.getElementById('m-no').focus();});}
 document.getElementById('links').innerHTML=
   `<a href="http://${host}:50000/" target="_blank">Control :50000</a>`+
   `<a href="http://${host}:50003/dashboard" target="_blank">Dashboard :50003</a>`;
-const CONFIRM={
-  stand:'Stand 를 실행합니다 (1 Damp → 4 → 501).\n\n· 로봇을 사람이 붙잡고 있습니까?\n· 스탠드가 어깨에 단단히 묶여 있습니까?',
-  sit:'Sit 를 실행합니다 (3초 후).\n\n· 팔을 몸 옆으로 내렸습니까?\n· 앉는 동안 로봇을 받치고 있습니까?',
-  damp:'Damp 를 실행합니다 (3초 후). 모터 힘이 빠집니다.\n진행 중인 Stand/Sit 가 있으면 중단합니다.\n\n· 로봇을 받치고 있거나 앉아 있는 상태입니까?'};
+let CUR=null;
+// Damp / Sit 만 경고 후 실행, 4 / 501 은 바로 실행
+async function confirmFsm(t){
+  const standing=[4,500,501].includes(CUR);
+  if(t===1)return warn('Damp (FSM 1)',
+    standing?'지금 서 있습니다 — 힘이 빠져 넘어집니다!':'모터 힘이 빠집니다',
+    '· 로봇을 사람이 받치고 있거나 스탠드에 묶여 있습니까?\n· 주변에 사람/장애물이 없습니까?');
+  if(t===3)return warn('Sit (FSM 3)','로봇이 천천히 앉습니다',
+    '· 팔을 몸 옆으로 내렸습니까?\n· 앉는 동안 로봇을 받치고 있습니까?\n· 엉덩이 아래 공간이 비어 있습니까?');
+  return true;}
 async function post(u){const r=await fetch(u,{method:'POST'});const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d.detail||r.status);return d;}
-async function fsm(c){if(!confirm(CONFIRM[c]))return;
-  try{await post('/fsm/'+c);}catch(e){alert(e.message);}poll();}
+async function fsm(t){if(!await confirmFsm(t))return;
+  try{await post('/fsm/'+t);}catch(e){alert(e.message);}poll();}
 async function robotStart(){if(!confirm('start_robot.sh 를 실행합니다.\n\n· arm_server 가 기동하면서 팔/허리 제어권(weight=1)을 잡습니다.'))return;
   try{await post('/robot/start');}catch(e){alert(e.message);}poll();}
 async function robotStop(){if(!confirm('로봇 서버를 정지합니다 (팔 제어권 반납 후 종료).'))return;
@@ -511,17 +486,18 @@ async function poll(){try{const d=await(await fetch('/status')).json();
     document.getElementById('fsm-n').textContent=f.cur_err||'';}
   else{nw.className='fsmnow '+(f.cur===501?'bal':[4,500].includes(f.cur)?'std':'low');
     document.getElementById('fsm-v').textContent=f.cur;document.getElementById('fsm-n').textContent=f.cur_name;}
-  // 버튼: 진행 중엔 Stand/Sit 잠금 (Damp 는 항상 가능)
-  const standing=[4,500,501].includes(f.cur);
-  document.getElementById('b-stand').disabled=!!f.task||f.cur===null||standing;
-  document.getElementById('b-sit').disabled=!!f.task||r.running||(f.cur!==null&&!standing);
-  document.getElementById('b-damp').disabled=f.task==='damp';
-  if(f.task)setState('fsm-s','run',`${f.task} 진행 중 — ${f.step} (${f.elapsed}s)`);
+  // 버튼: 현재 FSM 에서 갈 수 있는 단계만 활성, 다음 단계 강조 (1→4→501)
+  CUR=f.cur;
+  const next={1:4,4:501}[f.cur];
+  [1,4,501,3].forEach(t=>{const b=document.getElementById('b-'+t);
+    b.disabled=f.busy!==null||!f.allowed[t];b.classList.toggle('next',t===next);});
+  if(f.busy!==null)setState('fsm-s','run',`FSM ${f.busy} 전송 중…`);
   else if(f.result)setState('fsm-s',f.result[0]?'on':'err',f.result[1]);
   else setState('fsm-s','','대기');
   fill(document.getElementById('fsm-log'),f.log);
   // 로봇 서버
-  document.getElementById('b-rstart').disabled=r.running||!!f.task||(f.cur!==null&&f.cur!==501);
+  document.getElementById('b-rstart').disabled=r.running||f.busy!==null||(f.cur!==null&&f.cur!==501);
+  document.getElementById('b-rstart').classList.toggle('next',f.cur===501&&!r.running);
   document.getElementById('b-rstop').disabled=!r.running;
   if(r.running)setState('rb-s','on',`실행 중 (${Math.floor(r.elapsed/60)}분 ${Math.floor(r.elapsed%60)}초)`);
   else if(r.label)setState('rb-s',r.rc===0?'':'err',`정지됨 (rc=${r.rc})`);
