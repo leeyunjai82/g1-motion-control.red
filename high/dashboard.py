@@ -375,11 +375,13 @@ body.dashboard-mode .right { width: 240px; }
 </style>
 </head>
 <body>
+<script src="/i18n.js"></script>
 <header>
   <h1>&#x1F916; G1 Live Viewer</h1>
   <span class="badge" id="statusBadge">Loading...</span>
   <span class="badge live" id="liveBadge" style="display:none">● LIVE</span>
   <span style="margin-left:auto;font-size:10px;color:#2a2a3a" id="imuDisp">IMU: -</span>
+  <span id="lang-slot" style="margin-left:10px"></span>
 </header>
 
 <div class="main">
@@ -1041,10 +1043,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 </style>
 </head>
 <body>
+<script src="/i18n.js"></script>
   <div class="grid">
     <div class="panel full">
       <h2>Robot (3D Viewer + Joint States)</h2>
-      <iframe src="/robot-only"></iframe>
+      <iframe id="robot-iframe" src="/robot-only?embed=1"></iframe>
     </div>
     <div class="panel">
       <h2>Video Feed</h2>
@@ -1064,6 +1067,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 @app.get('/')
 def index():
     return HTMLResponse(HTML_PAGE)
+
+@app.get('/i18n.js', include_in_schema=False)
+def i18n_js():
+    return FileResponse(os.path.join(current_dir, 'i18n.js'), media_type='application/javascript')
 
 @app.get('/robot-only')
 def robot_dashboard():

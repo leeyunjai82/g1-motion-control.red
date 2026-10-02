@@ -1598,6 +1598,11 @@ async def loco_stop_endpoint():
 # ==========================================
 WEB_HTML_PATH = os.path.join(current_dir, "robot_web.html")
 
+@app.get("/i18n.js", include_in_schema=False)
+async def i18n_js():
+    return FileResponse(os.path.join(current_dir, "i18n.js"), media_type="application/javascript")
+
+
 @app.get("/", include_in_schema=False)
 async def index():
     return HTMLResponse(open(WEB_HTML_PATH, encoding="utf-8").read())

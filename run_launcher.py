@@ -43,7 +43,7 @@ from collections import deque
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 
 PORT = 80                   # 1024 미만 → root 필요 (launcher.sh 가 sudo 로 실행)
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -425,6 +425,11 @@ def index():
     return HTML
 
 
+@app.get("/i18n.js", include_in_schema=False)
+def i18n_js():
+    return FileResponse(os.path.join(ROOT, "high", "i18n.js"), media_type="application/javascript")
+
+
 HTML = r"""<!DOCTYPE html>
 <html lang="ko"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -488,7 +493,8 @@ pre{margin:0;flex:1;min-height:120px;overflow:auto;background:#0a0d12;border:1px
 .mbox .mb{display:flex;gap:8px;padding:0 16px 16px}.mbox .mb button{flex:1;padding:12px}
 .mbox .run{background:#5a1f1f;border-color:var(--warn);color:#fff}
 </style></head><body>
-<div class="top"><b>G1 Launcher</b><span class="r">:80 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span></div>
+<script src="/i18n.js"></script>
+<div class="top"><b>G1 Launcher</b><span class="r">:80 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span><span id="lang-slot" style="margin-left:12px"></span></div>
 <div class="wrap">
   <div class="card">
     <div class="h"><span>자세 (FSM)</span><span></span></div>

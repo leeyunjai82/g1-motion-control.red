@@ -509,6 +509,11 @@ async def stop_motion():
 # ==========================================
 # UI — 통합 simulator.html 단일 파일
 # ==========================================
+@app.get("/i18n.js", include_in_schema=False)
+async def i18n_js():
+    return FileResponse(os.path.join(current_dir, "i18n.js"), media_type="application/javascript")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     p = os.path.join(current_dir, "simulator.html")

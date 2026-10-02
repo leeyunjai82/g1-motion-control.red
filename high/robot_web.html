@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- Version: 2.4
+<!-- Version: 2.5
+  2.5 - 한/EN 전환 버튼 (i18n.js), 로봇 뷰 iframe 에 언어 전달
   2.4 - AI 인식 정보 오버레이(추론 ms·fps·신뢰도·박스 크기·거리), 잡기 단계별 소요 시간 막대(최근 5회)
   2.3 - 잡기 진행 단계 표시줄 (허리 정렬 → … → 복귀, /status 의 stage)
   2.2 - Grab Mode 버튼 2분할(OFF/Box), Send Gift 버튼 제거,
@@ -279,6 +280,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
 }
 </style></head>
 <body>
+<script src="/i18n.js"></script>
 
 <div class="topbar">
   <span class="dot live" id="livedot"></span>
@@ -291,6 +293,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
       <span class="chip" id="chip-arm">Arm <b>-</b></span>
       <span class="chip" id="chip-task">작업 <b>-</b></span>
     </div>
+    <span id="lang-slot"></span>
     <a id="link-dash" href="#">dashboard ↗</a>
   </div>
 </div>
@@ -443,7 +446,12 @@ document.getElementById('link-dash').href=`http://${host}:50003/dashboard`;
 document.getElementById('link-marker').href=`http://${host}:50011/`;
 document.getElementById('link-box').href=`http://${host}:50010/`;
 // robot-only 3D 뷰 (50003)
-document.getElementById('robot-frame').src=`http://${host}:50003/robot-only`;
+// 언어는 포트가 달라 localStorage 공유가 안 되므로 ?lang= 로 넘기고, 전환 시엔 i18n.js 가 postMessage
+const LANG=()=>(window.G1I18N&&G1I18N.lang)||'ko';
+document.getElementById('robot-frame').src=`http://${host}:50003/robot-only?embed=1&lang=${LANG()}`;
+window.addEventListener('g1lang',e=>{
+  document.getElementById('link-dash').href=`http://${host}:50003/dashboard?lang=${e.detail}`;
+  document.getElementById('link-robotonly').href=`http://${host}:50003/robot-only?lang=${e.detail}`;});
 document.getElementById('link-robotonly').href=`http://${host}:50003/robot-only`;
 
 let toastTimer;
