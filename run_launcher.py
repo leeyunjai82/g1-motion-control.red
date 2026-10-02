@@ -32,6 +32,7 @@ run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50
   · 웹 버튼은 비상정지가 아니다. 물리 E-STOP / 리모컨을 항상 손에 둘 것.
 """
 
+import json
 import os
 import pwd
 import signal
@@ -100,6 +101,7 @@ FSM_NAME = {0: "Zero Torque", 1: "Damping", 2: "Squat (위치제어)", 3: "Sit D
 FSM_BAL = {500: True, 501: True, 702: True, 706: True, 801: True}   # 밸런스 제어 여부 (나머지 없음)
 STANDING = {4, 500, 501}
 POLL_SEC = 1.0
+API_GET_FSM_ID = 7001             # ROBOT_API_ID_LOCO_GET_FSM_ID (g1_loco_api.py)
 STEPS = (1, 4, 501, 3, 706)
 ROBOT_BUSY = "Robot 서버 실행 중 — 먼저 [Robot 정지]"
 
@@ -137,13 +139,14 @@ def allowed(target, cur, robot_running, squat=None):
 
 class FsmCtl:
     def __init__(self):
-        self.client = None
+        self.client = None                     # 명령용 (timeout 10s, init_fsm.py 와 동일)
+        self.qclient = None                    # 조회용 (timeout 1s — 폴링이 명령을 오래 막지 않게)
+        self.read_lock = threading.Lock()
         self.init_err = None
         self._dds_inited = False
-        self.call_lock = threading.Lock()      # RPC 직렬화 (폴링 / 명령)
+        self.call_lock = threading.Lock()      # 명령 RPC 직렬화
         self.cur = None                        # 마지막으로 읽은 FSM id (None=미확인)
         self.cur_err = None
-        self.get_supported = True
         self.busy = None                       # 전송 중인 FSM id
         self.squat = None                      # 706 자세 추정 ('squat' | 'stand' | None)
         self.result = None                     # (ok, msg)
@@ -171,29 +174,40 @@ class FsmCtl:
             c = LocoClient()
             c.Init()
             c.SetTimeout(10.0)            # init_fsm.py 와 동일
-            self.client = c
+            q = LocoClient()
+            q.Init()
+            q.SetTimeout(1.0)
+            self.client, self.qclient = c, q
             self.init_err = None
-            self.get_supported = hasattr(c, "GetFsmId")
             return True
         except Exception as e:
             self.init_err = str(e)
             return False
+
+    @staticmethod
+    def _get_fsm_id(c):
+        """GetFsmId — SDK 에 메서드가 없으면(2026-06 이전 unitree_sdk2py) 같은 RPC(7001)를 직접 호출.
+        구버전도 Init() 에서 7001 을 등록하므로 _Call 로 부를 수 있다 (만약을 위해 재등록)."""
+        if hasattr(c, "GetFsmId"):
+            return c.GetFsmId()
+        c._RegistApi(API_GET_FSM_ID, 0)
+        code, data = c._Call(API_GET_FSM_ID, json.dumps({}))
+        if code != 0:
+            return code, None
+        return code, json.loads(data).get("data")
 
     def read_fsm(self):
         """현재 FSM id 읽기 → id 또는 None. 결과는 self.cur 에 저장."""
         if not self._ensure_client():
             self.cur, self.cur_err = None, f"LocoClient 초기화 실패: {self.init_err}"
             return None
-        if not self.get_supported:
-            self.cur, self.cur_err = None, "이 SDK 에 GetFsmId 없음"
-            return None
-        with self.call_lock:
+        with self.read_lock:
             try:
-                code, data = self.client.GetFsmId()
+                code, data = self._get_fsm_id(self.qclient)
             except Exception as e:
                 code, data = -1, str(e)
         if code != 0 or data is None:
-            self.cur, self.cur_err = None, f"GetFsmId 실패 (code={code})"
+            self.cur, self.cur_err = None, f"FSM 조회 실패 (code={code})"
             return None
         self.cur, self.cur_err = int(data), None
         if self.cur != 706:
