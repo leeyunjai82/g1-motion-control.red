@@ -15,7 +15,7 @@ run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50
   · 706 Balance Squat ↔ Stand: FSM 501 에서(쪼그리기) / 706 에서(토글), Robot 정지 상태만 (경고창)
         같은 ID 로 앉기·서기를 오간다(SDK StandUp2Squat / Squat2StandUp 모두 706).
         FSM 번호로는 쪼그림/섬을 구분할 수 없어 launcher 가 보낸 순서로 추정한다.
-  · FSM 확인 불가 시 Damping 만 허용
+  · FSM 조회 불가 시 순서 제한 없음 (Robot 실행 중 4/706/3 차단만 유지) — 순서는 사람이 지킨다
   · Robot 시작은 FSM 501 에서만
 
   ./start_fsm.sh / utils/init_fsm.py 는 수정하지 않았다 — 터미널에서 따로 쓸 수 있다.
@@ -112,7 +112,10 @@ def allowed(target, cur, robot_running, squat=None):
     if target == 1:
         return True, ""
     if cur is None:
-        return False, "현재 FSM 확인 불가 — Damping 만 가능 (터미널 ./start_fsm.sh 사용)"
+        # FSM 조회 불가(펌웨어/SDK 미지원) — 순서 제한 없이 허용, Robot 실행 중 차단만 유지
+        if robot_running and target in (3, 4, 706):
+            return False, ROBOT_BUSY
+        return True, ""
     if target == 4:
         if cur == 1:
             return True, ""
@@ -148,6 +151,8 @@ class FsmCtl:
         self.cur = None                        # 마지막으로 읽은 FSM id (None=미확인)
         self.cur_err = None
         self.busy = None                       # 전송 중인 FSM id
+        self.last_sent = None                  # 마지막으로 성공 전송한 FSM id (조회 불가 시 참고)
+        self.last_sent_before = None
         self.squat = None                      # 706 자세 추정 ('squat' | 'stand' | None)
         self.result = None                     # (ok, msg)
         self.lines = deque(maxlen=300)
@@ -211,7 +216,7 @@ class FsmCtl:
             return None
         self.cur, self.cur_err = int(data), None
         if self.cur != 706:
-            self.squat = None                  # 706 을 벗어나면 추정 초기화
+            self.squat = None                  # 706 을 벗어나면 추정 초기화 (조회 불가 시엔 유지)
         return self.cur
 
     def set(self, target, robot_running):
@@ -230,6 +235,7 @@ class FsmCtl:
                 self.log(f"FSM {target} 거부 — {why}")
                 raise HTTPException(409, why)
             self.log(f"SetFsmId({target}) … (현재 {cur})")
+            self.last_sent_before = self.last_sent
             with self.call_lock:
                 code = self.client.SetFsmId(target)
             now = self.read_fsm()
@@ -237,9 +243,11 @@ class FsmCtl:
             if code != 0:
                 self.result = (False, f"FSM {target} 실패 (code={code})")
                 raise HTTPException(502, self.result[1])
+            self.last_sent = target
             if target == 706:
-                # 501 → 706 은 쪼그리기, 706 → 706 은 토글
-                self.squat = "squat" if cur != 706 else ("stand" if self.squat == "squat" else "squat")
+                # 501 → 706 은 쪼그리기, 706 → 706 은 토글 (조회 불가면 직전 전송 기준)
+                prev = cur if cur is not None else self.last_sent_before
+                self.squat = "squat" if prev != 706 else ("stand" if self.squat == "squat" else "squat")
                 self.log(f"706 자세 추정: {'쪼그림' if self.squat == 'squat' else '일어섬'}")
             self.result = (True, f"FSM {target} {FSM_NAME.get(target, '')} 전송 완료")
         finally:
@@ -255,6 +263,7 @@ class FsmCtl:
     def state(self, robot_running):
         return {"cur": self.cur, "cur_name": FSM_NAME.get(self.cur, "") if self.cur is not None else "",
                 "cur_bal": FSM_BAL.get(self.cur, False), "squat": self.squat,
+                "last_sent": self.last_sent,
                 "cur_err": self.cur_err, "busy": self.busy, "result": self.result,
                 "allowed": {str(t): allowed(t, self.cur, robot_running, self.squat)[0] for t in STEPS},
                 "log": list(self.lines)[-120:]}
@@ -421,7 +430,9 @@ button.next:not(:disabled){box-shadow:0 0 0 2px var(--accent) inset;animation:nx
 .st{border-color:#5a2b2b;color:var(--warn)} .st:hover:not(:disabled){background:#2e1515}
 .ok{border-color:#1f4a73;color:var(--accent2)} .ok:hover:not(:disabled){background:#10243a}
 .fsmnow{display:flex;align-items:baseline;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:#0a0d12}
-.fsmnow .k{font-size:11px;color:var(--dim)}
+.fsmnow .k{font-size:11px;color:var(--dim);white-space:nowrap}
+.fsmnow .v{white-space:nowrap}
+.fsmnow .bal:empty{display:none}
 .fsmnow .v{font-size:22px;font-weight:700}
 .fsmnow .n{font-size:13px;color:var(--dim)}
 .fsmnow .bal{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
@@ -508,7 +519,8 @@ let CUR=null,SQUAT=null;
 async function confirmFsm(t){
   const standing=[4,500,501,706].includes(CUR);
   if(t===1)return warn('Damp (FSM 1)',
-    standing?'지금 서 있습니다 — 힘이 빠져 넘어집니다!':'모터 힘이 빠집니다',
+    standing?'지금 서 있습니다 — 힘이 빠져 넘어집니다!':
+    CUR===null?'현재 상태 확인 불가 — 서 있다면 힘이 빠져 넘어집니다!':'모터 힘이 빠집니다',
     '· 로봇을 사람이 받치고 있거나 스탠드에 묶여 있습니까?\n· 주변에 사람/장애물이 없습니까?');
   if(t===3)return warn('Sit Down (FSM 3)','로봇이 천천히 앉습니다 (밸런스 제어 없음)',
     '· 팔을 몸 옆으로 내렸습니까?\n· 앉는 동안 로봇을 받치고 있습니까?\n· 엉덩이 아래 공간이 비어 있습니까?');
@@ -532,7 +544,8 @@ async function poll(){try{const d=await(await fetch('/status')).json();
   // 현재 FSM
   const nw=document.getElementById('fsmnow');
   if(f.cur===null){nw.className='fsmnow unk';document.getElementById('fsm-v').textContent='확인 불가';
-    document.getElementById('fsm-n').textContent=f.cur_err||'';}
+    document.getElementById('fsm-n').textContent=(f.cur_err||'')+' — 순서 제한 없음'+
+      (f.last_sent!==null?` · 마지막 전송 ${f.last_sent}`+(f.last_sent===706?(f.squat==='squat'?' (쪼그림)':' (일어섬)'):''):'');}
   else{nw.className='fsmnow '+([500,501].includes(f.cur)?'bal':[4,706].includes(f.cur)?'std':'low');
     document.getElementById('fsm-v').textContent=f.cur;
     document.getElementById('fsm-n').textContent=f.cur_name+
@@ -541,10 +554,11 @@ async function poll(){try{const d=await(await fetch('/status')).json();
   if(f.cur===null){fb.textContent='';fb.className='bal';}
   else{fb.textContent=f.cur_bal?'밸런스 제어':'밸런스 없음';fb.className='bal '+(f.cur_bal?'on':'off');}
   SQUAT=f.squat;
-  document.getElementById('b-706-l').textContent=f.cur===706?(f.squat==='squat'?'Squat → Stand':'Stand → Squat'):'Balance Squat';
-  // 버튼: 현재 FSM 에서 갈 수 있는 단계만 활성, 다음 단계 강조 (1→4→501)
+  const ref=f.cur!==null?f.cur:f.last_sent;          // 조회 불가면 마지막 전송 기준
+  document.getElementById('b-706-l').textContent=ref===706?(f.squat==='squat'?'Squat → Stand':'Stand → Squat'):'Balance Squat';
+  // 버튼: 갈 수 있는 단계만 활성(조회 불가면 제한 없음), 다음 단계 강조 (1→4→501)
   CUR=f.cur;
-  const next=f.cur===706?(f.squat==='stand'?501:706):{1:4,4:501}[f.cur];
+  const next=ref===706?(f.squat==='stand'?501:706):{1:4,4:501}[ref];
   [1,4,501,3,706].forEach(t=>{const b=document.getElementById('b-'+t);
     b.disabled=f.busy!==null||!f.allowed[t];b.classList.toggle('next',t===next);});
   if(f.busy!==null)setState('fsm-s','run',`FSM ${f.busy} 전송 중…`);
