@@ -7,6 +7,8 @@ run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50
 
 자세 — FSM 단계별 버튼 (LocoClient.SetFsmId 직접 호출, 연속 시퀀스 없음)
   사람이 로봇 상태를 보고 한 단계씩 누른다. init_fsm.py 의 stand = 1 → 4 → 501.
+  버튼을 누르면 5초 카운트다운 후 전송 (취소 가능, 대기 중 Damp 는 눌러서 교체 가능).
+  전송 직전에 허용 조건을 다시 검사한다.
   현재 FSM(GetFsmId)에서 갈 수 있는 단계만 허용:
   · 1   Damping              : 항상 (서 있으면 넘어짐 — 경고창)
   · 4   Lock Standing        : FSM 1 에서 / 501 에서(= no-bal, Robot 정지 상태만)
@@ -98,6 +100,7 @@ FSM_NAME = {0: "Zero Torque", 1: "Damping", 2: "Squat (위치제어)", 3: "Sit D
 FSM_BAL = {500: True, 501: True, 702: True, 801: True}   # 밸런스 제어 여부 (나머지 없음)
 STANDING = {4, 500, 501}
 POLL_SEC = 1.0
+DELAY_SEC = 5.0                   # 버튼 → 전송 지연
 API_GET_FSM_ID = 7001             # ROBOT_API_ID_LOCO_GET_FSM_ID (g1_loco_api.py)
 STEPS = (1, 4, 501, 3)
 ROBOT_BUSY = "Robot 서버 실행 중 — 먼저 [Robot 정지]"
@@ -137,7 +140,9 @@ class FsmCtl:
         self.call_lock = threading.Lock()      # 명령 RPC 직렬화
         self.cur = None                        # 마지막으로 읽은 FSM id (None=미확인)
         self.cur_err = None
-        self.busy = None                       # 전송 중인 FSM id
+        self.busy = None                       # 대기/전송 중인 FSM id
+        self.fire_at = 0.0                     # 전송 예정 시각
+        self.cancel = threading.Event()
         self.last_sent = None                  # 마지막으로 성공 전송한 FSM id (조회 불가 시 참고)
         self.result = None                     # (ok, msg)
         self.lines = deque(maxlen=300)
@@ -202,21 +207,56 @@ class FsmCtl:
         self.cur, self.cur_err = int(data), None
         return self.cur
 
-    def set(self, target, robot_running):
+    def set(self, target, robot_running_fn):
+        """검사 후 DELAY_SEC 카운트다운 → 전송 (별도 스레드). 대기 중 Damp 는 교체 허용."""
         if target not in STEPS:
             raise HTTPException(400, f"FSM 은 {STEPS} 중 하나")
         with self.lock:
             if self.busy is not None:
-                raise HTTPException(409, f"FSM {self.busy} 전송 중")
-            self.busy = target
+                if target == 1 and self.busy != 1 and time.time() < self.fire_at:
+                    self.log(f"FSM {self.busy} 대기 취소 — Damp 로 교체")
+                    self.cancel.set()
+                else:
+                    raise HTTPException(409, f"FSM {self.busy} 대기/전송 중")
+        if self.cancel.is_set():               # 교체: 이전 스레드가 빠질 때까지
+            t0 = time.time()
+            while self.busy is not None and time.time() - t0 < 2:
+                time.sleep(0.02)
+        if not self._ensure_client():
+            raise HTTPException(503, f"LocoClient 초기화 실패: {self.init_err}")
+        ok, why = allowed(target, self.read_fsm(), robot_running_fn())
+        if not ok:
+            self.log(f"FSM {target} 거부 — {why}")
+            raise HTTPException(409, why)
+        with self.lock:
+            if self.busy is not None:
+                raise HTTPException(409, f"FSM {self.busy} 대기/전송 중")
+            self.cancel.clear()
+            self.busy, self.fire_at, self.result = target, time.time() + DELAY_SEC, None
+        self.log(f"FSM {target} {FSM_NAME.get(target, '')} — {DELAY_SEC:.0f}초 후 전송")
+        threading.Thread(target=self._fire, args=(target, robot_running_fn), daemon=True).start()
+
+    def cancel_pending(self):
+        with self.lock:
+            if self.busy is None or time.time() >= self.fire_at:
+                return False
+            self.cancel.set()
+        return True
+
+    def _fire(self, target, robot_running_fn):
         try:
-            if not self._ensure_client():
-                raise HTTPException(503, f"LocoClient 초기화 실패: {self.init_err}")
+            if self.cancel.wait(DELAY_SEC):
+                self.log(f"FSM {target} 취소됨")
+                self.result = (False, f"FSM {target} 취소됨")
+                return
+            with self.lock:
+                self.fire_at = 0.0            # 이제부터 취소 불가
             cur = self.read_fsm()
-            ok, why = allowed(target, cur, robot_running)
+            ok, why = allowed(target, cur, robot_running_fn())   # 대기 중 상태가 바뀌었을 수 있다
             if not ok:
-                self.log(f"FSM {target} 거부 — {why}")
-                raise HTTPException(409, why)
+                self.log(f"FSM {target} 전송 직전 거부 — {why}")
+                self.result = (False, f"FSM {target} 거부: {why}")
+                return
             self.log(f"SetFsmId({target}) … (현재 {cur})")
             with self.call_lock:
                 code = self.client.SetFsmId(target)
@@ -224,12 +264,15 @@ class FsmCtl:
             self.log(f"SetFsmId({target}) → code={code}, 현재 FSM = {now} ({FSM_NAME.get(now, '?')})")
             if code != 0:
                 self.result = (False, f"FSM {target} 실패 (code={code})")
-                raise HTTPException(502, self.result[1])
+                return
             self.last_sent = target
             self.result = (True, f"FSM {target} {FSM_NAME.get(target, '')} 전송 완료")
+        except Exception as e:
+            self.log(f"FSM {target} 오류: {e}")
+            self.result = (False, f"FSM {target} 오류: {e}")
         finally:
             with self.lock:
-                self.busy = None
+                self.busy, self.fire_at = None, 0.0
 
     def poll_loop(self):
         while True:
@@ -242,6 +285,7 @@ class FsmCtl:
                 "cur_bal": FSM_BAL.get(self.cur, False),
                 "last_sent": self.last_sent,
                 "cur_err": self.cur_err, "busy": self.busy, "result": self.result,
+                "remain": round(max(0.0, self.fire_at - time.time()), 1) if self.fire_at else 0,
                 "allowed": {str(t): allowed(t, self.cur, robot_running)[0] for t in STEPS},
                 "log": list(self.lines)[-120:]}
 
@@ -341,14 +385,19 @@ app = FastAPI(title="G1 Launcher", lifespan=lifespan)
 
 @app.post("/fsm/{target}")
 def run_fsm(target: int):
-    fsm.set(target, robot.running())
-    return {"ok": True}
+    fsm.set(target, robot.running)
+    return {"ok": True, "delay": DELAY_SEC}
+
+
+@app.post("/fsm_cancel")
+def fsm_cancel():
+    return {"ok": fsm.cancel_pending()}
 
 
 @app.post("/robot/start")
 def robot_start():
     if fsm.busy is not None:
-        raise HTTPException(409, f"FSM {fsm.busy} 전송 중")
+        raise HTTPException(409, f"FSM {fsm.busy} 대기/전송 중")
     cur = fsm.read_fsm()
     if cur is not None and cur != 501:
         raise HTTPException(409, f"FSM {cur} ({FSM_NAME.get(cur, '')}) — 1 → 4 → 501 로 Walk(3DoF waist) 진입 후 시작")
@@ -401,6 +450,7 @@ button{font:inherit;font-size:14px;font-weight:700;padding:16px 8px;border-radiu
 button small{display:block;font-size:10px;font-weight:400;color:var(--dim);margin-top:3px}
 button:disabled{opacity:.3;cursor:not-allowed}
 button .no{display:block;font-size:20px;margin-bottom:2px}
+button.pend{box-shadow:0 0 0 2px var(--amber) inset;opacity:1!important}
 button.next:not(:disabled){box-shadow:0 0 0 2px var(--accent) inset;animation:nx 1.6s infinite}
 @keyframes nx{50%{box-shadow:0 0 0 2px transparent inset}}
 .go{border-color:#1f5a43;color:var(--accent)} .go:hover:not(:disabled){background:#12301f}
@@ -453,7 +503,10 @@ pre{margin:0;flex:1;min-height:120px;overflow:auto;background:#0a0d12;border:1px
       <div class="row">
         <button class="ok" id="b-3" onclick="fsm(3)"><span class="no">3</span>Sit Down<small>밸런스 없음 · 서 있을 때</small></button>
       </div>
-      <div class="state" id="fsm-s">대기</div>
+      <div class="row" style="align-items:stretch">
+        <div class="state" id="fsm-s" style="flex:3">대기</div>
+        <button class="st" id="b-cancel" onclick="fsmCancel()" style="flex:1;padding:8px;display:none">취소</button>
+      </div>
       <pre id="fsm-log"></pre>
     </div>
   </div>
@@ -505,6 +558,7 @@ async function post(u){const r=await fetch(u,{method:'POST'});const d=await r.js
   if(!r.ok)throw new Error(d.detail||r.status);return d;}
 async function fsm(t){if(!await confirmFsm(t))return;
   try{await post('/fsm/'+t);}catch(e){alert(e.message);}poll();}
+async function fsmCancel(){try{await post('/fsm_cancel');}catch(e){}poll();}
 async function robotStart(){if(!confirm('start_robot.sh 를 실행합니다.\n\n· arm_server 가 기동하면서 팔/허리 제어권(weight=1)을 잡습니다.'))return;
   try{await post('/robot/start');}catch(e){alert(e.message);}poll();}
 async function robotStop(){if(!confirm('로봇 서버를 정지합니다 (팔 제어권 반납 후 종료).'))return;
@@ -530,8 +584,15 @@ async function poll(){try{const d=await(await fetch('/status')).json();
   CUR=f.cur;
   const next={1:4,4:501}[ref];
   [1,4,501,3].forEach(t=>{const b=document.getElementById('b-'+t);
-    b.disabled=f.busy!==null||!f.allowed[t];b.classList.toggle('next',t===next);});
-  if(f.busy!==null)setState('fsm-s','run',`FSM ${f.busy} 전송 중…`);
+    // 대기 중엔 다른 버튼 잠금 — 단 Damp(1)는 대기 중 교체 가능
+    const pend=f.busy!==null&&f.remain>0;
+    b.disabled=(f.busy!==null&&!(t===1&&pend&&f.busy!==1))||!f.allowed[t];
+    b.classList.toggle('next',t===next&&f.busy===null);
+    b.classList.toggle('pend',t===f.busy);});
+  const cb=document.getElementById('b-cancel');
+  cb.style.display=(f.busy!==null&&f.remain>0)?'':'none';
+  if(f.busy!==null&&f.remain>0)setState('fsm-s','run',`FSM ${f.busy} — ${Math.ceil(f.remain)}초 후 전송`);
+  else if(f.busy!==null)setState('fsm-s','run',`FSM ${f.busy} 전송 중…`);
   else if(f.result)setState('fsm-s',f.result[0]?'on':'err',f.result[1]);
   else setState('fsm-s','','대기');
   fill(document.getElementById('fsm-log'),f.log);
@@ -544,7 +605,7 @@ async function poll(){try{const d=await(await fetch('/status')).json();
   else setState('rb-s','','정지됨');
   fill(document.getElementById('rb-log'),r.log);
 }catch(e){setState('fsm-s','err','launcher 연결 끊김');}}
-poll();setInterval(poll,1000);
+poll();setInterval(poll,500);
 </script></body></html>"""
 
 
