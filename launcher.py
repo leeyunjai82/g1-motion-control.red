@@ -384,15 +384,17 @@ HTML = r"""<!DOCTYPE html>
 :root{--bg:#0e1116;--panel:#161b22;--panel2:#1c232d;--line:#2a3340;--ink:#c9d4e0;--dim:#6b7785;
   --accent:#3ddc97;--accent2:#4aa8ff;--warn:#ff6b6b;--amber:#ffb454}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 ui-monospace,Menlo,monospace}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 ui-monospace,Menlo,monospace;
+  display:flex;flex-direction:column;min-height:640px}
 .top{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
 .top b{color:var(--accent)} .top .r{margin-left:auto;color:var(--dim);font-size:11px}
-.wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px;max-width:1300px;margin:0 auto}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.wrap{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 .h{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);padding:9px 13px;
   border-bottom:1px solid var(--line);background:var(--panel2);display:flex;justify-content:space-between}
 .h code{text-transform:none}
-.b{padding:13px;display:flex;flex-direction:column;gap:10px;flex:1}
+.b{padding:13px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
 .row{display:flex;gap:8px}.row>*{flex:1}
 button{font:inherit;font-size:14px;font-weight:700;padding:16px 8px;border-radius:8px;cursor:pointer;
   background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
@@ -418,11 +420,13 @@ button.next:not(:disabled){box-shadow:0 0 0 2px var(--accent) inset;animation:nx
 .state.on{border-color:#1f5a43;color:var(--accent)}.state.on::before{background:var(--accent)}
 .state.err{border-color:#5a2b2b;color:var(--warn)}.state.err::before{background:var(--warn)}
 @keyframes bl{50%{opacity:.25}}
-pre{margin:0;flex:1;min-height:240px;max-height:46vh;overflow:auto;background:#0a0d12;border:1px solid var(--line);
+pre{margin:0;flex:1;min-height:120px;overflow:auto;background:#0a0d12;border:1px solid var(--line);
   border-radius:8px;padding:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-all}
 .note{font-size:11px;color:var(--dim)}
 .links a{color:var(--accent2);margin-right:12px}
-@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+/* 큰 화면: 버튼 키움 */
+@media(min-height:900px){button{padding:22px 8px;font-size:15px}button .no{font-size:24px}}
+@media(max-width:900px){body{height:auto}.wrap{grid-template-columns:1fr}pre{min-height:240px}}
 .modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:9}
 .modal.show{display:flex}
 .mbox{width:min(460px,92vw);background:var(--panel);border:2px solid var(--warn);border-radius:12px;overflow:hidden}
