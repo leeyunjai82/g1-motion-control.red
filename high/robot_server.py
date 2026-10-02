@@ -523,7 +523,14 @@ FOLLOW_P = {
     # 정면 접근: 마커 법선 위 경유점을 먼저 찍고 정면에서 진입
     "pre_dist": 0.7,                    # 경유점 거리 (마커 정면, m)
     "wp_reach": 0.2,                    # 경유점 도달 판정 (m)
-    "axis_from_x": 0,                   # 접근축: 0=마커 Y축, 1=X축 (배치에 맞게)
+    # 접근축 = 마커 좌표계의 어느 축을 쓸 것인가
+    #   0 = X축(빨강) / 1 = Y축(초록) / 2 = Z축(파랑, 마커 법선)
+    #   · 바닥에 눕힌 마커      → 1 (면 안의 축이 접근 방향)
+    #   · 벽·박스 앞면 수직 마커 → 2 (법선이 곧 접근 방향)
+    #   · -1 = 자동 (마커→로봇 방향과 가장 잘 맞는 축. 로봇이 마커 정면
+    #     부근일 때만 신뢰 가능 — 배치가 정해졌으면 0/1/2 로 고정할 것)
+    "axis_col": 2,
+    "axis_min_h": 0.35,                 # 축의 수평 성분 최소치 — 미만이면 축 없음(직행 폴백)
 }
 FOLLOW_S = {"state": "idle", "phase": "-", "found": False,
             "mx": 0.0, "my": 0.0, "vx": 0.0, "vyaw": 0.0, "t_run": 0.0}
@@ -551,10 +558,30 @@ def _follow_get_pose():
                 import cv2 as _cv2
                 rv = np.asarray(rvec, dtype=np.float64).reshape(3, 1)
                 R, _ = _cv2.Rodrigues(rv)
-                col = 1 if not FOLLOW_P["axis_from_x"] else 0
-                ax, ay, _az = camera_dir_to_torso(R[0, col], R[1, col], R[2, col])
-                n = (ax * ax + ay * ay) ** 0.5
-                if n > 1e-6:
+                def _horiz(c):
+                    """마커 축 c 의 torso 수평 성분 (ax, ay, 수평크기)."""
+                    hx, hy, _h = camera_dir_to_torso(R[0, c], R[1, c], R[2, c])
+                    return hx, hy, (hx * hx + hy * hy) ** 0.5
+
+                col = FOLLOW_P["axis_col"]
+                if col < 0:
+                    # 자동: 마커→로봇 방향과 가장 잘 정렬되는 축.
+                    # (수평 성분 크기로 고르면 두 축이 동점이 되어 구분이 안 된다)
+                    _tl = (mx * mx + my * my) ** 0.5
+                    _rx, _ry = (-mx / _tl, -my / _tl) if _tl > 1e-6 else (-1.0, 0.0)
+                    _best, col = -2.0, 1
+                    for _c in (0, 1, 2):
+                        _cx, _cy, _ch = _horiz(_c)
+                        if _ch < FOLLOW_P["axis_min_h"]:
+                            continue
+                        _s = abs((_cx / _ch) * _rx + (_cy / _ch) * _ry)
+                        if _s > _best:
+                            _best, col = _s, _c
+
+                ax, ay, n = _horiz(col)
+                # 수평 성분이 너무 작은 축(거의 수직)은 정규화 시 노이즈가 증폭되어
+                # 엉뚱한 방향이 나온다 → 축 없음으로 처리(직행 폴백)
+                if n >= FOLLOW_P["axis_min_h"]:
                     ax, ay = ax / n, ay / n
                     if ax * (-mx) + ay * (-my) < 0:   # 로봇(원점) 쪽으로
                         ax, ay = -ax, -ay
@@ -1396,6 +1423,41 @@ async def arm_hold():
 # ==========================================
 # 마커 추종 보행
 # ==========================================
+@app.get("/follow/axis_debug")
+async def follow_axis_debug():
+    """현재 마커의 세 축을 torso 좌표로 보여준다 — 마커 배치 확인 / axis_col 결정용.
+    수평 성분 h 가 크고 마커→로봇 방향과 잘 맞는 축이 접근축이다."""
+    import urllib.request as _u
+    try:
+        d = json.loads(_u.urlopen(MARKER_POSE_URL, timeout=1.0).read())
+    except Exception as e:
+        return {"found": False, "error": str(e)}
+    if not d.get("found") or not d.get("rvec"):
+        return {"found": False}
+    import cv2 as _cv2
+    R, _ = _cv2.Rodrigues(np.asarray(d["rvec"], dtype=np.float64).reshape(3, 1))
+    cm = d["torso_cm"]
+    mx, my = cm[0] / 100.0, cm[1] / 100.0
+    out = {}
+    for c, nm in ((0, "X(red)"), (1, "Y(green)"), (2, "Z(blue)")):
+        ax, ay, az = camera_dir_to_torso(R[0, c], R[1, c], R[2, c])
+        h = (ax * ax + ay * ay) ** 0.5
+        item = {"dir": [round(ax, 3), round(ay, 3), round(az, 3)],
+                "h": round(h, 3), "usable": h >= FOLLOW_P["axis_min_h"]}
+        if h >= FOLLOW_P["axis_min_h"]:
+            nx, ny = ax / h, ay / h
+            if nx * (-mx) + ny * (-my) < 0:
+                nx, ny = -nx, -ny
+            item["waypoint"] = [round(mx + nx * FOLLOW_P["pre_dist"], 2),
+                                round(my + ny * FOLLOW_P["pre_dist"], 2)]
+        out[nm] = item
+    _f, _mx, _my, axis = _follow_get_pose()
+    return {"found": True, "marker_xy": [round(mx, 2), round(my, 2)],
+            "axis_col_setting": FOLLOW_P["axis_col"],
+            "selected_axis": [round(axis[0], 3), round(axis[1], 3)] if axis else None,
+            "axes": out}
+
+
 @app.get("/follow/status")
 async def follow_status():
     return {**FOLLOW_S, "params": FOLLOW_P, "running": _follow_run.is_set()}
@@ -1474,4 +1536,3 @@ async def index():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=50000, timeout_graceful_shutdown=2)
-

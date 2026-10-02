@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-# Version: 0.6
+# Version: 0.7
 # Changes:
+#   0.7 - POST /reset_window 추가 (펄스 이동 소비자용 안정화 버퍼 즉시 비우기)
+#         /pose, /status 에 n(최소 샘플 수) 노출 — 소비자가 충분한지 판단 가능
+#         _count 를 max → min 으로 (키마다 샘플 수가 달라 max 는 과대평가)
 #   0.6 - 미검출 3프레임 연속 시 smoother 버퍼 클리어(박스 치우면 잔상 제거)
 #   0.5 - OpenVINO 모델 자동 감지(box_openvino_model), intel:cpu
 #   0.4 - 카메라 K를 ik_box 검증값(606)으로 통일
@@ -19,12 +22,19 @@ box_estimator.py(YOLO seg + depth)로 박스 윗면/L/R/크기 측정.
   좌표계는 카메라 frame, gravity는 47.6도 고정.
 
 동작:
-  · 1초 윈도우 median 안정화 (좌표 → 크기 자동 안정)
+  · SMOOTH_WINDOW_SEC(2초) 슬라이딩 윈도우 median 안정화
   · 자동 모드: 영역 안 dwell 만족 → robot_server(50003) POST /grab_at
-  · GET /pose : 현재 박스 좌표 (수동 잡기용)
+  · GET  /pose         : 현재 박스 좌표 (수동 잡기용)
+  · POST /reset_window : 안정화 버퍼 비우기 (걷다 멈추는 펄스 소비자용)
   · 작은 웹 UI
 
 robot_server active_mode == "box"일 때만 POST (그쪽 게이트).
+
+펄스 이동 소비자(mission_server)를 위한 주의:
+  이 서버가 내보내는 값은 최근 2초 윈도우의 median 이다. 걷다 멈춘 직후
+  그냥 읽으면 "걷는 동안의 좌표"가 섞여 실제보다 뒤처진 값이 나온다.
+  정지 직후 POST /reset_window 로 버퍼를 비우고, /pose 의 n 이 충분해질
+  때까지 기다렸다 읽을 것.
 """
 import os
 import io
@@ -163,12 +173,21 @@ def update_smoothers(result):
 
 
 def get_smoothed():
+    """안정화된 값 + _count.
+
+    _count 는 키들 중 '가장 적게' 쌓인 수다(min).
+    파지에 쓰는 값은 L·R·top_center·box_H 를 모두 조합하므로,
+    하나라도 덜 쌓였으면 그 값은 아직 못 믿는다.
+    (max 를 쓰면 한 키만 채워져도 충분한 것처럼 보여 과대평가된다)
+    """
     out = {}
     with smoother_lock:
+        counts = []
         for k, sm in smoothers.items():
             v = sm.median()
             if v is not None: out[k] = v
-        out['_count'] = max((sm.count() for sm in smoothers.values()), default=0)
+            counts.append(sm.count())
+        out['_count'] = min(counts) if counts else 0
     return out
 
 
@@ -384,13 +403,37 @@ async def video_feed():
                              media_type="multipart/x-mixed-replace; boundary=frame")
 
 
+@app.post("/reset_window")
+async def reset_window():
+    """안정화 버퍼를 즉시 비운다 — 걷다 멈추는 펄스 소비자용.
+
+    이 서버 값은 최근 SMOOTH_WINDOW_SEC(2초) median 이므로, 정지 직후
+    그냥 읽으면 걷는 동안의 좌표가 섞인다. 정지 직후 이걸 호출하면
+    이후 쌓이는 값은 전부 "정지 후" 프레임이다.
+
+    비운 직후에는 샘플이 0 이다 — /pose 의 n 이 충분해질 때까지
+    기다렸다 읽을 것 (10Hz 로 쌓이므로 15개면 약 1.5초).
+    """
+    global _miss_count
+    with smoother_lock:
+        for sm in smoothers.values():
+            sm.clear()
+    _miss_count = 0
+    return {"ok": True, "window_sec": SMOOTH_WINDOW_SEC}
+
+
 @app.get("/pose")
 async def pose():
-    """현재 박스 좌표 (수동 잡기용) — 안정화된 값."""
+    """현재 박스 좌표 (수동 잡기용) — 안정화된 값.
+
+    n = 현재 버퍼에 쌓인 샘플 수(키들 중 최소). 소비자가 이 값을 보고
+    충분히 쌓였는지 판단한다.
+    """
     sm = get_smoothed()
     if sm.get('_count',0) < 3 or 'L' not in sm or 'R' not in sm:
-        return {"found": False}
+        return {"found": False, "n": int(sm.get('_count',0))}
     out = {"found": True, "type": "cardboard",
+           "n": int(sm.get('_count',0)),
            "L": [float(v) for v in sm['L']],
            "R": [float(v) for v in sm['R']],
            "top_center": [float(v) for v in sm['top_center']] if 'top_center' in sm else None,
@@ -405,6 +448,8 @@ async def status():
     in_zone_since = auto_state.get("in_zone_since")
     elapsed = (time.time()-in_zone_since) if in_zone_since else 0.0
     out = {"found": found, "frames": sm.get('_count',0),
+           "n": int(sm.get('_count',0)),
+           "window_sec": SMOOTH_WINDOW_SEC,
            "stream_started": stream_started,
            "auto_enabled": auto_mode["enabled"],
            "auto_in_zone": in_zone_since is not None,
@@ -465,7 +510,7 @@ button{background:#FF9800;border:none;color:#000;padding:8px;border-radius:5px;c
       <div class="info-row"><span class="info-key">torso Y</span><span class="info-val" id="ty">-</span></div>
       <div class="info-row"><span class="info-key">torso Z</span><span class="info-val" id="tz">-</span></div>
       <div class="info-row"><span class="info-key">box H</span><span class="info-val" id="bh">-</span></div>
-      <div class="info-row"><span class="info-key">frames</span><span class="info-val" id="fr">-</span></div>
+      <div class="info-row"><span class="info-key">samples</span><span class="info-val" id="fr">-</span></div>
     </div>
     <div class="card">
       <div class="card-title">자동 모드</div>
@@ -477,6 +522,7 @@ button{background:#FF9800;border:none;color:#000;padding:8px;border-radius:5px;c
         <div>dwell<input id="dwell" value="1.5"></div>
       </div>
       <button onclick="applyZone()">영역 적용</button>
+      <button onclick="fetch('/reset_window',{method:'POST'})" style="background:#666;color:#fff">버퍼 비우기</button>
       <div class="bar"><div class="bar-fill" id="bar"></div></div>
       <div id="amsg" style="font-size:11px;color:#666;margin-top:6px">대기</div>
     </div>
@@ -485,7 +531,7 @@ button{background:#FF9800;border:none;color:#000;padding:8px;border-radius:5px;c
 <script>
 function poll(){fetch('/status').then(r=>r.json()).then(d=>{
   document.getElementById('bstatus').textContent=d.found?'검출됨 ✓':'대기...';
-  document.getElementById('fr').textContent=d.frames;
+  document.getElementById('fr').textContent=d.n+' / '+d.window_sec+'s';
   if(d.torso){document.getElementById('tx').textContent=d.torso.x.toFixed(3);
     document.getElementById('ty').textContent=d.torso.y.toFixed(3);
     document.getElementById('tz').textContent=d.torso.z.toFixed(3);}
