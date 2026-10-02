@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50080)
+run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50080)
 
   ./launcher.sh             (start_fsm.sh 와 같이 sudo 로 tv 환경 python 실행)
   → http://<robot-ip>:50080/
