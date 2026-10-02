@@ -424,6 +424,7 @@ body.dashboard-mode .right { width: 240px; }
     <div class="tooltip" id="tt"></div>
     <div class="vizleg" id="vizLeg"></div>
     <div class="heatbar">
+      <div class="bt"><button id="autoBtn" title="천천히 좌우로 회전 (마우스 조작 시 멈추고 5초 후 재개)">자동 회전</button></div>
       <div class="bt"><button class="on" data-hm="base">기본</button><button data-hm="temp">모터 온도</button><button data-hm="load">부하</button></div>
       <div class="hl" id="heatList"></div>
     </div>
@@ -447,16 +448,18 @@ class Orbit {
     this.cam=cam;this.el=el;this.target=new THREE.Vector3(0,.8,0);
     this.phi=1.2;this.theta=0.5;this.r=3.5;
     this._dn=false;this._btn=-1;this._lx=0;this._ly=0;
-    el.addEventListener('mousedown',e=>{this._dn=true;this._btn=e.button;this._lx=e.clientX;this._ly=e.clientY;});
+    this.lastInput=0;          // 마지막 사용자 조작 시각 (자동 회전 일시정지용)
+    el.addEventListener('mousedown',e=>{this.lastInput=performance.now();this._dn=true;this._btn=e.button;this._lx=e.clientX;this._ly=e.clientY;});
     window.addEventListener('mousemove',e=>{
       if(!this._dn)return;
+      this.lastInput=performance.now();
       const dx=e.clientX-this._lx,dy=e.clientY-this._ly;this._lx=e.clientX;this._ly=e.clientY;
       if(this._btn===0){this.theta-=dx*.005;this.phi=Math.max(.04,Math.min(Math.PI-.04,this.phi-dy*.005));}
       else if(this._btn===2){const f=this.r*.0012;const rt=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0);const up=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);this.target.addScaledVector(rt,-dx*f).addScaledVector(up,dy*f);}
       this.update();
     });
     window.addEventListener('mouseup',()=>this._dn=false);
-    el.addEventListener('wheel',e=>{e.preventDefault();this.r=Math.max(.15,Math.min(60,this.r*(e.deltaY>0?1.1:.9)));this.update();},{passive:false});
+    el.addEventListener('wheel',e=>{e.preventDefault();this.lastInput=performance.now();this.r=Math.max(.15,Math.min(60,this.r*(e.deltaY>0?1.1:.9)));this.update();},{passive:false});
     el.addEventListener('contextmenu',e=>e.preventDefault());
     this.update();
   }
@@ -637,8 +640,28 @@ let valEls={},barEls={},jointLimits={};
 let liveEvt=null;
 
 let fps=0,fpsT=performance.now();
+// ── 자동 회전: 현재 시점을 중심으로 좌우 ±15° 를 20초 주기로 천천히 왕복 (+ 상하 ±2°)
+//    마우스 조작 중 정지 → 마지막 조작 5초 후 그 시점을 새 중심으로 재개.
+//    재개 시 진폭을 3초에 걸쳐 0→1 로 키워 화면이 튀지 않게 한다. 표시 전용 (로봇과 무관).
+const AUTO={on:true,amp:15*Math.PI/180,ampPhi:2*Math.PI/180,period:20000,idle:5000,ramp:3000,
+  run:false,t0:0,th0:0,ph0:0};
+try{const v=localStorage.getItem('g1dash.auto');if(v!==null)AUTO.on=v==='1';}catch(e){}
+function autoBtnSync(){const b=document.getElementById('autoBtn');if(b)b.classList.toggle('on',AUTO.on);}
+document.getElementById('autoBtn').addEventListener('click',()=>{
+  AUTO.on=!AUTO.on;AUTO.run=false;autoBtnSync();
+  try{localStorage.setItem('g1dash.auto',AUTO.on?'1':'0');}catch(e){}});
+autoBtnSync();
+function autoTick(now){
+  if(!AUTO.on||orbit._dn||now-orbit.lastInput<AUTO.idle){AUTO.run=false;return;}
+  if(!AUTO.run){AUTO.run=true;AUTO.t0=now;AUTO.th0=orbit.theta;AUTO.ph0=orbit.phi;}
+  const t=now-AUTO.t0,k=Math.min(1,t/AUTO.ramp),w=2*Math.PI*t/AUTO.period;
+  orbit.theta=AUTO.th0+AUTO.amp*k*Math.sin(w);
+  orbit.phi=Math.max(.04,Math.min(Math.PI-.04,AUTO.ph0+AUTO.ampPhi*k*Math.sin(2*w)));
+  orbit.update();
+}
 function renderLoop(now){
   requestAnimationFrame(renderLoop);
+  autoTick(now);
   renderer.render(scene,camera);
   fps++;if(now-fpsT>=1000){const el=document.getElementById('fpsEl');if(el)el.textContent='FPS: '+fps;fps=0;fpsT=now;}
 }
@@ -881,6 +904,7 @@ cv.addEventListener('click',e=>{
 // 인식 박스 / 손 목표 표시 — robot_server(:50000) GET /viz, torso_link 기준 좌표(m)
 //   torso_link 그룹에 붙이므로 허리 회전을 그대로 따라간다.
 //   주황: 박스 파지점 L/R + 옆면(L–R × 높이), 파랑: 윗면 중심, 초록: 현재 손(IK) 목표
+//   보라: 비교용 다른 추정 방식(잡기에 안 씀) 파지점 L/R + 윗면 중심 + 옆면 테두리
 // ==========================================
 const VIZ_URL=`http://${location.hostname}:50000/viz`;
 let vizGrp=null,vizTimer=null;const vz={};
@@ -896,6 +920,8 @@ function vizInit(){
   vz.face=new THREE.Mesh(new THREE.BufferGeometry(),mat(0xffb454,.18));
   vz.edge=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffb454,depthTest:false}));
   vz.tline=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x3ddc97,depthTest:false}));
+  vz.oL=sph(0xc58bff,.012);vz.oR=sph(0xc58bff,.012);vz.oTop=sph(0xc58bff,.010);
+  vz.oEdge=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xc58bff,depthTest:false}));
   Object.values(vz).forEach(o=>{o.renderOrder=999;o.visible=false;vizGrp.add(o);});
   if(!vizTimer)vizTimer=setInterval(vizPoll,250);
 }
@@ -918,6 +944,15 @@ async function vizPoll(){
       vz.face.visible=vz.edge.visible=true;
     }
   }
+  // 비교용 다른 방식
+  const o=d&&d.other;
+  ['oL','oR','oTop','oEdge'].forEach(k=>vz[k].visible=false);
+  if(o){
+    vz.oL.position.set(...o.L);vz.oR.position.set(...o.R);vz.oL.visible=vz.oR.visible=true;
+    if(o.top){vz.oTop.position.set(...o.top);vz.oTop.visible=true;}
+    const oh=o.h||0,Lb=[o.L[0],o.L[1],o.L[2]-oh],Rb=[o.R[0],o.R[1],o.R[2]-oh];
+    vizSetPts(vz.oEdge,oh?[o.L,o.R, o.R,Rb, Rb,Lb, Lb,o.L]:[o.L,o.R]);vz.oEdge.visible=true;
+  }
   // 손 목표
   ['tL','tR','tline'].forEach(k=>vz[k].visible=false);
   if(t){
@@ -929,8 +964,13 @@ async function vizPoll(){
   if(leg){
     if(b||t){
       const w=b?Math.hypot(b.L[0]-b.R[0],b.L[1]-b.R[1]):0;
-      leg.innerHTML=(b?`<div><i style="background:#ffb454"></i>인식 박스 · 폭 ${(w*100).toFixed(1)}cm`+
+      const mn=m=>m==='plane'?'평면':'기본';
+      const c=d.cmp;
+      leg.innerHTML=(b?`<div><i style="background:#ffb454"></i>인식 박스 (${mn(b.method)}) · 폭 ${(w*100).toFixed(1)}cm`+
           (b.h?` · 높이 ${(b.h*100).toFixed(1)}cm`:'')+'</div>':'')+
+        (o?`<div><i style="background:#c58bff"></i>비교 (${mn(o.method)})`+
+          (c&&c.dL_cm!=null?` · 차이 L ${c.dL_cm} / R ${c.dR_cm} cm`:'')+
+          (c&&c.tilt_deg!=null?` · 기울기 ${c.tilt_deg}°`:'')+'</div>':'')+
         (t?'<div><i style="background:#3ddc97"></i>손 목표 (IK)</div>':'')+
         (d.stage?`<div style="color:#ffb454">▶ ${d.stage_idx+1}/${d.stages.length} ${d.stage}</div>`:'');
       leg.style.display='block';

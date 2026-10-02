@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 1.7
+# Version: 1.8
 # Changes:
+#   1.8 - /viz 에 비교용 다른 박스 추정 방식(other) + 차이(cmp) 추가 — 표시 전용, 잡기는 detect_box BOX_METHOD 값
 #   1.7 - 잡기 단계별 소요 시간 기록 + GET /grab_history (최근 5회) — 표시용
 #   1.6 - 잡기 진행 단계(stage) 노출(/status, /grab_status), 3D 시각화용 GET /viz (박스·손 목표)
 #   1.5 - 잡은 뒤 건네기까지 단계 사이 대기 축소(1.3s→0.5s), box 받음 대기 3초→2초 (HANDOVER_HOLD_SEC)
@@ -1226,20 +1227,26 @@ def viz():
     """dashboard 3D 뷰어가 폴링. 박스는 detect_box /pose(카메라 좌표)를 torso 로 변환,
     손 목표는 마지막 IK 목표(pelvis 기준)를 torso 기준으로 변환."""
     import urllib.request as _u
-    box = None
+    box = other = cmp = None
     if ACTIVE_MODE == "box":
         try:
             d = json.loads(_u.urlopen("http://localhost:50010/pose", timeout=0.3).read())
             if d.get("found") and d.get("L") and d.get("R"):
                 box = {"L": list(camera_to_torso(*d["L"])), "R": list(camera_to_torso(*d["R"])),
                        "top": list(camera_to_torso(*d["top_center"])) if d.get("top_center") else None,
-                       "h": d.get("box_h")}
+                       "h": d.get("box_h"), "method": d.get("method", "legacy")}
+                o = d.get("other")   # 비교용: 잡기에 안 쓰는 다른 추정 방식 (표시 전용)
+                if o and o.get("L") and o.get("R"):
+                    other = {"L": list(camera_to_torso(*o["L"])), "R": list(camera_to_torso(*o["R"])),
+                             "top": list(camera_to_torso(*o["top_center"])) if o.get("top_center") else None,
+                             "h": o.get("box_h"), "method": o.get("method")}
+                cmp = d.get("cmp")
         except Exception:
-            box = None
+            box = other = cmp = None
     tg = None
     if grab and grab.targets and grab_busy:
         tg = {"L": ik_to_torso(grab.targets["L"]), "R": ik_to_torso(grab.targets["R"])}
-    return {"mode": ACTIVE_MODE, "box": box, "targets": tg, **_stage_info()}
+    return {"mode": ACTIVE_MODE, "box": box, "other": other, "cmp": cmp, "targets": tg, **_stage_info()}
 
 
 @app.get("/set_wrist")

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- Version: 2.5
+<!-- Version: 2.6
+  2.6 - AI 오버레이에 박스 추정 방식 비교(기울기, L/R·중심 차이, 높이)
   2.5 - 한/EN 전환 버튼 (i18n.js), 로봇 뷰 iframe 에 언어 전달
   2.4 - AI 인식 정보 오버레이(추론 ms·fps·신뢰도·박스 크기·거리), 잡기 단계별 소요 시간 막대(최근 5회)
   2.3 - 잡기 진행 단계 표시줄 (허리 정렬 → … → 복귀, /status 의 stage)
@@ -694,8 +695,21 @@ function renderAI(d){
     `<div class="r"><span>신뢰도</span><span>${conf==null?'-':conf+'%'}</span></div>`+
     (conf==null?'':`<div class="cbar"><i style="width:${conf}%"></i></div>`)+
     `<div class="r"><span>박스 W×D×H</span><span>${p.W_cm==null?'-':`${f(p.W_cm,'',0)}×${f(p.D_cm,'',0)}×${f(p.H_cm,'',0)} cm`}</span></div>`+
-    `<div class="r"><span>거리</span><span>${dist==null?'-':dist.toFixed(0)+' cm'}</span></div>`;
+    `<div class="r"><span>거리</span><span>${dist==null?'-':dist.toFixed(0)+' cm'}</span></div>`+
+    renderCmp(d.cmp);
   el.style.display='block';
+}
+// 두 추정 방식 비교 (detect_box BOX_METHOD 로 잡기에 쓰는 쪽 선택, 나머지는 표시만)
+function renderCmp(c){
+  if(!c||c.dL_cm==null)return '';
+  const f=v=>v==null?'-':(+v).toFixed(1);
+  const mx=Math.max(c.dL_cm||0,c.dR_cm||0,c.dC_cm||0);
+  const col=mx<1?'var(--ok,#3ddc97)':mx<2.5?'#ffd34a':'#ff5a4a';
+  return `<div class="t" style="margin-top:6px">추정 비교 · 사용 ${c.method==='plane'?'평면':'기본'}</div>`+
+    `<div class="r"><span>윗면 기울기</span><span>${f(c.tilt_deg)}°</span></div>`+
+    `<div class="r"><span>파지점 차이 L/R</span><span style="color:${col}">${f(c.dL_cm)} / ${f(c.dR_cm)} cm</span></div>`+
+    `<div class="r"><span>중심 차이</span><span>${f(c.dC_cm)} cm</span></div>`+
+    `<div class="r"><span>높이 기본/평면</span><span>${f(c.H_legacy_cm)} / ${f(c.H_plane_cm)} cm</span></div>`;
 }
 
 // ---- 잡기 단계별 소요 시간 (최근 5회) ----

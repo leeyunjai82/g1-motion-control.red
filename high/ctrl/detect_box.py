@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-# Version: 0.8
+# Version: 0.9
 # Changes:
+#   0.9 - 비교용 alt 추정(평면 피팅+3D 사각형, box_estimator 3.19) 별도 smoother 로 안정화.
+#         BOX_METHOD=legacy(기본)|plane 으로 /pose·자동잡기에 쓸 방식 선택.
+#         /pose·/status 에 cmp(두 방식 L/R/중심 차이 cm, 실측 기울기) 추가
 #   0.8 - /status 에 perf(추론 ms, fps, 신뢰도, 박스 W/D/H, 모델/디바이스) 추가 — 표시용
 #   0.7 - POST /reset_window 추가 (펄스 이동 소비자용 안정화 버퍼 즉시 비우기)
 #         /pose, /status 에 n(최소 샘플 수) 노출 — 소비자가 충분한지 판단 가능
@@ -91,6 +94,12 @@ YOLO_DEVICE = os.environ.get("YOLO_DEVICE",
                              "intel:cpu" if YOLO_MODEL.endswith("openvino_model") else "cpu")
 
 SMOOTH_WINDOW_SEC = 2.0
+
+# 잡기에 쓸 추정 방식: legacy = 기존(고정 기울기 가정) / plane = 윗면 평면 피팅 + 3D 사각형
+#   plane 으로 바꾸면 L/R/높이가 달라지므로 robot_server 의 GRAB_*_OFFSET 재보정 필요
+BOX_METHOD = os.environ.get("BOX_METHOD", "legacy").strip().lower()
+if BOX_METHOD not in ("legacy", "plane"):
+    BOX_METHOD = "legacy"
 STREAM_FPS_MAX = 15
 STREAM_QUALITY = 70
 
@@ -148,6 +157,8 @@ class Smoother:
 
 smoothers = {k: Smoother(SMOOTH_WINDOW_SEC)
              for k in ['top_center','L','R','box_H']}
+alt_smoothers = {k: Smoother(SMOOTH_WINDOW_SEC)            # 평면 피팅 방식
+                 for k in ['top_center','L','R','box_H','tilt']}
 smoother_lock = threading.Lock()
 
 
@@ -162,7 +173,7 @@ def update_smoothers(result):
         # 연속 미검출이면 버퍼 비워서 옛 값 잔상 제거
         if _miss_count >= 3:
             with smoother_lock:
-                for sm in smoothers.values():
+                for sm in list(smoothers.values()) + list(alt_smoothers.values()):
                     sm.clear()
         return
     _miss_count = 0
@@ -176,9 +187,61 @@ def update_smoothers(result):
                 smoothers['R'].push(mids['R'])
         if result.get('box_H_m') is not None:
             smoothers['box_H'].push([result['box_H_m']])
+        a = result.get('alt')
+        if a:
+            alt_smoothers['top_center'].push(a['top_center_3d'])
+            alt_smoothers['L'].push(a['L'])
+            alt_smoothers['R'].push(a['R'])
+            alt_smoothers['tilt'].push([a['tilt_deg']])
+            if a.get('H_m') is not None:
+                alt_smoothers['box_H'].push([a['H_m']])
+
+
+def _smoothed(group, keys=('top_center', 'L', 'R', 'box_H')):
+    out = {}
+    with smoother_lock:
+        counts = []
+        for k, sm in group.items():
+            v = sm.median()
+            if v is not None: out[k] = v
+            if k in keys:
+                counts.append(sm.count())
+        out['_count'] = min(counts) if counts else 0
+    return out
+
+
+def get_smoothed_legacy():
+    return _smoothed(smoothers)
+
+
+def get_smoothed_alt():
+    return _smoothed(alt_smoothers)
+
+
+def compare_methods():
+    """두 방식 차이 (표시용). 카메라 좌표 기준 거리 cm."""
+    lg, al = get_smoothed_legacy(), get_smoothed_alt()
+    d = lambda k: (round(float(np.linalg.norm(lg[k] - al[k])) * 100, 1)
+                   if k in lg and k in al else None)
+    return {"method": BOX_METHOD,
+            "dL_cm": d('L'), "dR_cm": d('R'), "dC_cm": d('top_center'),
+            "tilt_deg": round(float(al['tilt'][0]), 1) if 'tilt' in al else None,
+            "H_legacy_cm": round(float(lg['box_H'][0]) * 100, 1) if 'box_H' in lg else None,
+            "H_plane_cm": round(float(al['box_H'][0]) * 100, 1) if 'box_H' in al else None,
+            "n_plane": al.get('_count', 0)}
 
 
 def get_smoothed():
+    """잡기에 쓰는 값 (BOX_METHOD). plane 인데 평면 결과가 아직 부족하면 legacy 로."""
+    if BOX_METHOD == "plane":
+        al = get_smoothed_alt()
+        if al.get('_count', 0) >= 3 and 'L' in al and 'R' in al:
+            al.pop('tilt', None)
+            return al
+    return get_smoothed_legacy()
+
+
+def _get_smoothed_doc():
     """안정화된 값 + _count.
 
     _count 는 키들 중 '가장 적게' 쌓인 수다(min).
@@ -438,7 +501,7 @@ async def reset_window():
     """
     global _miss_count
     with smoother_lock:
-        for sm in smoothers.values():
+        for sm in list(smoothers.values()) + list(alt_smoothers.values()):
             sm.clear()
     _miss_count = 0
     return {"ok": True, "window_sec": SMOOTH_WINDOW_SEC}
@@ -459,7 +522,16 @@ async def pose():
            "L": [float(v) for v in sm['L']],
            "R": [float(v) for v in sm['R']],
            "top_center": [float(v) for v in sm['top_center']] if 'top_center' in sm else None,
-           "box_h": float(sm['box_H'][0]) if 'box_H' in sm else None}
+           "box_h": float(sm['box_H'][0]) if 'box_H' in sm else None,
+           "method": BOX_METHOD}
+    # 비교용: 선택 안 된 쪽 값도 같이 (3D 뷰어가 두 방식을 겹쳐 그림)
+    other = get_smoothed_alt() if BOX_METHOD == "legacy" else get_smoothed_legacy()
+    if 'L' in other and 'R' in other:
+        out["other"] = {"method": "plane" if BOX_METHOD == "legacy" else "legacy",
+                        "L": [float(v) for v in other['L']], "R": [float(v) for v in other['R']],
+                        "top_center": [float(v) for v in other['top_center']] if 'top_center' in other else None,
+                        "box_h": float(other['box_H'][0]) if 'box_H' in other else None}
+    out["cmp"] = compare_methods()
     return out
 
 
@@ -477,6 +549,7 @@ async def status():
            "auto_in_zone": in_zone_since is not None,
            "auto_elapsed": round(elapsed,2),
            "auto_dwell": auto_mode["dwell_sec"],
+           "cmp": compare_methods(),
            "perf": {**perf, "active": (time.time() - perf["t"]) < 1.5,
                     "model": os.path.basename(YOLO_MODEL.rstrip("/")), "device": YOLO_DEVICE}}
     if found:

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-# Version: 3.18
+# Version: 3.19
 # Changes:
+#   3.19 - 비교용 'alt' 추정 추가 (fit_top_plane_rect): 윗면 RANSAC 평면 피팅(기울기 실측) +
+#          평면 좌표(미터)에서 사각형 피팅 + 경계 1셀 깎기. 기존 결과는 그대로, out['alt'] 에만 기록
 #   3.18 - VERBOSE 진단로그 켬 (up/h_top/h_table/H/윗면비율)
 #   3.17 - 윗면 분리 비대칭 임계(위 넉넉/아래 빡빡)로 앞면 차단
 #   3.16 - 윗면 4꼭지점 minAreaRect 우선(노이즈 강함)+approx 보조
@@ -31,6 +33,137 @@ MIN_PIXELS    = 100
 MIN_DEPTH_M   = 0.10
 MAX_DEPTH_M   = 3.00
 TOP_THRESH_M  = 0.020   # 윗면 ±20mm (기울어진 박스 포용)
+
+# ---- alt (평면 피팅 + 3D 사각형) 파라미터 ----
+ALT_BAND_DOWN  = 0.030  # 윗면 후보: h_top 아래 3cm 까지 (기울기 몰라도 윗면 전체 포함)
+ALT_BAND_UP    = 0.050  #           위 5cm 까지
+ALT_RANSAC_IT  = 200
+ALT_RANSAC_TH  = 0.006  # 평면 inlier 거리 6mm
+ALT_MAX_TILT   = 25.0   # 고정 up 과 평면 법선 차이가 이보다 크면 실패 처리 (deg)
+ALT_CELL       = 0.005  # 평면 격자 5mm
+ALT_INSET_M    = 0.02   # L/R 변에서 안쪽 2cm (기존 INSET_M 과 동일)
+
+
+def _mode(v, step=0.005):
+    """1D 값의 최빈 구간 중앙 (기존 h_top/h_table 과 같은 방식)."""
+    if len(v) == 0:
+        return None
+    bins = np.arange(v.min(), v.max() + step, step)
+    if len(bins) < 2:
+        return float(np.median(v))
+    hist, edges = np.histogram(v, bins=bins)
+    k = int(np.argmax(hist))
+    return float((edges[k] + edges[k + 1]) / 2)
+
+
+def fit_top_plane_rect(pts3d, h, h_top, up, table_pts=None, rng=None):
+    """윗면을 '고정 기울기 가정' 없이 depth 로 직접 맞춘다 (비교/검증용).
+
+    1) h_top 근처 넓은 띠의 점들로 RANSAC 평면 → 법선 n (실제 기울기)
+    2) inlier 를 평면 좌표(e1=카메라 x 의 평면 투영, e2=n×e1, 미터)로 펼쳐 5mm 격자화
+       → open/close → 최대 덩어리 → 경계 1셀 깎기(depth 경계 튐 제거) → minAreaRect
+    3) 사각형 4 꼭지점/변 중점을 3D 로 복원, L/R = 카메라 좌/우 변 중점에서 안쪽 2cm
+    반환: dict 또는 None (카메라 좌표계, m)
+    """
+    rng = rng or np.random.default_rng(0)
+    band = (h > h_top - ALT_BAND_DOWN) & (h < h_top + ALT_BAND_UP)
+    P = pts3d[band]
+    if len(P) < 200:
+        return None
+
+    # --- RANSAC 평면 (벡터화) ---
+    S = P if len(P) <= 4000 else P[rng.choice(len(P), 4000, replace=False)]
+    idx = rng.integers(0, len(S), size=(ALT_RANSAC_IT, 3))
+    a, b, c = S[idx[:, 0]], S[idx[:, 1]], S[idx[:, 2]]
+    N = np.cross(b - a, c - a)
+    nn = np.linalg.norm(N, axis=1)
+    ok = nn > 1e-9
+    if not ok.any():
+        return None
+    N, a = N[ok] / nn[ok, None], a[ok]
+    N[(N @ up) < 0] *= -1                                    # 위쪽을 향하게
+    tilt_ok = (N @ up) > np.cos(np.radians(ALT_MAX_TILT))
+    if not tilt_ok.any():
+        return None
+    N, a = N[tilt_ok], a[tilt_ok]
+    d = np.abs((S[None, :, :] - a[:, None, :]) @ N[:, :, None])[..., 0]   # (it, n)
+    best = int(np.argmax((d < ALT_RANSAC_TH).sum(axis=1)))
+    n0, p0 = N[best], a[best]
+    inl = np.abs((P - p0) @ n0) < ALT_RANSAC_TH
+    if inl.sum() < 150:
+        return None
+    # 최소제곱 재피팅 (SVD)
+    Q = P[inl]
+    cen = Q.mean(axis=0)
+    _, _, vt = np.linalg.svd(Q - cen, full_matrices=False)
+    n = vt[2] if vt[2] @ up > 0 else -vt[2]
+    res = (Q - cen) @ n
+    rms_mm = float(np.sqrt(np.mean(res ** 2)) * 1000)
+    tilt_deg = float(np.degrees(np.arccos(np.clip(n @ up, -1, 1))))
+
+    # --- 평면 좌표계 ---
+    cx = np.array([1.0, 0.0, 0.0])
+    e1 = cx - (cx @ n) * n
+    e1 /= np.linalg.norm(e1) + 1e-12
+    e2 = np.cross(n, e1)
+    uv = np.stack([(Q - cen) @ e1, (Q - cen) @ e2], axis=1)
+
+    # --- 격자화 → 정리 → 사각형 ---
+    # 여백 8셀: close/erode 가 격자 경계에 닿으면(OpenCV 경계값) 가장자리가 안 줄어 크기가 커진다
+    PAD = 8
+    mn = uv.min(axis=0) - PAD * ALT_CELL
+    ij = np.floor((uv - mn) / ALT_CELL).astype(int)
+    Wg, Hg = ij[:, 0].max() + PAD + 1, ij[:, 1].max() + PAD + 1
+    if Wg * Hg > 400 * 400:
+        return None
+    grid = np.zeros((Hg, Wg), np.uint8)
+    grid[ij[:, 1], ij[:, 0]] = 255
+    k3 = np.ones((3, 3), np.uint8)
+    grid = cv2.morphologyEx(grid, cv2.MORPH_CLOSE, k3, iterations=2)
+    grid = cv2.morphologyEx(grid, cv2.MORPH_OPEN, k3, iterations=1)
+    n_lbl, lbls, stats, _ = cv2.connectedComponentsWithStats(grid, 8)
+    if n_lbl < 2:
+        return None
+    big = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    grid = np.where(lbls == big, 255, 0).astype(np.uint8)
+    grid = cv2.erode(grid, k3, iterations=1)                 # 경계 1셀(5mm) 깎기
+    ys, xs = np.nonzero(grid)
+    if len(xs) < 20:
+        return None
+    (rc_x, rc_y), (rw, rh), ang = cv2.minAreaRect(np.stack([xs, ys], 1).astype(np.float32))
+    # 셀 중심 → 실제 외곽 (+1셀), 깎은 만큼 복원 (+2셀)
+    rw_m, rh_m = (rw + 3) * ALT_CELL, (rh + 3) * ALT_CELL
+    box = cv2.boxPoints(((rc_x, rc_y), (rw + 3, rh + 3), ang))      # 셀 단위 4점
+
+    def to3d(pc):                                            # 셀 좌표 → 3D (평면 위)
+        u = mn[0] + (pc[0] + 0.5) * ALT_CELL
+        v = mn[1] + (pc[1] + 0.5) * ALT_CELL
+        return cen + u * e1 + v * e2
+
+    corners = [to3d(p) for p in box]
+    center = to3d((rc_x, rc_y))
+    mids = [(corners[i] + corners[(i + 1) % 4]) / 2 for i in range(4)]
+    mu = [(m - cen) @ e1 for m in mids]                      # 카메라 좌(-)/우(+)
+    L_edge, R_edge = mids[int(np.argmin(mu))], mids[int(np.argmax(mu))]
+
+    def inset(e):
+        dv = center - e
+        dl = np.linalg.norm(dv)
+        return e + dv / dl * ALT_INSET_M if dl > ALT_INSET_M else e
+
+    # 박스 높이: 평면 법선 방향으로 테이블까지 (테이블 점 있으면)
+    H_m = None
+    if table_pts is not None and len(table_pts) > 50:
+        ht = _mode(table_pts @ n)
+        if ht is not None:
+            H_m = float(cen @ n - ht)
+            if not (0.01 < H_m < 0.50):
+                H_m = None
+
+    return {"top_center_3d": center, "L": inset(L_edge), "R": inset(R_edge),
+            "corners_3d": corners, "W_m": float(max(rw_m, rh_m)), "D_m": float(min(rw_m, rh_m)),
+            "H_m": H_m, "normal": n, "tilt_deg": tilt_deg, "rms_mm": rms_mm,
+            "inliers": int(inl.sum()), "band": int(len(P))}
 
 
 class BoxEstimator:
@@ -131,6 +264,7 @@ class BoxEstimator:
         table_region = outer & ~inner
 
         h_table = None
+        pts_table = None
         if table_region.sum() > 50:
             ys_t, xs_t = np.where(table_region)
             z_t = depth_mm[ys_t, xs_t].astype(np.float32) / 1000.0
@@ -140,6 +274,7 @@ class BoxEstimator:
                 X_t = (xs_t - cx_K) * z_t / fx
                 Y_t = (ys_t - cy_K) * z_t / fy
                 pts_t = np.stack([X_t, Y_t, z_t], axis=1)
+                pts_table = pts_t
                 h_t = pts_t @ up
                 # mode
                 bins_t = np.arange(h_t.min(), h_t.max() + 0.005, 0.005)
@@ -156,6 +291,16 @@ class BoxEstimator:
             H_m = float(h_top - h_table)
             if H_m < 0.01 or H_m > 0.50:
                 H_m = None
+
+        # === 비교용 alt: 평면 피팅 + 3D 사각형 (기존 결과에는 영향 없음) ===
+        try:
+            alt = fit_top_plane_rect(pts3d, h, h_top, up, pts_table)
+        except Exception as e:
+            alt = None
+            if VERBOSE_LOG:
+                print(f"[BOX-ALT] 실패: {e}")
+        if alt is not None:
+            out['alt'] = alt
 
         # 윗면 분리: 비대칭 임계
         #   윗면이 카메라 향해 기울면 h가 h_top보다 위로 퍼짐 → 위쪽 여유 넉넉히
@@ -368,10 +513,15 @@ class BoxEstimator:
                 size_str = f" WxD={W_m*100:.1f}x{D_m*100:.1f}cm"
             h_tab_str = f"{h_table*100:+.1f}" if h_table is not None else "?"
             H_str = f"{H_m*100:.1f}" if H_m is not None else "?"
+            alt_str = ""
+            if out.get('alt'):
+                a = out['alt']
+                alt_str = (f" | ALT tilt={a['tilt_deg']:.1f}° rms={a['rms_mm']:.1f}mm "
+                           f"{a['W_m']*100:.1f}x{a['D_m']*100:.1f}cm")
             print(f"[BOX] up={up.round(2)} h_top={h_top*100:+.1f} "
                   f"h_table={h_tab_str} H={H_str}cm "
                   f"top_px={int(is_top.sum())}/{len(pts3d)} "
-                  f"({100*is_top.sum()/len(pts3d):.0f}%){size_str}")
+                  f"({100*is_top.sum()/len(pts3d):.0f}%){size_str}{alt_str}")
 
         return out
 
