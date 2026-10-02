@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 1.4
+# Version: 1.5
 # Changes:
+#   1.5 - 잡은 뒤 건네기까지 단계 사이 대기 축소(1.3s→0.5s), box 받음 대기 3초→2초 (HANDOVER_HOLD_SEC)
 #   1.4 - arm 제어를 arm_server(50022) HTTP로 분리, Box Size 엔드포인트 제거(사용처 없음) (arm_sdk 단독 점유는 arm_server)
 #   1.3 - 마커 추종 정면(법선) 경유점 접근 — 옆에서 와도 마커 정면으로 돌아 들어감
 #   1.2 - grab_box가 L/R 실제좌표 직접 사용(기울어진 박스 양손 정확)
@@ -129,6 +130,11 @@ HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
 WAIST_BASE_PITCH = -3.0   # 기본 상체 각도 (0=중립)
 
+# 잡은 뒤 → 건네기 구간 타이밍 (s)
+STEP_PAUSE        = 0.1   # 대칭정렬/들기/건네기 동작 사이 정지 (구 0.3/0.2/0.3)
+WAIST_SETTLE      = 0.2   # 허리 회전 후 안정 대기 (구 0.5)
+HANDOVER_HOLD_SEC = 2.0   # box: 건넨 뒤 손 벌리기까지 대기 (구 3.0)
+
 
 # ==========================================
 # GrabController
@@ -229,13 +235,13 @@ class GrabController:
         sym_R = [grab_x_base, -grp_off_R, grab_z]
         if not self._move(sym_L, sym_R, 1.5, "⑥' 대칭 정렬", l_rot, r_rot):
             return
-        time.sleep(0.3)
+        time.sleep(STEP_PAUSE)
 
         ll = [grab_x_base, +grp_off_L + LEFT_HAND_Y_OFFSET, lift_z]
         rl = [grab_x_base, -grp_off_R, lift_z]
         if not self._move(ll, rl, 1.5, "⑦ 들기", l_rot, r_rot):
             return
-        time.sleep(0.2)
+        time.sleep(STEP_PAUSE)
 
         if self.handover_direction == "left":
             hy = +self.handover_yaw_deg
@@ -248,13 +254,13 @@ class GrabController:
             # 회전 각도가 클수록 느리게 (기본 1.5초 + 30도당 1초)
             yaw_dur = 1.5 + abs(hy) / 30.0
             self.arm.move_waist_smooth(yaw=hy, roll=0.0, pitch=WAIST_BASE_PITCH, duration=yaw_dur)
-            time.sleep(0.5)
+            time.sleep(WAIST_SETTLE)
 
         hl = [HANDOVER_X, +grp_off_L + LEFT_HAND_Y_OFFSET, lift_z]
         hr = [HANDOVER_X, -grp_off_R, lift_z]
         if not self._move(hl, hr, 1.5, "⑧ 건네기", l_rot, r_rot):
             return
-        time.sleep(0.3)
+        time.sleep(STEP_PAUSE)
         self.speak(self.MSG_HANDOVER)
 
         # 받음 처리 — 종류별로 다름
@@ -272,9 +278,9 @@ class GrabController:
             if not received:
                 print("[HANDOVER] 타임아웃 → 그냥 놓음")
         else:
-            # 박스: 받아도 계속 보이므로 고정 3초 대기 후 놓기
-            print("[HANDOVER] 박스 — 3초 대기 후 놓기")
-            time.sleep(3.0)
+            # 박스: 받아도 계속 보이므로 고정 대기 후 놓기
+            print(f"[HANDOVER] 박스 — {HANDOVER_HOLD_SEC:.0f}초 대기 후 놓기")
+            time.sleep(HANDOVER_HOLD_SEC)
             received = True
 
         self.speak(self.MSG_RECEIVED if received else self.MSG_TIMEOUT)
