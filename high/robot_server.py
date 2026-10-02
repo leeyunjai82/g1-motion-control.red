@@ -126,6 +126,11 @@ def marker_x_axis_in_torso(rvec):
 GRIP_EXTRA     = -0.050
 APPROACH_EXTRA = 0.10
 GRAB_Z_OFFSET  = 0.08
+# ↑ 실험으로 맞춘 값. grab_z = 박스 윗면 - h/2 + GRAB_Z_OFFSET.
+#   아래를 함께 흡수하고 있다 (h=9cm 예: IK 목표 윗면+3.5cm → 실제 손 윗면 약 -0.9cm):
+#   · 카메라→torso_link 좌표 vs IK(pelvis 기준, 허리 0 고정) 기준 차이 z 4.4cm (PELVIS_TO_TORSO)
+#   · IK 목표점 L_ee/R_ee = 손목 yaw 에서 +5cm 지점 (손바닥 접촉면 아님)
+#   좌표 변환을 pelvis 기준으로 정확히 고치면 이 값을 0.044 줄여야 같은 높이가 된다.
 GRAB_X_OFFSET  = -0.15
 HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
