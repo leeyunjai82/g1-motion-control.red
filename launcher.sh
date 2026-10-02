@@ -1,5 +1,5 @@
 #!/bin/bash
-# G1 Launcher 웹 (http://<robot-ip>:50080/) — FSM 버튼 / start_robot.sh 실행
+# G1 Launcher 웹 (http://<robot-ip>/ , 포트 80) — FSM 버튼 / start_robot.sh 실행
 # start_fsm.sh 와 같이 sudo 로 tv 환경 python 을 실행한다 (비밀번호는 여기서 한 번만).
 #
 # 기동 전 정리 (이전 실행이 남아 있으면):
@@ -51,10 +51,10 @@ for name in "${TARGETS[@]}"; do
   stop_procs "^[^ ]*python[^ ]* (-u )?[^ ]*${name}\.py" 5 "${name}.py"
 done
 
-# 포트 확인 (다른 프로그램이 50080 을 쓰고 있으면 알림)
-if command -v ss >/dev/null 2>&1 && ss -ltn 2>/dev/null | grep -q ':50080 '; then
-  echo "[launcher] ⚠️ 포트 50080 이 아직 사용 중 — 잠시 후 다시 실행하세요"
-  ss -ltnp 2>/dev/null | grep ':50080 '
+# 포트 확인 (다른 프로그램이 80 을 쓰고 있으면 어떤 프로세스인지 보여주고 중단)
+if command -v ss >/dev/null 2>&1 && ss -ltn 2>/dev/null | grep -qE ':80[[:space:]]'; then
+  echo "[launcher] ⚠️ 포트 80 사용 중 — 아래 프로세스를 확인하세요 (nginx/apache 등이면 중지 필요)"
+  sudo ss -ltnp 2>/dev/null | grep -E ':80[[:space:]]'
   exit 1
 fi
 

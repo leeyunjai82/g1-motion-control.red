@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 0.7
+# Version: 0.8
 # Changes:
+#   0.8 - /status 에 perf(추론 ms, fps, 신뢰도, 박스 W/D/H, 모델/디바이스) 추가 — 표시용
 #   0.7 - POST /reset_window 추가 (펄스 이동 소비자용 안정화 버퍼 즉시 비우기)
 #         /pose, /status 에 n(최소 샘플 수) 노출 — 소비자가 충분한지 판단 가능
 #         _count 를 max → min 으로 (키마다 샘플 수가 달라 max 는 과대평가)
@@ -114,6 +115,11 @@ auto_mode = {"enabled": False,
              "x_min":0.30,"x_max":0.45,"y_min":-0.20,"y_max":0.20,
              "z_min":-0.15,"z_max":0.25,"dwell_sec":1.5}
 auto_state = {"in_zone_since": None}
+
+# 인식 성능/결과 (표시용 — 제어에 쓰지 않음)
+perf = {"infer_ms": None, "fps": None, "conf": None,
+        "W_cm": None, "D_cm": None, "H_cm": None, "t": 0.0}
+_perf_last_t = None
 
 
 # ==========================================
@@ -261,6 +267,20 @@ def depth_reader_loop():
             time.sleep(1.0)
 
 
+def _update_perf(result, infer_ms, a=0.3):
+    """추론 시간/루프 fps EMA + 마지막 결과의 신뢰도·크기."""
+    global _perf_last_t
+    now = time.time()
+    ema = lambda old, new: new if old is None else old + a * (new - old)
+    perf["infer_ms"] = round(ema(perf["infer_ms"], infer_ms), 1)
+    if _perf_last_t is not None and now > _perf_last_t:
+        perf["fps"] = round(ema(perf["fps"], 1.0 / (now - _perf_last_t)), 1)
+    _perf_last_t = now
+    cm = lambda k: round(float(result[k]) * 100, 1) if result and result.get(k) is not None else None
+    perf.update(conf=round(float(result["conf"]), 3) if result and result.get("conf") is not None else None,
+                W_cm=cm("box_W_m"), D_cm=cm("box_D_m"), H_cm=cm("box_H_m"), t=now)
+
+
 def detect_loop():
     global latest_annotated, latest_result
     print("[DETECT] 첫 프레임 대기...")
@@ -283,7 +303,9 @@ def detect_loop():
         if depth.shape[:2] != color.shape[:2]:
             depth = cv2.resize(depth, (color.shape[1], color.shape[0]),
                                interpolation=cv2.INTER_NEAREST)
+        t_inf = time.perf_counter()
         result = estimator.detect(color, depth, gravity_cam=GRAVITY_CAM)
+        _update_perf(result, (time.perf_counter() - t_inf) * 1000.0)
         annotated = color.copy()
         if result is not None:
             draw_box_overlay(annotated, result, camera_K)
@@ -454,7 +476,9 @@ async def status():
            "auto_enabled": auto_mode["enabled"],
            "auto_in_zone": in_zone_since is not None,
            "auto_elapsed": round(elapsed,2),
-           "auto_dwell": auto_mode["dwell_sec"]}
+           "auto_dwell": auto_mode["dwell_sec"],
+           "perf": {**perf, "active": (time.time() - perf["t"]) < 1.5,
+                    "model": os.path.basename(YOLO_MODEL.rstrip("/")), "device": YOLO_DEVICE}}
     if found:
         mx,my,mz = camera_to_torso(*sm['top_center'])
         out["torso"] = {"x":round(mx,3),"y":round(my,3),"z":round(mz,3)}

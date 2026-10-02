@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 50080)
+run_launcher.py — G1 자세(FSM) 제어 + start_robot.sh 실행 웹 (포트 80)
 
   ./launcher.sh             (start_fsm.sh 와 같이 sudo 로 tv 환경 python 실행)
-  → http://<robot-ip>:50080/
+  → http://<robot-ip>/   (포트 80 — root 실행 필요, launcher.sh 의 sudo)
 
 자세 — FSM 단계별 버튼 (LocoClient.SetFsmId 직접 호출, 연속 시퀀스 없음)
   사람이 로봇 상태를 보고 한 단계씩 누른다. init_fsm.py 의 stand = 1 → 4 → 501.
@@ -45,7 +45,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
-PORT = 50080
+PORT = 80                   # 1024 미만 → root 필요 (launcher.sh 가 sudo 로 실행)
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(ROOT, "logs")
 ROBOT_STOP_WAIT = 20.0      # start_robot.sh 종료 시퀀스(최대 8초 + sweep) 여유
@@ -488,7 +488,7 @@ pre{margin:0;flex:1;min-height:120px;overflow:auto;background:#0a0d12;border:1px
 .mbox .mb{display:flex;gap:8px;padding:0 16px 16px}.mbox .mb button{flex:1;padding:12px}
 .mbox .run{background:#5a1f1f;border-color:var(--warn);color:#fff}
 </style></head><body>
-<div class="top"><b>G1 Launcher</b><span class="r">:50080 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span></div>
+<div class="top"><b>G1 Launcher</b><span class="r">:80 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span></div>
 <div class="wrap">
   <div class="card">
     <div class="h"><span>자세 (FSM)</span><span></span></div>

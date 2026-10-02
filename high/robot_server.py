@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 1.6
+# Version: 1.7
 # Changes:
+#   1.7 - 잡기 단계별 소요 시간 기록 + GET /grab_history (최근 5회) — 표시용
 #   1.6 - 잡기 진행 단계(stage) 노출(/status, /grab_status), 3D 시각화용 GET /viz (박스·손 목표)
 #   1.5 - 잡은 뒤 건네기까지 단계 사이 대기 축소(1.3s→0.5s), box 받음 대기 3초→2초 (HANDOVER_HOLD_SEC)
 #   1.4 - arm 제어를 arm_server(50022) HTTP로 분리, Box Size 엔드포인트 제거(사용처 없음) (arm_sdk 단독 점유는 arm_server)
@@ -44,6 +45,7 @@ import time
 import asyncio
 import threading
 import numpy as np
+from collections import deque
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import List, Optional
@@ -199,12 +201,30 @@ class GrabController:
         self.redetect = None
         # 진행 표시 / 시각화
         self.stage = None                  # GRAB_STAGES 중 하나 (None=대기)
+        self._stage_log = []               # [(단계, 시작시각)] — 이번 잡기
+        self.history = deque(maxlen=5)     # 최근 잡기 기록 (단계별 소요 시간)
         self.targets = None                # 마지막 IK 목표 {"L":[xyz],"R":[xyz]} (IK=pelvis 기준)
         self._last_kind = "marker"   # 마지막 잡기 종류 (handover 가림 판정용)
 
     def _stage(self, name):
         self.stage = name
+        self._stage_log.append((name, time.time()))
         print(f"[STAGE] {GRAB_STAGES.index(name)+1}/{len(GRAB_STAGES)} {name}")
+
+    def begin_log(self):
+        self._stage_log = []
+
+    def end_log(self):
+        """이번 잡기의 단계별 소요 시간을 history 에 남긴다. 복귀까지 갔으면 완료."""
+        log, end = self._stage_log, time.time()
+        if not log:
+            return
+        stages = [[n, round((log[i + 1][1] if i + 1 < len(log) else end) - t, 2)]
+                  for i, (n, t) in enumerate(log)]
+        self.history.appendleft({"end": round(end, 1), "total": round(end - log[0][1], 2),
+                                 "ok": log[-1][0] == "복귀", "stages": stages})
+        print(f"[GRAB] 소요 {end - log[0][1]:.1f}s — " +
+              ", ".join(f"{n} {d:.1f}" for n, d in stages))
 
     # ---- 로봇 저수준 래퍼 ----
     def _rpy_to_quat(self, roll_deg, pitch_deg, yaw_deg):
@@ -1118,6 +1138,7 @@ async def _execute_ik_frames(frames: List[IKMotionFrame]):
 def _run_grab(req: GrabRequest):
     """별도 스레드에서 잡기 시퀀스 실행."""
     global grab_busy
+    grab.begin_log()
     try:
         if req.type == "marker":
             grab.grab_marker(req.tvec, req.rvec)
@@ -1131,6 +1152,7 @@ def _run_grab(req: GrabRequest):
         print("[GRAB] 예외 발생:")
         traceback.print_exc()
     finally:
+        grab.end_log()
         with grab_lock:
             grab_busy = False
         grab.stage = None
@@ -1192,6 +1214,11 @@ def _stage_info():
 @app.get("/grab_status")
 async def grab_status():
     return {"mode": ACTIVE_MODE, "busy": grab_busy, "is_running": is_running, **_stage_info()}
+
+
+@app.get("/grab_history", summary="최근 잡기 5회 단계별 소요 시간 (s)")
+async def grab_history():
+    return {"stages": GRAB_STAGES, "history": list(grab.history) if grab else []}
 
 
 @app.get("/viz", summary="3D 시각화용 — 인식 박스 + 손 목표 (torso_link 기준, m)")

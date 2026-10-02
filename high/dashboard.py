@@ -56,6 +56,8 @@ class LowStateReader:
         ChannelFactoryInitialize(0)
         self._q = np.zeros(NUM_MOTORS)
         self._rpy = np.zeros(3)
+        self._temp = None                 # 모터 온도 (°C) — 필드 없으면 None
+        self._tau = None                  # 추정 토크 tau_est (Nm)
         self._lock = threading.Lock()
         self.connected = False
         self._sub = ChannelSubscriber("rt/lowstate", hg_LowState)
@@ -74,10 +76,33 @@ class LowStateReader:
             if msg is not None:
                 q = np.array([msg.motor_state[i].q for i in range(NUM_MOTORS)])
                 rpy = np.array(msg.imu_state.rpy)
+                temp, tau = self._read_temp_tau(msg)
                 with self._lock:
                     self._q, self._rpy = q, rpy
+                    self._temp, self._tau = temp, tau
                 self.connected = True
             time.sleep(0.002)
+
+    @staticmethod
+    def _read_temp_tau(msg):
+        """hg MotorState_ 의 temperature(int16[2] — 두 센서 중 큰 값)와 tau_est. 표시용.
+        필드 형식이 다르면 None (확인 필요: 펌웨어별 temperature 의미)."""
+        try:
+            temp = []
+            for i in range(NUM_MOTORS):
+                t = msg.motor_state[i].temperature
+                temp.append(float(max(t)) if hasattr(t, "__len__") else float(t))
+        except Exception:
+            temp = None
+        try:
+            tau = [float(msg.motor_state[i].tau_est) for i in range(NUM_MOTORS)]
+        except Exception:
+            tau = None
+        return temp, tau
+
+    def get_temp_tau(self):
+        with self._lock:
+            return self._temp, self._tau
 
     def get_current_motor_q(self):
         with self._lock:
@@ -185,6 +210,12 @@ async def joint_states():
             data = {j: float(q[i]) for j, i in JOINT_TO_MOTOR.items()}
             data['_imu']       = imu
             data['_connected'] = live
+            if live:
+                temp, tau = ctrl.get_temp_tau()
+                if temp is not None:
+                    data['_temp'] = {j: temp[i] for j, i in JOINT_TO_MOTOR.items()}
+                if tau is not None:
+                    data['_tau'] = {j: tau[i] for j, i in JOINT_TO_MOTOR.items()}
             yield f"data: {json.dumps(data)}\n\n"
             await asyncio.sleep(0.05)
     return StreamingResponse(
@@ -295,6 +326,14 @@ canvas#cv{display:block;width:100%!important;height:100%!important}
 .vizleg{position:absolute;top:10px;left:10px;font-size:11px;color:#c9d4e0;background:#0a0a0fcc;border:1px solid #2a2a3a;
   border-radius:6px;padding:6px 10px;pointer-events:none;line-height:1.7;display:none;z-index:50}
 .vizleg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.heatbar{position:absolute;top:10px;right:10px;z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.heatbar .bt{display:flex;border:1px solid #2a2a3a;border-radius:6px;overflow:hidden;background:#0a0a0fcc}
+.heatbar .bt button{background:transparent;border:none;color:#888;font:inherit;font-size:11px;padding:5px 10px;cursor:pointer}
+.heatbar .bt button.on{background:#1c232d;color:#4aa8ff;font-weight:700}
+.heatbar .hl{background:#0a0a0fcc;border:1px solid #2a2a3a;border-radius:6px;padding:6px 10px;font-size:11px;
+  color:#c9d4e0;line-height:1.6;min-width:170px;display:none}
+.heatbar .hl .sc{height:6px;border-radius:3px;margin:3px 0 5px;background:linear-gradient(90deg,#2f6fff,#3ddc97,#ffd34a,#ff5a4a)}
+.heatbar .hl .r{display:flex;justify-content:space-between;gap:10px}.heatbar .hl .r span:last-child{font-weight:700}
 .load-overlay{position:absolute;inset:0;background:#0a0a0fdd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 .load-title{font-size:15px;color:#f9c300;font-weight:500}
 .pbar-bg{width:280px;height:5px;background:#1a1a28;border-radius:3px}
@@ -382,6 +421,10 @@ body.dashboard-mode .right { width: 240px; }
     </div>
     <div class="tooltip" id="tt"></div>
     <div class="vizleg" id="vizLeg"></div>
+    <div class="heatbar">
+      <div class="bt"><button class="on" data-hm="base">기본</button><button data-hm="temp">모터 온도</button><button data-hm="load">부하</button></div>
+      <div class="hl" id="heatList"></div>
+    </div>
   </div>
 
   <div class="right">
@@ -475,7 +518,8 @@ function parseURDF(xml){
     const axis=(axEl?.getAttribute('xyz')||'0 0 1').split(/\s+/).map(Number);
     const lim=el.querySelector('limit');
     joints[name]={name,type,parent,child,origin:parseOrig(el.querySelector('origin')),axis,
-      limit:{lower:lim?+lim.getAttribute('lower'):-3.14,upper:lim?+lim.getAttribute('upper'):3.14}};
+      limit:{lower:lim?+lim.getAttribute('lower'):-3.14,upper:lim?+lim.getAttribute('upper'):3.14,
+             effort:lim&&lim.getAttribute('effort')?+lim.getAttribute('effort'):null}};
   });
   return{links,joints,materials};
 }
@@ -719,7 +763,9 @@ function startSSE(){
         [['Roll',(r*180/Math.PI).toFixed(2)+'°'],['Pitch',(p*180/Math.PI).toFixed(2)+'°'],['Yaw',(y*180/Math.PI).toFixed(2)+'°']]
         .map(([k,v])=>`<div class="info-row imu-row"><span>${k}</span><span class="info-val">${v}</span></div>`).join('');
     }
-    delete data._imu;delete data._connected;
+    if(data._temp)heat.temp=data._temp;
+    if(data._tau)heat.tau=data._tau;
+    delete data._imu;delete data._connected;delete data._temp;delete data._tau;
     applyPose(data);
   };
   liveEvt.onerror=()=>{setTimeout(startSSE,1000);};
@@ -889,6 +935,54 @@ async function vizPoll(){
     }else leg.style.display='none';
   }
 }
+
+// ==========================================
+// 모터 온도 / 부하 색상 (표시 전용) — SSE 의 _temp(°C), _tau(Nm) 사용
+//   온도: 25°C 파랑 → 75°C 빨강 (표시용 눈금)
+//   부하: |tau_est| / URDF effort(관절 최대 토크) 0 → 1
+//   관절 → 그 관절이 움직이는 child 링크의 메시를 칠한다. 대응 없는 링크는 회색.
+// ==========================================
+const heat={mode:'base',temp:null,tau:null};
+const HEAT_T0=25,HEAT_T1=75;
+function heatColor(x){                        // 0..1 → 파랑-초록-노랑-빨강
+  x=Math.max(0,Math.min(1,x));
+  const st=[[0,[0x2f,0x6f,0xff]],[.4,[0x3d,0xdc,0x97]],[.7,[0xff,0xd3,0x4a]],[1,[0xff,0x5a,0x4a]]];
+  for(let i=1;i<st.length;i++)if(x<=st[i][0]){const[a,ca]=st[i-1],[b,cb]=st[i],k=(x-a)/(b-a);
+    return new THREE.Color(...ca.map((v,j)=>(v+(cb[j]-v)*k)/255));}
+  return new THREE.Color(1,.35,.29);
+}
+function heatApply(){
+  const list=document.getElementById('heatList');
+  if(heat.mode==='base'){
+    allMeshes.forEach(m=>{if(m.material&&m.material.color&&m.userData.baseHex!==undefined)m.material.color.setHex(m.userData.baseHex);});
+    list.style.display='none';return;}
+  const src=heat.mode==='temp'?heat.temp:heat.tau;
+  const linkJoint={};Object.values(jointDefs).forEach(j=>{if(j.type!=='fixed')linkJoint[j.child]=j.name;});
+  const val=jn=>{if(!src||src[jn]===undefined)return null;
+    if(heat.mode==='temp')return (src[jn]-HEAT_T0)/(HEAT_T1-HEAT_T0);
+    const e=jointDefs[jn]?.limit?.effort;return e?Math.abs(src[jn])/e:null;};
+  allMeshes.forEach(m=>{
+    if(!m.material||!m.material.color)return;
+    if(m.userData.baseHex===undefined)m.userData.baseHex=m.material.color.getHex();
+    const v=val(linkJoint[m.userData.linkName]);
+    if(v===null)m.material.color.setHex(0x3a3a44);else m.material.color.copy(heatColor(v));
+  });
+  // 상위 3개
+  if(!src){list.innerHTML=`<div>${heat.mode==='temp'?'모터 온도':'부하'} 데이터 없음</div><div style="color:#888">로봇 연결 시 표시</div>`;
+    list.style.display='block';return;}
+  const rows=Object.keys(src).map(jn=>({jn,raw:src[jn],v:val(jn)})).filter(r=>r.v!==null)
+    .sort((a,b)=>b.v-a.v).slice(0,3);
+  const nm=jn=>jn.replace(/_joint$/,'').replace(/_/g,' ');
+  list.innerHTML=`<div>${heat.mode==='temp'?`모터 온도 (${HEAT_T0}–${HEAT_T1}°C)`:'부하 (|토크| / 최대 토크)'}</div><div class="sc"></div>`+
+    rows.map(r=>`<div class="r"><span>${nm(r.jn)}</span><span style="color:#${heatColor(r.v).getHexString()}">`+
+      (heat.mode==='temp'?`${r.raw.toFixed(0)}°C`:`${Math.round(r.v*100)}% · ${Math.abs(r.raw).toFixed(1)}Nm`)+'</span></div>').join('');
+  list.style.display='block';
+}
+document.querySelectorAll('.heatbar button[data-hm]').forEach(b=>b.addEventListener('click',()=>{
+  heat.mode=b.dataset.hm;
+  document.querySelectorAll('.heatbar button[data-hm]').forEach(x=>x.classList.toggle('on',x===b));
+  heatApply();}));
+setInterval(()=>{if(heat.mode!=='base')heatApply();},300);
 
 window.addEventListener('load',()=>loadRobot());
 </script>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- Version: 2.3
+<!-- Version: 2.4
+  2.4 - AI 인식 정보 오버레이(추론 ms·fps·신뢰도·박스 크기·거리), 잡기 단계별 소요 시간 막대(최근 5회)
   2.3 - 잡기 진행 단계 표시줄 (허리 정렬 → … → 복귀, /status 의 stage)
   2.2 - Grab Mode 버튼 2분할(OFF/Box), Send Gift 버튼 제거,
         Stop/Home·Hold/Release·마커 추종을 좌측 하단 Control 카드로 이동,
@@ -126,6 +127,21 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
   flex:1;min-height:0;width:100%}
 .cam-wrap img{width:100%;height:100%;object-fit:contain;display:block}
 .cam-empty{color:var(--dim);font-size:13px;text-align:center;padding:30px}
+/* AI 인식 정보 (카메라 위) */
+.ai-ov{position:absolute;top:10px;right:10px;background:#000b;border:1px solid var(--line);border-radius:8px;
+  padding:7px 10px;font-size:11px;line-height:1.6;min-width:150px;display:none;pointer-events:none}
+.ai-ov .t{color:var(--accent2);font-weight:700;letter-spacing:.5px;margin-bottom:2px}
+.ai-ov .r{display:flex;justify-content:space-between;gap:12px}.ai-ov .r span:first-child{color:var(--dim)}
+.ai-ov .cbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:2px}
+.ai-ov .cbar i{display:block;height:100%;background:var(--accent)}
+/* 잡기 단계별 소요 시간 */
+.timing{margin-top:8px;flex:none;font-size:11px;color:var(--dim);display:none}
+.timing .hd{display:flex;gap:10px;align-items:baseline;margin-bottom:4px}
+.timing .hd b{color:var(--ink);font-size:13px}
+.timing .hd .ok{color:var(--accent)}.timing .hd .ng{color:var(--warn)}
+.timing .hd .rec{margin-left:auto}
+.timing .bar{display:flex;height:12px;border-radius:4px;overflow:hidden;background:var(--panel2)}
+.timing .bar i{display:block;height:100%;border-right:1px solid var(--bg)}
 .cam-badge{position:absolute;top:10px;left:10px;font-size:10px;letter-spacing:1px;
   background:#000a;border:1px solid var(--line);padding:4px 9px;border-radius:6px;color:var(--accent)}
 .statusline{margin-top:10px;flex:none;display:flex;gap:8px;align-items:center;font-size:12px;
@@ -368,6 +384,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
         <div class="cam-wrap">
           <span class="cam-badge" id="cam-badge" style="display:none">●REC</span>
           <img id="detect-feed" style="display:none">
+          <div class="ai-ov" id="ai-ov"></div>
           <div class="cam-empty" id="feed-none">Select a Grab Mode<br>to show the camera view</div>
         </div>
         <div class="statusline" id="statusline">
@@ -375,6 +392,7 @@ body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,monospace;
           <span id="coord" style="margin-left:auto;color:var(--accent);font-size:11px"></span>
         </div>
         <div class="stages" id="stages"></div>
+        <div class="timing" id="timing"></div>
       </div>
     </div>
 
@@ -613,7 +631,8 @@ function renderStages(names,cur){
   const el=document.getElementById('stages');
   if(el.childElementCount!==names.length)
     el.innerHTML=names.map((n,i)=>`<span class="sg" title="${i+1}. ${n}">${n.replace(/ /g,'')}</span>`).join('');
-  [...el.children].forEach((c,i)=>{c.className='sg'+(cur<0?'':i<cur?' done':i===cur?' cur':'');});
+  [...el.children].forEach((c,i)=>{c.className='sg'+(cur<0?'':i<cur?' done':i===cur?' cur':'');
+    c.style.boxShadow=`inset 0 -2px 0 ${STAGE_COLORS[i]||'transparent'}`;});   // 소요 시간 막대 색 범례
 }
 function pollStatus(){
   fetch('/status').then(r=>r.json()).then(d=>{
@@ -648,9 +667,47 @@ function pollCoord(){
       if(d.box_h_cm)s+=`  H ${d.box_h_cm}`;
       co.textContent=s;
     }else{co.textContent='no target';}
-  }).catch(()=>{co.textContent='';});
+    renderAI(d);
+  }).catch(()=>{co.textContent='';renderAI(null);});
 }
 setInterval(pollCoord, 400);
+
+// ---- AI 인식 정보 오버레이 (detect_box /status 의 perf) ----
+function renderAI(d){
+  const el=document.getElementById('ai-ov');
+  const p=d&&d.perf;
+  if(!p||!p.active){el.style.display='none';return;}
+  const f=(v,u,k=1)=>v==null?'-':(+v).toFixed(k)+u;
+  const dist=d.found&&d.torso?Math.hypot(d.torso.x,d.torso.y)*100:null;
+  const conf=p.conf==null?null:Math.round(p.conf*100);
+  el.innerHTML=`<div class="t">AI 인식 · ${(p.device||'').replace('intel:','OpenVINO ').toUpperCase()}</div>`+
+    `<div class="r"><span>추론</span><span>${f(p.infer_ms,' ms')}</span></div>`+
+    `<div class="r"><span>처리 속도</span><span>${f(p.fps,' fps')}</span></div>`+
+    `<div class="r"><span>신뢰도</span><span>${conf==null?'-':conf+'%'}</span></div>`+
+    (conf==null?'':`<div class="cbar"><i style="width:${conf}%"></i></div>`)+
+    `<div class="r"><span>박스 W×D×H</span><span>${p.W_cm==null?'-':`${f(p.W_cm,'',0)}×${f(p.D_cm,'',0)}×${f(p.H_cm,'',0)} cm`}</span></div>`+
+    `<div class="r"><span>거리</span><span>${dist==null?'-':dist.toFixed(0)+' cm'}</span></div>`;
+  el.style.display='block';
+}
+
+// ---- 잡기 단계별 소요 시간 (최근 5회) ----
+const STAGE_COLORS=['#2f6f9f','#3b82a8','#4aa8ff','#5bc0de','#3ddc97','#2fb37a','#ffb454','#e08b2c','#c96b6b','#8a7fc9'];
+function pollHistory(){
+  fetch('/grab_history').then(r=>r.json()).then(d=>{
+    const el=document.getElementById('timing');
+    const h=d.history||[];
+    if(!h.length){el.style.display='none';return;}
+    const last=h[0];
+    const seg=last.stages.map(([n,t])=>{const i=d.stages.indexOf(n);
+      return `<i title="${n} ${t.toFixed(1)}s" style="flex:${Math.max(t,0.05)};background:${STAGE_COLORS[i]||'#555'}"></i>`;}).join('');
+    el.innerHTML=`<div class="hd"><span>마지막 잡기</span><b>${last.total.toFixed(1)}s</b>`+
+      `<span class="${last.ok?'ok':'ng'}">${last.ok?'완료':'중단'}</span>`+
+      `<span class="rec">최근 ${h.map(x=>x.total.toFixed(1)).join(' · ')}s</span></div>`+
+      `<div class="bar">${seg}</div>`;
+    el.style.display='block';
+  }).catch(()=>{});
+}
+setInterval(pollHistory,2000);pollHistory();
 
 // ---- init ----
 fetch('/active_mode').then(r=>r.json()).then(d=>applyMode(d.mode||'none')).catch(()=>{});
