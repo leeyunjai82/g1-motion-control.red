@@ -380,7 +380,7 @@ async def lifespan(app: FastAPI):
         _stop_robot()
 
 
-app = FastAPI(title="pitron launcher", lifespan=lifespan)
+app = FastAPI(title="Pion launcher", lifespan=lifespan)
 
 
 @app.post("/fsm/{target}")
@@ -433,7 +433,7 @@ def i18n_js():
 HTML = r"""<!DOCTYPE html>
 <html lang="ko"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>pitron launcher</title>
+<title>Pion launcher</title>
 <style>
 :root{--bg:#0e1116;--panel:#161b22;--panel2:#1c232d;--line:#2a3340;--ink:#c9d4e0;--dim:#6b7785;
   --accent:#00b7eb;--accent2:#7fd8f5;--ok:#3ddc97;--warn:#ff6b6b;--amber:#ffb454}   /* 메인 = 회사 메인 컬러 (H2 와 같음), 상태 OK 는 --ok */
@@ -494,7 +494,7 @@ pre{margin:0;flex:1;min-height:120px;overflow:auto;background:#0a0d12;border:1px
 .mbox .run{background:#5a1f1f;border-color:var(--warn);color:#fff}
 </style></head><body>
 <script src="/i18n.js"></script>
-<div class="top"><b>pitron<span style="color:var(--ink)">·launcher</span></b><span class="r">:80 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span><span id="lang-slot" style="margin-left:12px"></span></div>
+<div class="top"><b>Pion<span style="color:var(--ink)">·launcher</span></b><span class="r">:80 · 웹 버튼은 비상정지가 아닙니다 — E-STOP/리모컨을 손에 두세요</span><span id="lang-slot" style="margin-left:12px"></span></div>
 <div class="wrap">
   <div class="card">
     <div class="h"><span>자세 (FSM)</span><span></span></div>
