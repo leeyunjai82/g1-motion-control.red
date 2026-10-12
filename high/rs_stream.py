@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# Version: 1.1
+# Version: 1.2
+# Changes:
+#   1.2 - 기본 해상도 640x480 → 848x480 (D435 계열 depth 권장 해상도, 좌우 시야 넓음; RS_W/RS_H 로 변경 가능)
+#         GET /intrinsics 추가 — 카메라에서 읽은 color K (detect_box/detect_marker 가 시작 시 읽음)
 """
 RealSense → HTTP MJPEG 서버 (canvas viewer)
 
@@ -8,8 +11,10 @@ RealSense → HTTP MJPEG 서버 (canvas viewer)
   /video_feed  : color MJPEG (ik_box.py 등에서 사용)
   /depth_feed  : depth MJPEG (320x240 q60, 디버깅용 시각화)
   /depth_raw   : depth 16bit PNG 스트림 (mm 원본, detect_box용) ← v1.1 추가
+  /intrinsics  : color 스트림 내부 파라미터 (fx, fy, ppx, ppy, width, height) ← v1.2 추가
 """
 
+import os
 import threading
 import cv2
 import numpy as np
@@ -17,12 +22,14 @@ import pyrealsense2 as rs
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
-COLOR_W, COLOR_H, FPS = 640, 480, 30
-DEPTH_W, DEPTH_H      = 320, 240
+COLOR_W = int(os.environ.get("RS_W", 848))
+COLOR_H = int(os.environ.get("RS_H", 480))
+FPS     = 30
+DEPTH_W, DEPTH_H      = COLOR_W // 2, COLOR_H // 2   # 시각화용 축소 (종횡비 유지)
 COLOR_Q, DEPTH_Q      = 80, 60
 DEPTH_MAX_MM          = 3000
 
@@ -49,17 +56,25 @@ depth_raw_buf = FrameBuffer()   # 16bit PNG (mm 원본)
 
 pipeline  = None
 align     = None
+intrinsics = None   # color 스트림 K (depth 는 color 에 align)
 stop_flag = threading.Event()
 
 
 def init_camera():
-    global pipeline, align
+    global pipeline, align, intrinsics
     pipeline = rs.pipeline()
     cfg = rs.config()
     cfg.enable_stream(rs.stream.color, COLOR_W, COLOR_H, rs.format.bgr8, FPS)
     cfg.enable_stream(rs.stream.depth, COLOR_W, COLOR_H, rs.format.z16,  FPS)
-    pipeline.start(cfg)
+    profile = pipeline.start(cfg)
     align = rs.align(rs.stream.color)
+    it = profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+    intrinsics = {"width": it.width, "height": it.height,
+                  "fx": it.fx, "fy": it.fy, "ppx": it.ppx, "ppy": it.ppy,
+                  "model": str(it.model), "coeffs": [float(c) for c in it.coeffs],
+                  "fps": FPS}
+    print(f"[RS] K: fx={it.fx:.3f} fy={it.fy:.3f} ppx={it.ppx:.3f} ppy={it.ppy:.3f} "
+          f"({it.width}x{it.height}, {it.model})")
     for _ in range(15):
         pipeline.wait_for_frames()
     print(f"[RS] 카메라 시작 ({COLOR_W}x{COLOR_H}@{FPS}fps)")
@@ -153,10 +168,18 @@ async def depth_raw():
         media_type="multipart/x-mixed-replace; boundary=frame")
 
 
+@app.get("/intrinsics")
+async def get_intrinsics():
+    """카메라에서 읽은 color K. depth_raw 는 color 에 align 되어 있어 같은 K 를 쓴다."""
+    if intrinsics is None:
+        return JSONResponse({"error": "camera not started"}, status_code=503)
+    return intrinsics
+
+
 @app.get("/")
 async def index():
     return HTMLResponse("<h2>RealSense Stream</h2>"
-                        "<p>/video_feed (color), /depth_feed (vis), /depth_raw (16bit mm)</p>"
+                        "<p>/video_feed (color), /depth_feed (vis), /depth_raw (16bit mm), /intrinsics (K)</p>"
                         '<img src="/video_feed" width="480">')
 
 

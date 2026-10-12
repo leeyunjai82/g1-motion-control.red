@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Version: 0.9
+# Version: 1.0
 # Changes:
+#   1.0 - 카메라 K 를 고정값 대신 rs_stream /intrinsics 에서 읽음 (848x480 전환). 해상도 다른 프레임은 무시
 #   0.9 - 비교용 alt 추정(평면 피팅+3D 사각형, box_estimator 3.19) 별도 smoother 로 안정화.
 #         BOX_METHOD=legacy(기본)|plane 으로 /pose·자동잡기에 쓸 방식 선택.
 #         /pose·/status 에 cmp(두 방식 L/R/중심 차이 cm, 실측 기울기) 추가
@@ -56,6 +57,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from box_estimator import BoxEstimator, draw_box_overlay
+from cam_intrinsics import fetch_intrinsics, FrameSizeGuard
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))   # high/ctrl
 _HIGH_DIR = os.path.dirname(_THIS_DIR)                     # high
@@ -69,10 +71,11 @@ COLOR_URL     = os.environ.get("RS_COLOR_URL", "http://localhost:50001/video_fee
 DEPTH_URL     = os.environ.get("RS_DEPTH_URL", "http://localhost:50001/depth_raw")
 ROBOT_SERVER  = os.environ.get("ROBOT_SERVER", "http://localhost:50000")
 
-# 카메라 K (ik_box 검증값 — detect_marker와 동일하게 통일)
-CAM_FX, CAM_FY = 606.756104, 606.583374
-CAM_PPX, CAM_PPY = 316.739441, 258.982391
-camera_K = np.array([[CAM_FX,0,CAM_PPX],[0,CAM_FY,CAM_PPY],[0,0,1]], dtype=np.float32)
+# 카메라 K — 시작 시 rs_stream(50001) /intrinsics 에서 읽는다 (cam_intrinsics.py)
+#   (예전 고정값 606.76/606.58/316.74/258.98 은 640x480 전용이라 해상도가 바뀌면 틀린다)
+camera_K = None
+cam_info = None
+frame_guard = None
 
 # 카메라 tilt 고정 (G1, 47.6도)
 CAM_TILT_DEG = 47.6
@@ -362,6 +365,9 @@ def detect_loop():
             depth = latest_depth.copy() if latest_depth is not None else None
         if color is None or depth is None:
             time.sleep(0.05); continue
+        # K 를 읽은 해상도와 다른 프레임은 쓰지 않는다 (틀린 K → 틀린 3D 좌표)
+        if not frame_guard.ok(color):
+            time.sleep(0.5); continue
         # depth 해상도 맞추기 (color 기준)
         if depth.shape[:2] != color.shape[:2]:
             depth = cv2.resize(depth, (color.shape[1], color.shape[0]),
@@ -448,12 +454,15 @@ def auto_monitor_loop():
 # ==========================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global estimator
+    global estimator, camera_K, cam_info, frame_guard
+    cam_info, camera_K = fetch_intrinsics(tag="detect_box")
+    frame_guard = FrameSizeGuard(cam_info, tag="detect_box")
     print(f"[YOLO] 로드: {YOLO_MODEL} (device={YOLO_DEVICE})")
     estimator = BoxEstimator(YOLO_MODEL, camera_K, conf=YOLO_CONF, device=YOLO_DEVICE)
     # 워밍업
-    estimator.detect(np.zeros((480,640,3),np.uint8),
-                     np.zeros((480,640),np.uint16), gravity_cam=GRAVITY_CAM)
+    _h, _w = int(cam_info["height"]), int(cam_info["width"])
+    estimator.detect(np.zeros((_h,_w,3),np.uint8),
+                     np.zeros((_h,_w),np.uint16), gravity_cam=GRAVITY_CAM)
     threading.Thread(target=color_reader_loop, daemon=True).start()
     threading.Thread(target=depth_reader_loop, daemon=True).start()
     threading.Thread(target=detect_loop, daemon=True).start()
@@ -598,7 +607,7 @@ button{background:#FF9800;border:none;color:#000;padding:8px;border-radius:5px;c
 </style></head><body>
 <h1>📦 Detect Box (50010)</h1>
 <div id="wrap">
-  <img src="/video_feed" width="640" height="480">
+  <img src="/video_feed" style="width:640px;max-width:100%;height:auto">
   <div class="panel">
     <div class="card">
       <div class="card-title">박스</div>

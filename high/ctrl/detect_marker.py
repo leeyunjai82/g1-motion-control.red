@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-# Version: 0.1
+# Version: 0.2
+# Changes:
+#   0.2 - 카메라 K 를 고정값 대신 rs_stream /intrinsics 에서 읽음 (848x480 전환). 해상도 다른 프레임은 무시
 """
 detect_marker.py — 마커 인식 전용 서버 (50011)
 
@@ -27,6 +29,8 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from cam_intrinsics import fetch_intrinsics, FrameSizeGuard
+
 
 # ==========================================
 # 설정
@@ -35,8 +39,8 @@ PORT          = 50011
 RS_STREAM_URL = os.environ.get("RS_STREAM_URL", "http://localhost:50001/video_feed")
 ROBOT_SERVER  = os.environ.get("ROBOT_SERVER", "http://localhost:50000")
 
-CAM_FX, CAM_FY = 606.756104, 606.583374
-CAM_PPX, CAM_PPY = 316.739441, 258.982391
+# 카메라 K — 시작 시 rs_stream(50001) /intrinsics 에서 읽는다 (cam_intrinsics.py)
+#   (예전 고정값 606.76/606.58/316.74/258.98 은 640x480 전용이라 해상도가 바뀌면 틀린다)
 CAM_DIST = [0.0, 0.0, 0.0, 0.0, 0.0]
 
 ARUCO_DICT_TYPE = cv2.aruco.DICT_4X4_50
@@ -63,7 +67,8 @@ MARKER_OBJ_PTS = np.array([
 # ==========================================
 # 전역
 # ==========================================
-camera_matrix = np.array([[CAM_FX,0,CAM_PPX],[0,CAM_FY,CAM_PPY],[0,0,1]], dtype=np.float32)
+camera_matrix = None       # lifespan 에서 로드
+frame_guard   = None
 dist_coeffs   = np.array(CAM_DIST, dtype=np.float32)
 
 latest_image    = None
@@ -193,6 +198,8 @@ def detect_loop():
             img = None if latest_image is None else latest_image.copy()
         if img is None:
             time.sleep(0.05); continue
+        if not frame_guard.ok(img):          # K 해상도와 다른 프레임은 쓰지 않음
+            time.sleep(0.5); continue
         detect_aruco(img)
         with annotated_lock:
             latest_annotated = img
@@ -260,6 +267,9 @@ def auto_monitor_loop():
 # ==========================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global camera_matrix, frame_guard
+    info, camera_matrix = fetch_intrinsics(tag="detect_marker")
+    frame_guard = FrameSizeGuard(info, tag="detect_marker")
     init_aruco()
     threading.Thread(target=stream_reader_loop, daemon=True).start()
     threading.Thread(target=detect_loop, daemon=True).start()
@@ -366,7 +376,7 @@ button{background:#4CAF50;border:none;color:#000;padding:8px;border-radius:5px;c
 </style></head><body>
 <h1>🎯 Detect Marker (50011)</h1>
 <div id="wrap">
-  <img src="/video_feed" width="640" height="480">
+  <img src="/video_feed" style="width:640px;max-width:100%;height:auto">
   <div class="panel">
     <div class="card">
       <div class="card-title">마커</div>
