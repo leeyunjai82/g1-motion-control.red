@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-# Version: 3.19
+# Version: 3.20
 # Changes:
+#   3.20 - seg 마스크 좌표 버그 수정: OpenVINO(640x640 고정) 모델은 640x480 프레임을 위아래 여백(80px)
+#          붙여 추론하고 마스크도 640x640 으로 나오는데, 이를 그대로 640x480 으로 늘려 마스크가 세로 0.75배로
+#          눌리고 아래쪽이 잘렸다 (y' = 0.75y + 60). retina_masks=True 로 원본 크기 마스크를 받고,
+#          그래도 크기가 다르면 letterbox 여백을 잘라낸 뒤 늘린다 (_mask_to_image)
 #   3.19 - 비교용 'alt' 추정 추가 (fit_top_plane_rect): 윗면 RANSAC 평면 피팅(기울기 실측) +
 #          평면 좌표(미터)에서 사각형 피팅 + 경계 1셀 깎기. 기존 결과는 그대로, out['alt'] 에만 기록
 #   3.18 - VERBOSE 진단로그 켬 (up/h_top/h_table/H/윗면비율)
@@ -166,6 +170,20 @@ def fit_top_plane_rect(pts3d, h, h_top, up, table_pts=None, rng=None):
             "inliers": int(inl.sum()), "band": int(len(P))}
 
 
+def _mask_to_image(mask_raw, H_img, W_img):
+    """모델 출력 마스크 → 원본 프레임 크기 (bool).
+    retina_masks=True 면 이미 (H_img, W_img). 아니면 letterbox(가운데 정렬 여백) 기준으로
+    여백을 잘라낸 뒤 늘린다 — 그냥 늘리면 종횡비가 다른 프레임에서 마스크가 눌린다."""
+    mh, mw = mask_raw.shape[:2]
+    if (mh, mw) != (H_img, W_img):
+        g = min(mh / H_img, mw / W_img)
+        ch, cw = round(H_img * g), round(W_img * g)
+        top, left = int(round((mh - ch) / 2 - 0.1)), int(round((mw - cw) / 2 - 0.1))
+        mask_raw = mask_raw[top:top + ch, left:left + cw]
+        mask_raw = cv2.resize(mask_raw, (W_img, H_img), interpolation=cv2.INTER_LINEAR)
+    return mask_raw > 0.5
+
+
 class BoxEstimator:
     def __init__(self, model_path, K, conf=0.4, device="cpu", imgsz=640):
         from ultralytics import YOLO
@@ -178,7 +196,7 @@ class BoxEstimator:
     def detect(self, color_bgr, depth_mm, gravity_cam=None):
         results = self.model(color_bgr, conf=self.conf,
                              device=self.device, imgsz=self.imgsz,
-                             verbose=False)
+                             retina_masks=True, verbose=False)
         if len(results) == 0 or results[0].masks is None:
             return None
 
@@ -190,8 +208,7 @@ class BoxEstimator:
 
         mask_raw = results[0].masks.data[idx].cpu().numpy()
         H_img, W_img = color_bgr.shape[:2]
-        mask = cv2.resize(mask_raw, (W_img, H_img),
-                          interpolation=cv2.INTER_LINEAR) > 0.5
+        mask = _mask_to_image(mask_raw, H_img, W_img)
 
         if mask.sum() < MIN_PIXELS:
             return None
