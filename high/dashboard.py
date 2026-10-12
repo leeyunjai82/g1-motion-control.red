@@ -299,11 +299,11 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0f;color:#d0d0d8;font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden;font-size:13px}
-header{background:#0f0f1a;border-bottom:1px solid #f9c30030;padding:0 16px;display:flex;align-items:center;gap:12px;height:44px;flex-shrink:0}
-header h1{font-size:14px;color:#f9c300;font-weight:600;letter-spacing:.5px}
+header{background:#0f0f1a;border-bottom:1px solid #00b7eb30;padding:0 16px;display:flex;align-items:center;gap:12px;height:44px;flex-shrink:0}
+header h1{font-size:14px;color:#00b7eb;font-weight:600;letter-spacing:.5px}
 .badge{font-size:10px;padding:2px 8px;border-radius:10px;background:#1a1a2a;color:#555;border:1px solid #222}
 .badge.ok{color:#4caf80;border-color:#4caf5044}
-.badge.live{color:#f9c300;border-color:#f9c30044;animation:pulse 1.5s infinite}
+.badge.live{color:#00b7eb;border-color:#00b7eb44;animation:pulse 1.5s infinite}
 .badge.err{color:#ff6666;border-color:#ff444444}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .main{display:flex;flex:1;overflow:hidden;min-height:0}
@@ -311,12 +311,12 @@ header h1{font-size:14px;color:#f9c300;font-weight:600;letter-spacing:.5px}
 .sec{padding:10px 12px;border-bottom:1px solid #1a1a28}
 .sec-title{font-size:10px;text-transform:uppercase;color:#444;letter-spacing:1.2px;margin-bottom:8px}
 .tb{display:flex;align-items:center;gap:7px;width:100%;padding:6px 9px;background:#12121e;border:1px solid #1e1e2e;border-radius:7px;color:#666;font-size:11px;cursor:pointer;margin-bottom:5px;transition:all .15s;text-align:left}
-.tb:hover{border-color:#f9c30033;color:#d5c599}
-.tb.on{background:#f9c30010;border-color:#f9c30055;color:#f9c300}
+.tb:hover{border-color:#00b7eb33;color:#9fdcf0}
+.tb.on{background:#00b7eb10;border-color:#00b7eb55;color:#00b7eb}
 .tb .ic{width:13px;flex-shrink:0;text-align:center;font-size:11px}
 .info-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;color:#444}
 .info-val{color:#666}
-.imu-row{font-size:11px;padding:3px 0;color:#6a6a2a}
+.imu-row{font-size:11px;padding:3px 0;color:#2f6a7a}
 .status-dot{width:7px;height:7px;border-radius:50%;background:#333;flex-shrink:0}
 .status-dot.on{background:#4caf80;box-shadow:0 0 5px #4caf8088}
 .status-dot.err{background:#ff4444}
@@ -329,15 +329,15 @@ canvas#cv{display:block;width:100%!important;height:100%!important}
 .heatbar{position:absolute;top:10px;right:10px;z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .heatbar .bt{display:flex;border:1px solid #2a2a3a;border-radius:6px;overflow:hidden;background:#0a0a0fcc}
 .heatbar .bt button{background:transparent;border:none;color:#888;font:inherit;font-size:11px;padding:5px 10px;cursor:pointer}
-.heatbar .bt button.on{background:#1c232d;color:#4aa8ff;font-weight:700}
+.heatbar .bt button.on{background:#1c232d;color:#00b7eb;font-weight:700}
 .heatbar .hl{background:#0a0a0fcc;border:1px solid #2a2a3a;border-radius:6px;padding:6px 10px;font-size:11px;
   color:#c9d4e0;line-height:1.6;min-width:170px;display:none}
 .heatbar .hl .sc{height:6px;border-radius:3px;margin:3px 0 5px;background:linear-gradient(90deg,#2f6fff,#3ddc97,#ffd34a,#ff5a4a)}
 .heatbar .hl .r{display:flex;justify-content:space-between;gap:10px}.heatbar .hl .r span:last-child{font-weight:700}
 .load-overlay{position:absolute;inset:0;background:#0a0a0fdd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.load-title{font-size:15px;color:#f9c300;font-weight:500}
+.load-title{font-size:15px;color:#00b7eb;font-weight:500}
 .pbar-bg{width:280px;height:5px;background:#1a1a28;border-radius:3px}
-.pbar-fill{height:100%;background:#f9c300;border-radius:3px;transition:width .07s;width:0%}
+.pbar-fill{height:100%;background:#00b7eb;border-radius:3px;transition:width .07s;width:0%}
 .pbar-text{font-size:11px;color:#555}
 .tooltip{position:absolute;background:#14141e;border:1px solid #2a2a3a;border-radius:6px;padding:5px 10px;font-size:11px;color:#aaa;pointer-events:none;z-index:100;display:none}
 .right{width:275px;background:#0d0d16;border-left:1px solid #1a1a28;display:flex;flex-direction:column;flex-shrink:0}
@@ -345,7 +345,7 @@ canvas#cv{display:block;width:100%!important;height:100%!important}
 .right-head b{font-size:12px;font-weight:600;color:#aaa;white-space:nowrap}
 .search-box{flex:1;background:#12121e;border:1px solid #1e1e2e;border-radius:5px;padding:4px 8px;color:#aaa;font-size:11px;outline:none;min-width:0}
 .search-box::placeholder{color:#2a2a3a}
-.search-box:focus{border-color:#f9c30044}
+.search-box:focus{border-color:#00b7eb44}
 .jcount{font-size:10px;color:#444;white-space:nowrap}
 .joints{flex:1;overflow-y:auto;padding:7px}
 .no-joint{text-align:center;color:#2a2a3a;font-size:11px;padding:40px 16px;line-height:1.8}
@@ -357,9 +357,9 @@ canvas#cv{display:block;width:100%!important;height:100%!important}
 .ji{margin-bottom:5px;background:#12121e;border-radius:7px;padding:6px 9px;border:1px solid #1a1a28}
 .ji-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:4px}
 .ji-name{font-size:10px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.ji-val{font-size:11px;color:#f9c300;font-weight:600;min-width:46px;text-align:right;flex-shrink:0;font-family:monospace}
+.ji-val{font-size:11px;color:#00b7eb;font-weight:600;min-width:46px;text-align:right;flex-shrink:0;font-family:monospace}
 .ji-bar{position:relative;height:4px;background:#1a1a28;border-radius:2px;overflow:hidden}
-.ji-bar-fill{position:absolute;top:0;height:100%;background:#f9c300;transition:left .08s linear,width .08s linear;border-radius:2px}
+.ji-bar-fill{position:absolute;top:0;height:100%;background:#00b7eb;transition:left .08s linear,width .08s linear;border-radius:2px}
 .ji-bar-zero{position:absolute;top:0;left:50%;width:1px;height:100%;background:#333}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -888,7 +888,7 @@ cv.addEventListener('click',e=>{
   selectedMesh=hits[0].object;
   if(selectedMesh.material.color){
     selectedMesh.userData.origColor=selectedMesh.material.color.getHex();
-    selectedMesh.material.color.set(0xf9c300);
+    selectedMesh.material.color.set(0x00b7eb);
   }
   const lname=selectedMesh.userData.linkName;
   Object.values(jointDefs).forEach(j=>{
@@ -1068,7 +1068,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   .panel h2 {
     font-size: 14px; font-weight: 500;
     padding: 8px 14px; background: #232323;
-    border-bottom: 1px solid #2a2a2a; color: #9cf;
+    border-bottom: 1px solid #2a2a2a; color: #00b7eb;
     flex: 0 0 auto;
   }
   .panel iframe, .panel img {

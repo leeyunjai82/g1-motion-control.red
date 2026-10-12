@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unitree G1 | Motion Editor</title>
-<!-- Version: 7.1 — 이동 패드 재배치(회전 2개를 전진 양옆 같은 줄에, 한글 라벨+단축키), 좁은 폭 슬라이더 잘림 수정
+<!-- Version: 7.2 — 메인 색 #00b7eb (회사 메인 컬러 — H2·제어 웹·런처·대시보드와 같음)
+     Version: 7.1 — 이동 패드 재배치(회전 2개를 전진 양옆 같은 줄에, 한글 라벨+단축키), 좁은 폭 슬라이더 잘림 수정
      Version: 7.0 — simulator.html(관절 v5.2) + simulator_ik.html(IK v6.3) 통합
   - 좌측 패널 Joint/IK 모드 토글, 이동·손·타임라인 공용
   - 타임라인에 관절/IK 프레임 혼재 가능 (백엔드 /set_motion 이 프레임별 판별)
@@ -16,7 +17,7 @@
 :root {
   --bg-primary:#0D1117; --bg-secondary:#161B22; --bg-tertiary:#21262D;
   --border-primary:#30363D; --text-primary:#C9D1D9; --text-secondary:#8B949E;
-  --accent-primary:#58A6FF; --accent-danger:#F85149; --accent-hand:#F778BA;
+  --accent-primary:#00b7eb; --accent-danger:#F85149; --accent-hand:#F778BA;   /* 메인 = 회사 메인 컬러 */
   --accent-waist:#F0A050; --accent-ik:#3FB950; --accent-rot:#D2A8FF;
   --font-sans:'Noto Sans KR',sans-serif; --font-mono:'Roboto Mono',monospace;
 }
@@ -27,7 +28,7 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
   grid-template-areas:"header header header" "arm-panel controls-panel editor-panel";
   height:100vh;padding:1rem;gap:1rem}
 .app-header{grid-area:header;display:flex;justify-content:space-between;align-items:center;
-  padding-bottom:.8rem;border-bottom:1px solid var(--border-primary)}
+  padding-bottom:.8rem;border-bottom:1px solid var(--border-primary);box-shadow:0 1px 0 rgba(0,183,235,.45)}
 .app-title{font-size:1.4rem;font-weight:500;margin:0}
 .app-title span{font-weight:300;color:var(--text-secondary)}
 .header-status{display:flex;gap:.8rem;align-items:center}
@@ -141,7 +142,7 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 .btn{background:var(--bg-tertiary);border:1px solid var(--border-primary);color:var(--text-primary);
   border-radius:.4rem;padding:.6rem;font-size:.85rem;font-weight:500;cursor:pointer}
 .btn:hover{border-color:var(--text-primary)}
-.btn-primary{background:var(--accent-primary);border-color:var(--accent-primary)}
+.btn-primary{background:var(--accent-primary);border-color:var(--accent-primary);color:#04121f;font-weight:700}
 .btn-group{display:flex;gap:.8rem}
 .btn-group .btn{flex-grow:1}
 </style>

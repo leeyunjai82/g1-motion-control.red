@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-# Version: 1.8
+# Version: 1.9
 # Changes:
+#   1.9 - APPROACH_EXTRA 0.10 → 0.15 (측면 하강 때 손이 박스에 걸리던 문제),
+#         박스 잡기 x 2cm 더 몸쪽 (BOX_GRAB_X_EXTRA = -0.02, 마커 잡기는 그대로)
 #   1.8 - /viz 에 비교용 다른 박스 추정 방식(other) + 차이(cmp) 추가 — 표시 전용, 잡기는 detect_box BOX_METHOD 값
 #   1.7 - 잡기 단계별 소요 시간 기록 + GET /grab_history (최근 5회) — 표시용
 #   1.6 - 잡기 진행 단계(stage) 노출(/status, /grab_status), 3D 시각화용 GET /viz (박스·손 목표)
@@ -127,7 +129,7 @@ def marker_x_axis_in_torso(rvec):
 # 잡기 파라미터 (ik_box와 동일)
 # ==========================================
 GRIP_EXTRA     = -0.050
-APPROACH_EXTRA = 0.10
+APPROACH_EXTRA = 0.15     # 위쪽 접근·측면 하강 때 L/R 에서 바깥으로 벌리는 거리 [m] (0.10 → 0.15: 내려올 때 박스에 걸림, H2 와 같은 값)
 GRAB_Z_OFFSET  = 0.08
 # ↑ 실험으로 맞춘 값. grab_z = 박스 윗면 - h/2 + GRAB_Z_OFFSET.
 #   아래를 함께 흡수하고 있다 (h=9cm 예: IK 목표 윗면+3.5cm → 실제 손 윗면 약 -0.9cm):
@@ -135,6 +137,7 @@ GRAB_Z_OFFSET  = 0.08
 #   · IK 목표점 L_ee/R_ee = 손목 yaw 에서 +5cm 지점 (손바닥 접촉면 아님)
 #   좌표 변환을 pelvis 기준으로 정확히 고치면 이 값을 0.044 줄여야 같은 높이가 된다.
 GRAB_X_OFFSET  = -0.15
+BOX_GRAB_X_EXTRA = -0.02  # 박스만: 잡을 때 2cm 더 몸쪽 (GRAB_X_OFFSET 에 더함, 마커 잡기는 그대로)
 HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
 WAIST_BASE_PITCH = -3.0   # 기본 상체 각도 (0=중립)
@@ -522,14 +525,14 @@ class GrabController:
         time.sleep(0.2)
 
         # 잡기 — 실제 L/R 점 + X는 몸쪽으로 당김(GRAB_X_OFFSET)
-        gripL = [Lx + GRAB_X_OFFSET, Ly + LEFT_HAND_Y_OFFSET, grab_z]
-        gripR = [Rx + GRAB_X_OFFSET, Ry, grab_z]
+        gripL = [Lx + GRAB_X_OFFSET + BOX_GRAB_X_EXTRA, Ly + LEFT_HAND_Y_OFFSET, grab_z]
+        gripR = [Rx + GRAB_X_OFFSET + BOX_GRAB_X_EXTRA, Ry, grab_z]
         self._stage("잡기")
         if not self._move(gripL, gripR, 2.5, "⑥ 잡기", l_rot, r_rot): return
         time.sleep(1.0)
 
         # 대칭 정렬용 파라미터: 잡은 뒤 양손을 평행/대칭으로 정리
-        grab_x_base = cx + GRAB_X_OFFSET
+        grab_x_base = cx + GRAB_X_OFFSET + BOX_GRAB_X_EXTRA
         grp_off_L = abs(Ly - cy)
         grp_off_R = abs(Ry - cy)
         self._finish_sequence(grab_x_base, grp_off_L, grp_off_R,
