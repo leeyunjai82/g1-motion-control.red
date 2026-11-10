@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# Version: 2.0
+# Version: 1.9
 # Changes:
-#   2.0 - Box 대기 자세 x 0.15 → 0.10 (BOX_READY_X/Y/Z 상수) — 앞뒤 흔들림 완화
 #   1.9 - APPROACH_EXTRA 0.10 → 0.15 (측면 하강 때 손이 박스에 걸리던 문제),
 #         박스 잡기 x 2cm 더 몸쪽 (BOX_GRAB_X_EXTRA = -0.02, 마커 잡기는 그대로)
 #   1.8 - /viz 에 비교용 다른 박스 추정 방식(other) + 차이(cmp) 추가 — 표시 전용, 잡기는 detect_box BOX_METHOD 값
@@ -143,13 +142,6 @@ HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
 WAIST_BASE_PITCH = -3.0   # 기본 상체 각도 (0=중립)
 
-# Box 대기 자세 (Box 선택 시 / 잡기 후 복귀) — 손 목표 [m], IK(pelvis) 기준
-#   x 0.15 → 0.10: 팔이 앞으로 나가 있으면 무게중심이 앞으로 가 앞뒤로 흔들림.
-#   더 줄이면 손·팔꿈치가 가슴에 닿을 수 있음 (몸통 앞면 거리 확인 필요)
-BOX_READY_X = 0.10
-BOX_READY_Y = 0.25
-BOX_READY_Z = 0.20
-
 # 잡은 뒤 → 건네기 구간 타이밍 (s)
 STEP_PAUSE        = 0.1   # 대칭정렬/들기/건네기 동작 사이 정지 (구 0.3/0.2/0.3)
 WAIST_SETTLE      = 0.2   # 허리 회전 후 안정 대기 (구 0.5)
@@ -206,8 +198,8 @@ class GrabController:
         self.MSG_TIMEOUT  = "No one? I will put it down."
         self.MSG_HOME      = "Bring me another box."
 
-        self.HOME_LEFT  = [BOX_READY_X,  BOX_READY_Y, BOX_READY_Z]
-        self.HOME_RIGHT = [BOX_READY_X, -BOX_READY_Y, BOX_READY_Z]
+        self.HOME_LEFT  = [0.15,  0.25, 0.20]
+        self.HOME_RIGHT = [0.15, -0.25, 0.20]
 
         # 허리 정렬 후 재감지 콜백 (robot_server가 주입) — None이면 재감지 안 함
         self.redetect = None
