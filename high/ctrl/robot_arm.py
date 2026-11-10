@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import threading
 import time
@@ -60,10 +59,8 @@ class G1_29_ArmController:
         self.kd_low = 3.0
         self.kp_wrist = 40.0
         self.kd_wrist = 1.5
-        # 허리 게인 — 환경변수로 시험 가능 (기본 150 / 3.0 그대로).
-        #   흔들림 시험: ARM_KP_WAIST=60 ./start_robot.sh  (허리를 덜 단단하게 잡아 밸런스 제어와 덜 싸우게)
-        self.kp_waist = float(os.environ.get("ARM_KP_WAIST", 150.0))
-        self.kd_waist = float(os.environ.get("ARM_KD_WAIST", 3.0))
+        self.kp_waist = 150.0
+        self.kd_waist = 3.0
 
         self.arm_velocity_limit = 20.0
         self.control_dt = 1.0 / 250.0 # 250Hz
@@ -119,7 +116,6 @@ class G1_29_ArmController:
         self.q_target = self.get_current_dual_arm_q()
         self.waist_q_target = current_all_q[12:15] # 12, 13, 14번
 
-        logger_mp.info(f"허리 게인 kp={self.kp_waist} kd={self.kd_waist}")
         logger_mp.info("모든 관절 고정 설정 중 (팔/허리 제외)...")
         arm_indices = set(member.value for member in G1_29_JointArmIndex)
         waist_indices = {12, 13, 14}

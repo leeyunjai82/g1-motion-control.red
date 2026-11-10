@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# Version: 2.1
-#   2.1 - WAIST_BASE_PITCH 환경변수로 시험 가능 (기본 -3.0 그대로)
+# Version: 2.0
 # Changes:
 #   2.0 - Box 대기 자세 x 0.15 → 0.10 (BOX_READY_X/Y/Z 상수) — 앞뒤 흔들림 완화
 #   1.9 - APPROACH_EXTRA 0.10 → 0.15 (측면 하강 때 손이 박스에 걸리던 문제),
@@ -142,7 +141,7 @@ GRAB_X_OFFSET  = -0.15
 BOX_GRAB_X_EXTRA = -0.02  # 박스만: 잡을 때 2cm 더 몸쪽 (GRAB_X_OFFSET 에 더함, 마커 잡기는 그대로)
 HANDOVER_X     = 0.30
 LEFT_HAND_Y_OFFSET = 0.0
-WAIST_BASE_PITCH = float(os.environ.get("WAIST_BASE_PITCH", -3.0))   # 기본 상체 각도 (0=중립) — 환경변수로 시험 가능
+WAIST_BASE_PITCH = -3.0   # 기본 상체 각도 (0=중립)
 
 # Box 대기 자세 (Box 선택 시 / 잡기 후 복귀) — 손 목표 [m], IK(pelvis) 기준
 #   x 0.15 → 0.10: 팔이 앞으로 나가 있으면 무게중심이 앞으로 가 앞뒤로 흔들림.
